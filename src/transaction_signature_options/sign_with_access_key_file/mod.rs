@@ -1,9 +1,7 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
-use near_primitives::transaction::Transaction;
-use near_primitives::transaction::TransactionV0;
 
-use crate::common::{blocking_view_access_key, from_nk_crypto_hash};
+use crate::common::blocking_view_access_key;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -56,14 +54,18 @@ impl SignAccessKeyFileContext {
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?;
 
+        let nk_public_key = crate::common::to_nk_public_key(&account_json.public_key);
+        let nk_secret_key = crate::common::to_nk_secret_key(&account_json.private_key);
+
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
                 scope
                     .nonce
                     .wrap_err("Nonce is required to sign a transaction in offline mode")?,
-                near_primitives::hash::CryptoHash::from(scope
+                scope
                     .block_hash
-                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?),
+                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                    .0,
                 scope
                     .block_height
                     .wrap_err("Block Height is required to sign a transaction in offline mode")?,
@@ -81,29 +83,21 @@ impl SignAccessKeyFileContext {
 
             (
                 access_key_view.nonce + 1,
-                from_nk_crypto_hash(&access_key_view.block_hash),
+                access_key_view.block_hash,
                 access_key_view.block_height,
             )
         };
 
-        // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
-        let np_actions = previous_context.prepopulated_transaction.to_np_actions();
-        let mut unsigned_transaction = TransactionV0 {
-            public_key: account_json.public_key.clone(),
+        let mut unsigned_transaction = near_kit::Transaction {
+            public_key: nk_public_key.clone(),
             block_hash,
             nonce,
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: np_actions,
+            actions: previous_context.prepopulated_transaction.actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
-        let unsigned_transaction = Transaction::V0(unsigned_transaction);
-
-        let signature = account_json
-            .private_key
-            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
         if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
@@ -113,8 +107,8 @@ impl SignAccessKeyFileContext {
 
             let signed_delegate_action = super::get_signed_delegate_action(
                 unsigned_transaction,
-                &account_json.public_key,
-                account_json.private_key,
+                &nk_public_key,
+                nk_secret_key,
                 max_block_height,
             );
 
@@ -129,18 +123,15 @@ impl SignAccessKeyFileContext {
             });
         }
 
-        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-            signature.clone(),
-            unsigned_transaction,
-        );
+        let mut signed_transaction = unsigned_transaction.sign(&nk_secret_key);
 
         tracing::info!(
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
                 "\nPublic key: {}\nSignature:  {}\n ",
-                account_json.public_key,
-                signature
+                nk_public_key,
+                signed_transaction.signature
             ))
         );
 

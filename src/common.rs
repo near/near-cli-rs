@@ -646,6 +646,38 @@ pub fn print_full_signed_transaction(
     info_str
 }
 
+pub fn print_full_signed_transaction_nk(
+    transaction: &near_kit::SignedTransaction,
+) -> String {
+    let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
+    info_str.push_str(&format!(
+        "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
+        transaction.transaction.get_hash()
+    ));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "public_key:",
+        &transaction.transaction.public_key
+    ));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "nonce:",
+        transaction.transaction.nonce
+    ));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "block_hash:",
+        &transaction.transaction.block_hash
+    ));
+    let prepopulated = crate::commands::PrepopulatedTransaction {
+        signer_id: transaction.transaction.signer_id.clone(),
+        receiver_id: transaction.transaction.receiver_id.clone(),
+        actions: transaction.transaction.actions.clone(),
+    };
+    info_str.push_str(&print_unsigned_transaction(&prepopulated));
+    info_str
+}
+
 pub fn print_full_unsigned_transaction(
     transaction: near_primitives::transaction::Transaction,
 ) -> String {
@@ -2120,6 +2152,24 @@ pub fn to_nk_public_key(
     key.to_string()
         .parse()
         .expect("near_crypto::PublicKey should always produce a valid near_kit::PublicKey string")
+}
+
+/// Convert a `near_crypto::SecretKey` to `near_kit::SecretKey`.
+pub fn to_nk_secret_key(
+    key: &near_crypto::SecretKey,
+) -> near_kit::SecretKey {
+    key.to_string()
+        .parse()
+        .expect("near_crypto::SecretKey should always produce a valid near_kit::SecretKey string")
+}
+
+/// Convert a `near_crypto::Signature` to `near_kit::Signature`.
+pub fn to_nk_signature(
+    sig: &near_crypto::Signature,
+) -> near_kit::Signature {
+    sig.to_string()
+        .parse()
+        .expect("near_crypto::Signature should always produce a valid near_kit::Signature string")
 }
 
 /// Convert a `near_kit::CryptoHash` to `near_primitives::hash::CryptoHash`.

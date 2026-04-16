@@ -1,13 +1,9 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 use near_ledger::NEARLedgerError;
-use near_primitives::action::delegate::SignedDelegateAction;
-use near_primitives::borsh;
-use near_primitives::transaction::Transaction;
-use near_primitives::transaction::TransactionV0;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{blocking_view_access_key, from_nk_crypto_hash};
+use crate::common::blocking_view_access_key;
 
 #[cfg(feature = "ledger-ble")]
 pub mod ble_helpers;
@@ -212,11 +208,14 @@ fn sign_transaction_with_usb(
     let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
+    let nk_public_key = crate::common::to_nk_public_key(&public_key);
+
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
         (
             nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
-            near_primitives::hash::CryptoHash::from(block_hash
-                .wrap_err("Block Hash is required to sign a transaction in offline mode")?),
+            block_hash
+                .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                .0,
             block_height
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
@@ -233,13 +232,13 @@ fn sign_transaction_with_usb(
 
         (
             access_key_view.nonce + 1,
-            from_nk_crypto_hash(&access_key_view.block_hash),
+            access_key_view.block_hash,
             access_key_view.block_height,
         )
     };
 
-    let mut unsigned_transaction = TransactionV0 {
-        public_key: signer_public_key.clone().into(),
+    let mut unsigned_transaction = near_kit::Transaction {
+        public_key: nk_public_key.clone(),
         block_hash,
         nonce,
         signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
@@ -247,33 +246,28 @@ fn sign_transaction_with_usb(
             .prepopulated_transaction
             .receiver_id
             .clone(),
-        // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
-        actions: previous_context.prepopulated_transaction.to_np_actions(),
+        actions: previous_context.prepopulated_transaction.actions.clone(),
     };
 
     (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
-    let unsigned_transaction = Transaction::V0(unsigned_transaction);
 
     if previous_context.sign_as_delegate_action {
         let max_block_height = block_height
             + meta_transaction_valid_for.unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
 
-        let mut delegate_action = near_primitives::action::delegate::DelegateAction {
-            sender_id: unsigned_transaction.signer_id().clone(),
-            receiver_id: unsigned_transaction.receiver_id().clone(),
-            actions: vec![],
-            nonce: unsigned_transaction.nonce().nonce(),
+        let delegate_action = near_kit::DelegateAction {
+            sender_id: unsigned_transaction.signer_id.clone(),
+            receiver_id: unsigned_transaction.receiver_id.clone(),
+            actions: unsigned_transaction
+                .actions
+                .into_iter()
+                .map(near_kit::NonDelegateAction::try_from)
+                .collect::<Result<_, _>>()
+                .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again)."),
+            nonce: unsigned_transaction.nonce,
             max_block_height,
-            public_key: unsigned_transaction.public_key().clone(),
+            public_key: unsigned_transaction.public_key.clone(),
         };
-
-        delegate_action.actions = unsigned_transaction
-                    .take_actions()
-                    .into_iter()
-                    .map(near_primitives::action::delegate::NonDelegateAction::try_from)
-                    .collect::<Result<_, _>>()
-                    .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
 
         let signature = match near_ledger::sign_message_nep366_delegate_action(
             &borsh::to_vec(&delegate_action)
@@ -281,8 +275,9 @@ fn sign_transaction_with_usb(
             seed_phrase_hd_path_raw.clone(),
         ) {
             Ok(signature) => {
-                near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                    .wrap_err("Signature is not expected to fail on deserialization")?
+                near_kit::Signature::ed25519_from_bytes(
+                    signature.try_into().expect("Ledger ED25519 signature should be 64 bytes")
+                )
             }
             Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
                 return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
@@ -293,10 +288,7 @@ fn sign_transaction_with_usb(
                 )));
             }
         };
-        let signed_delegate_action = SignedDelegateAction {
-            delegate_action,
-            signature,
-        };
+        let signed_delegate_action = delegate_action.sign(signature);
 
         return Ok(UsbConnectionContext(super::SubmitContext {
             network_config: previous_context.network_config.clone(),
@@ -317,8 +309,9 @@ fn sign_transaction_with_usb(
         seed_phrase_hd_path_raw.clone(),
     ) {
         Ok(signature) => {
-            near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                .wrap_err("Signature is not expected to fail on deserialization")?
+            near_kit::Signature::ed25519_from_bytes(
+                signature.try_into().expect("Ledger ED25519 signature should be 64 bytes")
+            )
         }
         Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
             return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
@@ -330,10 +323,7 @@ fn sign_transaction_with_usb(
         }
     };
 
-    let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-        signature.clone(),
-        unsigned_transaction,
-    );
+    let mut signed_transaction = unsigned_transaction.complete(signature.clone());
 
     tracing::info!(
         parent: &tracing::Span::none(),
@@ -470,11 +460,14 @@ fn sign_transaction_with_ble(
     let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
+    let nk_public_key = crate::common::to_nk_public_key(&public_key);
+
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
         (
             nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
-            near_primitives::hash::CryptoHash::from(block_hash
-                .wrap_err("Block Hash is required to sign a transaction in offline mode")?),
+            block_hash
+                .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                .0,
             block_height
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
@@ -491,13 +484,13 @@ fn sign_transaction_with_ble(
 
         (
             access_key_view.nonce + 1,
-            from_nk_crypto_hash(&access_key_view.block_hash),
+            access_key_view.block_hash,
             access_key_view.block_height,
         )
     };
 
-    let mut unsigned_transaction = TransactionV0 {
-        public_key: signer_public_key.clone().into(),
+    let mut unsigned_transaction = near_kit::Transaction {
+        public_key: nk_public_key.clone(),
         block_hash,
         nonce,
         signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
@@ -505,33 +498,28 @@ fn sign_transaction_with_ble(
             .prepopulated_transaction
             .receiver_id
             .clone(),
-        // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
-        actions: previous_context.prepopulated_transaction.to_np_actions(),
+        actions: previous_context.prepopulated_transaction.actions.clone(),
     };
 
     (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
-    let unsigned_transaction = Transaction::V0(unsigned_transaction);
 
     if previous_context.sign_as_delegate_action {
         let max_block_height = block_height
             + meta_transaction_valid_for.unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
 
-        let mut delegate_action = near_primitives::action::delegate::DelegateAction {
-            sender_id: unsigned_transaction.signer_id().clone(),
-            receiver_id: unsigned_transaction.receiver_id().clone(),
-            actions: vec![],
-            nonce: unsigned_transaction.nonce().nonce(),
+        let delegate_action = near_kit::DelegateAction {
+            sender_id: unsigned_transaction.signer_id.clone(),
+            receiver_id: unsigned_transaction.receiver_id.clone(),
+            actions: unsigned_transaction
+                .actions
+                .into_iter()
+                .map(near_kit::NonDelegateAction::try_from)
+                .collect::<Result<_, _>>()
+                .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again)."),
+            nonce: unsigned_transaction.nonce,
             max_block_height,
-            public_key: unsigned_transaction.public_key().clone(),
+            public_key: unsigned_transaction.public_key.clone(),
         };
-
-        delegate_action.actions = unsigned_transaction
-                    .take_actions()
-                    .into_iter()
-                    .map(near_primitives::action::delegate::NonDelegateAction::try_from)
-                    .collect::<Result<_, _>>()
-                    .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
 
         let signature = match ble_session.sign_message_nep366_delegate_action(
             &borsh::to_vec(&delegate_action)
@@ -539,8 +527,9 @@ fn sign_transaction_with_ble(
             seed_phrase_hd_path_raw.clone(),
         ) {
             Ok(signature) => {
-                near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                    .wrap_err("Signature is not expected to fail on deserialization")?
+                near_kit::Signature::ed25519_from_bytes(
+                    signature.try_into().expect("Ledger ED25519 signature should be 64 bytes")
+                )
             }
             Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
                 return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
@@ -551,10 +540,7 @@ fn sign_transaction_with_ble(
                 )));
             }
         };
-        let signed_delegate_action = SignedDelegateAction {
-            delegate_action,
-            signature,
-        };
+        let signed_delegate_action = delegate_action.sign(signature);
 
         return Ok(BluetoothConnectionContext(super::SubmitContext {
             network_config: previous_context.network_config.clone(),
@@ -575,8 +561,9 @@ fn sign_transaction_with_ble(
         seed_phrase_hd_path_raw.clone(),
     ) {
         Ok(signature) => {
-            near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                .wrap_err("Signature is not expected to fail on deserialization")?
+            near_kit::Signature::ed25519_from_bytes(
+                signature.try_into().expect("Ledger ED25519 signature should be 64 bytes")
+            )
         }
         Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
             return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
@@ -588,10 +575,7 @@ fn sign_transaction_with_ble(
         }
     };
 
-    let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-        signature.clone(),
-        unsigned_transaction,
-    );
+    let mut signed_transaction = unsigned_transaction.complete(signature.clone());
 
     tracing::info!(
         parent: &tracing::Span::none(),

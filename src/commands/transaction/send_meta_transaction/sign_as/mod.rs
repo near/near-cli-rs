@@ -28,8 +28,7 @@ impl RelayerAccountIdContext {
                 let signed_delegate_action = previous_context.signed_delegate_action.clone();
 
                 move |_network_config| {
-                    let np_action: near_primitives::transaction::Action = signed_delegate_action.clone().into();
-                    let actions = vec![crate::commands::np_action_to_nk(np_action)];
+                    let actions = vec![near_kit::Action::delegate(signed_delegate_action.clone())];
 
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
@@ -43,9 +42,9 @@ impl RelayerAccountIdContext {
             std::sync::Arc::new({
                 move |prepopulated_unsigned_transaction, _network_config| {
                     prepopulated_unsigned_transaction.actions =
-                        vec![near_primitives::transaction::Action::Delegate(Box::new(
+                        vec![near_kit::Action::delegate(
                             previous_context.signed_delegate_action.clone(),
-                        ))];
+                        )];
                     Ok(())
                 }
             });

@@ -124,61 +124,99 @@ pub struct SubmitContext {
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
 pub enum SignedTransactionOrSignedDelegateAction {
-    SignedTransaction(near_primitives::transaction::SignedTransaction),
-    SignedDelegateAction(near_primitives::action::delegate::SignedDelegateAction),
+    SignedTransaction(near_kit::SignedTransaction),
+    SignedDelegateAction(near_kit::SignedDelegateAction),
 }
 
-impl From<near_primitives::transaction::SignedTransaction>
+impl serde::Serialize for SignedTransactionOrSignedDelegateAction {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(1))?;
+        match self {
+            Self::SignedTransaction(tx) => {
+                map.serialize_entry("SignedTransaction", &tx.to_base64())?;
+            }
+            Self::SignedDelegateAction(da) => {
+                let b64 = near_primitives::serialize::to_base64(
+                    &borsh::to_vec(da).expect("borsh serialization should not fail"),
+                );
+                map.serialize_entry("SignedDelegateAction", &b64)?;
+            }
+        }
+        map.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for SignedTransactionOrSignedDelegateAction {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let map: std::collections::HashMap<String, String> =
+            serde::Deserialize::deserialize(deserializer)?;
+        if let Some(b64) = map.get("SignedTransaction") {
+            let tx = near_kit::SignedTransaction::from_base64(b64)
+                .map_err(serde::de::Error::custom)?;
+            Ok(Self::SignedTransaction(tx))
+        } else if let Some(b64) = map.get("SignedDelegateAction") {
+            let bytes = near_primitives::serialize::from_base64(b64)
+                .map_err(serde::de::Error::custom)?;
+            let da: near_kit::SignedDelegateAction =
+                borsh::from_slice(&bytes).map_err(serde::de::Error::custom)?;
+            Ok(Self::SignedDelegateAction(da))
+        } else {
+            Err(serde::de::Error::custom(
+                "expected SignedTransaction or SignedDelegateAction key",
+            ))
+        }
+    }
+}
+
+impl From<near_kit::SignedTransaction>
     for SignedTransactionOrSignedDelegateAction
 {
-    fn from(signed_transaction: near_primitives::transaction::SignedTransaction) -> Self {
+    fn from(signed_transaction: near_kit::SignedTransaction) -> Self {
         Self::SignedTransaction(signed_transaction)
     }
 }
 
-impl From<near_primitives::action::delegate::SignedDelegateAction>
+impl From<near_kit::SignedDelegateAction>
     for SignedTransactionOrSignedDelegateAction
 {
     fn from(
-        signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+        signed_delegate_action: near_kit::SignedDelegateAction,
     ) -> Self {
         Self::SignedDelegateAction(signed_delegate_action)
     }
 }
 
 pub fn get_signed_delegate_action(
-    unsigned_transaction: near_primitives::transaction::Transaction,
-    public_key: &near_crypto::PublicKey,
-    private_key: near_crypto::SecretKey,
+    unsigned_transaction: near_kit::Transaction,
+    public_key: &near_kit::PublicKey,
+    private_key: near_kit::SecretKey,
     max_block_height: u64,
-) -> near_primitives::action::delegate::SignedDelegateAction {
-    use near_primitives::signable_message::{SignableMessage, SignableMessageType};
-
-    let mut delegate_action = near_primitives::action::delegate::DelegateAction {
-        sender_id: unsigned_transaction.signer_id().clone(),
-        receiver_id: unsigned_transaction.receiver_id().clone(),
-        actions: vec![],
-        nonce: unsigned_transaction.nonce().nonce(),
+) -> near_kit::SignedDelegateAction {
+    let delegate_action = near_kit::DelegateAction {
+        sender_id: unsigned_transaction.signer_id.clone(),
+        receiver_id: unsigned_transaction.receiver_id.clone(),
+        actions: unsigned_transaction
+            .actions
+            .into_iter()
+            .map(near_kit::NonDelegateAction::try_from)
+            .collect::<Result<_, _>>()
+            .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again)."),
+        nonce: unsigned_transaction.nonce,
         max_block_height,
-        public_key: unsigned_transaction.public_key().clone(),
+        public_key: unsigned_transaction.public_key.clone(),
     };
 
-    delegate_action.actions = unsigned_transaction
-        .take_actions()
-        .into_iter()
-        .map(near_primitives::action::delegate::NonDelegateAction::try_from)
-        .collect::<Result<_, _>>()
-        .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
-
-    // create a new signature here signing the delegate action + discriminant
-    let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-    let signer = near_crypto::InMemorySigner::from_secret_key(
-        delegate_action.sender_id.clone(),
-        private_key,
-    );
-    let signature = signable.sign(&signer);
+    let hash = delegate_action.get_hash();
+    let signature = private_key.sign(hash.as_bytes());
 
     tracing::info!(
         parent: &tracing::Span::none(),
@@ -188,8 +226,5 @@ pub fn get_signed_delegate_action(
         ))
     );
 
-    near_primitives::action::delegate::SignedDelegateAction {
-        delegate_action,
-        signature,
-    }
+    delegate_action.sign(signature)
 }

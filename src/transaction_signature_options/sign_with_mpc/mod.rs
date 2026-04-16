@@ -1,9 +1,8 @@
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 use inquire::CustomType;
-use near_primitives::transaction::{Transaction, TransactionV0};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{blocking_view_access_key, blocking_view_function, from_nk_crypto_hash};
+use crate::common::{blocking_view_access_key, blocking_view_function};
 
 pub mod mpc_sign_request;
 pub mod mpc_sign_result;
@@ -170,7 +169,7 @@ pub struct MpcDeriveKeyContext {
     derived_public_key: near_crypto::PublicKey,
     derivation_path: String,
     nonce: near_primitives::types::Nonce,
-    block_hash: near_primitives::hash::CryptoHash,
+    block_hash: near_kit::CryptoHash,
     tx_context: crate::commands::TransactionContext,
 }
 
@@ -230,7 +229,7 @@ impl MpcDeriveKeyContext {
             derived_public_key,
             derivation_path: scope.derivation_path.clone(),
             nonce: access_key_view.nonce + 1,
-            block_hash: from_nk_crypto_hash(&access_key_view.block_hash),
+            block_hash: access_key_view.block_hash,
             tx_context: previous_context.tx_context,
         })
     }
@@ -295,7 +294,7 @@ pub struct PrepaidGasContext {
     derived_public_key: near_crypto::PublicKey,
     derivation_path: String,
     nonce: near_primitives::types::Nonce,
-    block_hash: near_primitives::hash::CryptoHash,
+    block_hash: near_kit::CryptoHash,
     tx_context: crate::commands::TransactionContext,
     gas: crate::common::NearGas,
 }
@@ -366,7 +365,7 @@ pub struct DepositContext {
     mpc_contract_address: near_primitives::types::AccountId,
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,
-    original_payload_transaction: Transaction,
+    original_payload_transaction: near_kit::Transaction,
     mpc_sign_request: mpc_sign_request::MpcSignRequest,
     mpc_sign_request_serialized: Vec<u8>,
     global_context: crate::GlobalContext,
@@ -378,22 +377,21 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
-        let np_actions = previous_context.tx_context.prepopulated_transaction.to_np_actions();
+        let nk_derived_public_key = crate::common::to_nk_public_key(&previous_context.derived_public_key);
         let controllable_account = previous_context
             .tx_context
             .prepopulated_transaction
             .signer_id;
-        let mut payload = TransactionV0 {
+        let mut payload = near_kit::Transaction {
             signer_id: controllable_account.clone(),
             receiver_id: previous_context
                 .tx_context
                 .prepopulated_transaction
                 .receiver_id,
-            public_key: previous_context.derived_public_key.clone(),
+            public_key: nk_derived_public_key,
             nonce: previous_context.nonce,
             block_hash: previous_context.block_hash,
-            actions: np_actions,
+            actions: previous_context.tx_context.prepopulated_transaction.actions,
         };
 
         (previous_context.tx_context.on_before_signing_callback)(
@@ -401,16 +399,16 @@ impl DepositContext {
             &previous_context.tx_context.network_config,
         )?;
 
-        let mpc_tx_payload = Transaction::V0(payload);
-        let hashed_payload = near_primitives::hash::CryptoHash::hash_borsh(&mpc_tx_payload).0;
+        let hashed_payload = payload.get_hash();
 
+        let mpc_tx_payload = payload.clone();
         let payload: mpc_sign_request::MpcSignPayload =
             match previous_context.derived_public_key.key_type() {
                 near_crypto::KeyType::ED25519 => {
                     mpc_sign_request::MpcSignPayload::Eddsa(hashed_payload.to_vec())
                 }
                 near_crypto::KeyType::SECP256K1 => {
-                    mpc_sign_request::MpcSignPayload::Ecdsa(hashed_payload)
+                    mpc_sign_request::MpcSignPayload::Ecdsa(*hashed_payload.as_bytes())
                 }
             };
 
@@ -475,7 +473,6 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let mpc_sign_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.admin_account_id.clone(),
             receiver_id: item.mpc_contract_address.clone(),
-            // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
             actions: vec![near_kit::Action::FunctionCall(
                 near_kit::FunctionCallAction {
                     method_name: "sign".to_string(),
@@ -501,8 +498,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let on_after_signing_callback: crate::commands::OnAfterSigningCallback =
             std::sync::Arc::new({
                 move |signed_transaction_to_replace, network_config| {
-                    if let Some(near_primitives::action::Action::FunctionCall(fc)) =
-                        signed_transaction_to_replace.transaction.actions().first()
+                    if let Some(near_kit::Action::FunctionCall(fc)) =
+                        signed_transaction_to_replace.transaction.actions.first()
                     {
                         // NOTE: Early exit if it is a DAO, it will be required to enter different
                         // flow for it
@@ -513,8 +510,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
 
                     let unsigned_transaction = original_transaction_for_signing.clone();
 
-                    let sender_id = unsigned_transaction.signer_id().clone();
-                    let receiver_id = unsigned_transaction.receiver_id().clone();
+                    let sender_id = unsigned_transaction.signer_id.clone();
+                    let receiver_id = unsigned_transaction.receiver_id.clone();
                     let contract_id = item.mpc_contract_address.clone();
                     let sign_request_tx = signed_transaction_to_replace.clone();
 
@@ -534,15 +531,14 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                         };
 
                     let signed_transaction = match sign_outcome_view.status {
-                        near_primitives::views::FinalExecutionStatus::SuccessValue(result) => {
+                        near_kit::FinalExecutionStatus::SuccessValue(result_b64) => {
+                            let result_bytes = near_primitives::serialize::from_base64(&result_b64)
+                                .map_err(|e| color_eyre::eyre::eyre!("Failed to decode base64: {e}"))?;
                             let sign_result: mpc_sign_result::SignResult =
-                                serde_json::from_slice(&result)?;
+                                serde_json::from_slice(&result_bytes)?;
                             let signature: near_crypto::Signature = sign_result.into();
 
-                            near_primitives::transaction::SignedTransaction::new(
-                                signature,
-                                unsigned_transaction,
-                            )
+                            unsigned_transaction.complete(crate::common::to_nk_signature(&signature))
                         }
                         _ => {
                             let error_msg = format!(
@@ -629,7 +625,7 @@ pub fn dao_sign_with_mpc_after_send_flow(
     global_context: &crate::GlobalContext,
     network_config: &crate::config::NetworkConfig,
     outcome_view: &near_kit::FinalExecutionOutcome,
-    unsigned_mpc_transaction: &near_primitives::transaction::Transaction,
+    unsigned_mpc_transaction: &near_kit::Transaction,
     original_sign_request: &mpc_sign_request::MpcSignRequest,
 ) -> color_eyre::eyre::Result<()> {
     use tracing_indicatif::suspend_tracing_indicatif;
@@ -662,10 +658,7 @@ pub fn dao_sign_with_mpc_after_send_flow(
             Ok(sign_result) => {
                 let signature: near_crypto::Signature = sign_result.into();
 
-                near_primitives::transaction::SignedTransaction::new(
-                    signature,
-                    unsigned_mpc_transaction.clone(),
-                )
+                unsigned_mpc_transaction.clone().complete(crate::common::to_nk_signature(&signature))
             }
             Err(err) => {
                 eprintln!(

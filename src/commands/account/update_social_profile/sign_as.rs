@@ -4,7 +4,10 @@ use std::sync::Arc;
 use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize};
 use inquire::{CustomType, Select};
 
-use crate::common::{CallResultExt, blocking_view_function, to_call_result};
+use crate::common::{
+    CallResultExt, blocking_view_access_key, blocking_view_function, from_nk_access_key_permission,
+    to_call_result,
+};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::profile_args_type::ArgsContext)]
@@ -57,15 +60,18 @@ impl From<SignerContext> for crate::commands::ActionContext {
             let signer_account_id = item.signer_account_id.clone();
             let account_id = item.account_id.clone();
             move |prepopulated_unsigned_transaction, network_config| {
-                let json_rpc_client = network_config.json_rpc_client();
-                let public_key = prepopulated_unsigned_transaction.public_key.clone();
+                let public_key: near_crypto::PublicKey = prepopulated_unsigned_transaction
+                    .public_key
+                    .to_string()
+                    .parse()
+                    .wrap_err("Failed to convert public key")?;
                 let receiver_id = prepopulated_unsigned_transaction.receiver_id.clone();
 
-                if let Some(near_primitives::transaction::Action::FunctionCall(action)) =
+                if let Some(near_kit::Action::FunctionCall(action)) =
                     prepopulated_unsigned_transaction.actions.first_mut()
                 {
                     action.deposit = get_deposit(
-                        &json_rpc_client,
+                        network_config,
                         &signer_account_id,
                         &public_key,
                         &account_id,
@@ -176,7 +182,7 @@ fn get_prepopulated_transaction(
         get_remote_profile(network_config, &contract_account_id, account_id.clone())?;
 
     let deposit = required_deposit(
-        &network_config.json_rpc_client(),
+        network_config,
         &contract_account_id,
         account_id,
         &local_profile,
@@ -211,27 +217,145 @@ fn get_prepopulated_transaction(
 
 #[tracing::instrument(name = "Calculation of the required deposit ...", skip_all)]
 fn required_deposit(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     near_social_account_id: &near_primitives::types::AccountId,
     account_id: &near_primitives::types::AccountId,
     data: &serde_json::Value,
     prev_data: Option<&serde_json::Value>,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::info!(target: "near_teach_me", "Calculation of the required deposit ...");
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(near_socialdb_client::required_deposit(
-            json_rpc_client,
+
+    const STORAGE_COST_PER_BYTE: i128 = 10i128.pow(19);
+    const MIN_STORAGE_BALANCE: u128 = STORAGE_COST_PER_BYTE as u128 * 2000;
+    const INITIAL_ACCOUNT_STORAGE_BALANCE: i128 = STORAGE_COST_PER_BYTE * 500;
+    const EXTRA_STORAGE_BALANCE: i128 = STORAGE_COST_PER_BYTE * 5000;
+
+    let storage_balance_result: color_eyre::eyre::Result<near_socialdb_client::StorageBalance> = {
+        let result = blocking_view_function(
+            network_config,
             near_social_account_id,
-            account_id,
-            data,
-            prev_data,
-        ))
+            "storage_balance_of",
+            serde_json::json!({ "account_id": account_id })
+                .to_string()
+                .into_bytes(),
+            near_primitives::types::Finality::Final.into(),
+        )
+        .wrap_err("Failed to fetch query for view method: 'storage_balance_of'")?;
+        to_call_result(&result)
+            .parse_result_from_json::<near_socialdb_client::StorageBalance>()
+    };
+
+    let (available_storage, initial_account_storage_balance, min_storage_balance) =
+        if let Ok(storage_balance) = storage_balance_result {
+            (storage_balance.available, 0, 0)
+        } else {
+            (0, INITIAL_ACCOUNT_STORAGE_BALANCE, MIN_STORAGE_BALANCE)
+        };
+
+    let estimated_storage_balance = u128::try_from(
+        STORAGE_COST_PER_BYTE * estimate_data_size(data, prev_data) as i128
+            + initial_account_storage_balance
+            + EXTRA_STORAGE_BALANCE,
+    )
+    .unwrap_or(0)
+    .saturating_sub(available_storage);
+    Ok(near_token::NearToken::from_yoctonear(std::cmp::max(
+        estimated_storage_balance,
+        min_storage_balance,
+    )))
+}
+
+/// https://github.com/NearSocial/VM/blob/24055641b53e7eeadf6efdb9c073f85f02463798/src/lib/data/utils.js#L182-L198
+fn estimate_data_size(data: &serde_json::Value, prev_data: Option<&serde_json::Value>) -> isize {
+    const ESTIMATED_KEY_VALUE_SIZE: isize = 40 * 3 + 8 + 12;
+    const ESTIMATED_NODE_SIZE: isize = 40 * 2 + 8 + 10;
+
+    match data {
+        serde_json::Value::Object(data) => {
+            let inner_data_size = data
+                .iter()
+                .map(|(key, value)| {
+                    let prev_value = if let Some(serde_json::Value::Object(prev_data)) = prev_data {
+                        prev_data.get(key)
+                    } else {
+                        None
+                    };
+                    if prev_value.is_some() {
+                        estimate_data_size(value, prev_value)
+                    } else {
+                        key.len() as isize * 2
+                            + estimate_data_size(value, None)
+                            + ESTIMATED_KEY_VALUE_SIZE
+                    }
+                })
+                .sum();
+            if prev_data.map(serde_json::Value::is_object).unwrap_or(false) {
+                inner_data_size
+            } else {
+                ESTIMATED_NODE_SIZE + inner_data_size
+            }
+        }
+        serde_json::Value::String(data) => {
+            data.len().max(8) as isize
+                - prev_data
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::len)
+                    .unwrap_or(0) as isize
+        }
+        _ => {
+            unreachable!("estimate_data_size expects only Object or String values");
+        }
+    }
+}
+
+fn is_signer_access_key_function_call_access_can_call_set_on_social_db_account(
+    near_social_account_id: &near_primitives::types::AccountId,
+    access_key_permission: &near_primitives::views::AccessKeyPermissionView,
+) -> color_eyre::eyre::Result<bool> {
+    if let near_primitives::views::AccessKeyPermissionView::FunctionCall {
+        allowance: _,
+        receiver_id,
+        method_names,
+    } = access_key_permission
+    {
+        Ok(receiver_id == &near_social_account_id.to_string()
+            && (method_names.contains(&"set".to_string()) || method_names.is_empty()))
+    } else {
+        Ok(false)
+    }
+}
+
+fn is_write_permission_granted(
+    network_config: &crate::config::NetworkConfig,
+    near_social_account_id: &near_primitives::types::AccountId,
+    permission_key_json: serde_json::Value,
+    key: String,
+) -> color_eyre::eyre::Result<bool> {
+    let mut args = serde_json::json!({ "key": key });
+    if let (Some(args_map), Some(perm_map)) = (args.as_object_mut(), permission_key_json.as_object())
+    {
+        for (k, v) in perm_map {
+            args_map.insert(k.clone(), v.clone());
+        }
+    }
+    let result = blocking_view_function(
+        network_config,
+        near_social_account_id,
+        "is_write_permission_granted",
+        serde_json::to_vec(&args)
+            .wrap_err("Internal error: could not serialize `is_write_permission_granted` input args")?,
+        near_primitives::types::Finality::Final.into(),
+    )
+    .wrap_err("Failed to fetch query for view method: 'is_write_permission_granted'")?;
+    let serde_call_result: serde_json::Value = to_call_result(&result)
+        .parse_result_from_json::<serde_json::Value>()
+        .wrap_err("Failed to parse is_write_permission_granted return value")?;
+    Ok(serde_call_result.as_bool().expect("Unexpected response"))
 }
 
 #[tracing::instrument(name = "Update the required deposit ...", skip_all)]
 fn get_deposit(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     signer_account_id: &near_primitives::types::AccountId,
     signer_public_key: &near_crypto::PublicKey,
     account_id: &near_primitives::types::AccountId,
@@ -240,17 +364,71 @@ fn get_deposit(
     required_deposit: near_token::NearToken,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::info!(target: "near_teach_me", "Update the required deposit ...");
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(near_socialdb_client::get_deposit(
-            json_rpc_client,
-            signer_account_id,
-            signer_public_key,
-            account_id,
-            key,
+
+    let nk_access_key_view = blocking_view_access_key(
+        network_config,
+        signer_account_id,
+        signer_public_key,
+        near_primitives::types::Finality::Final.into(),
+    )
+    .wrap_err_with(|| {
+        format!("Failed to fetch query 'view access key' for <{signer_public_key}>")
+    })?;
+    let signer_access_key_permission = from_nk_access_key_permission(&nk_access_key_view.permission);
+
+    let is_signer_access_key_full_access = matches!(
+        signer_access_key_permission,
+        near_primitives::views::AccessKeyPermissionView::FullAccess
+    );
+
+    let is_write_permission_granted_to_public_key = is_write_permission_granted(
+        network_config,
+        near_social_account_id,
+        serde_json::json!({ "public_key": signer_public_key.to_string() }),
+        format!("{account_id}/{key}"),
+    )?;
+
+    let is_write_permission_granted_to_signer = is_write_permission_granted(
+        network_config,
+        near_social_account_id,
+        serde_json::json!({ "predecessor_id": signer_account_id.to_string() }),
+        format!("{account_id}/{key}"),
+    )?;
+
+    let deposit = if is_signer_access_key_full_access
+        || is_signer_access_key_function_call_access_can_call_set_on_social_db_account(
             near_social_account_id,
-            required_deposit,
-        ))
+            &signer_access_key_permission,
+        )? {
+        if is_write_permission_granted_to_public_key || is_write_permission_granted_to_signer {
+            if required_deposit.is_zero() {
+                near_token::NearToken::from_near(0)
+            } else if is_signer_access_key_full_access {
+                required_deposit
+            } else {
+                color_eyre::eyre::bail!("ERROR: Social DB requires more storage deposit, but we cannot cover it when signing transaction with a Function Call only access key")
+            }
+        } else if signer_account_id == account_id {
+            if is_signer_access_key_full_access {
+                if required_deposit.is_zero() {
+                    near_token::NearToken::from_yoctonear(1)
+                } else {
+                    required_deposit
+                }
+            } else if required_deposit.is_zero() {
+                required_deposit
+            } else {
+                color_eyre::eyre::bail!("ERROR: Social DB requires more storage deposit, but we cannot cover it when signing transaction with a Function Call only access key")
+            }
+        } else {
+            color_eyre::eyre::bail!(
+                "ERROR: the signer is not allowed to modify the components of this account_id."
+            )
+        }
+    } else {
+        color_eyre::eyre::bail!("ERROR: signer access key cannot be used to sign a transaction to update components in Social DB.")
+    };
+    Ok(deposit)
 }
 
 #[tracing::instrument(name = "Getting data about a remote profile ...", skip_all)]

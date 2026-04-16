@@ -1,17 +1,6 @@
 use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-/// Convert a near_primitives FinalExecutionOutcomeView to near_kit FinalExecutionOutcome
-/// via JSON round-trip. Both types serialize/deserialize the same JSON format (NEAR RPC).
-pub fn np_outcome_to_nk(
-    outcome: &near_primitives::views::FinalExecutionOutcomeView,
-) -> near_kit::FinalExecutionOutcome {
-    let json = serde_json::to_value(outcome)
-        .expect("FinalExecutionOutcomeView should always serialize to JSON");
-    serde_json::from_value(json)
-        .expect("near_kit::FinalExecutionOutcome should deserialize from the same JSON format")
-}
-
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
@@ -57,15 +46,14 @@ impl SendContext {
                     wait_until.clone(),
                 )? {
                     Some(transaction_info) => {
-                        let nk_outcome = np_outcome_to_nk(&transaction_info);
                         crate::common::print_transaction_status(
-                            &nk_outcome,
+                            &transaction_info,
                             &previous_context.network_config,
                             previous_context.global_context.verbosity,
                         )?;
 
                         (previous_context.on_after_sending_transaction_callback)(
-                            &nk_outcome,
+                            &transaction_info,
                             &previous_context.network_config,
                         )
                         .map_err(color_eyre::Report::msg)?;
@@ -129,9 +117,9 @@ impl SendContext {
 #[tracing::instrument(name = "Broadcasting transaction via RPC", skip_all)]
 pub fn sending_signed_transaction(
     network_config: &crate::config::NetworkConfig,
-    signed_transaction: &near_primitives::transaction::SignedTransaction,
+    signed_transaction: &near_kit::SignedTransaction,
     wait_until: near_primitives::views::TxExecutionStatus,
-) -> color_eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
+) -> color_eyre::Result<Option<near_kit::FinalExecutionOutcome>> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
     tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
 
@@ -146,9 +134,7 @@ pub fn sending_signed_transaction(
             "I am making HTTP call to NEAR JSON RPC to send a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
         );
 
-        let tx_bytes = near_primitives::borsh::to_vec(signed_transaction)
-            .expect("SignedTransaction borsh serialization should never fail");
-        let tx_base64 = near_primitives::serialize::to_base64(&tx_bytes);
+        let tx_base64 = signed_transaction.to_base64();
 
         let params = serde_json::json!({
             "signed_tx_base64": tx_base64,
@@ -172,10 +158,9 @@ pub fn sending_signed_transaction(
                         if v.is_null() {
                             None
                         } else {
-                            serde_json::from_value::<near_primitives::views::FinalExecutionOutcomeViewEnum>(v.clone()).ok()
+                            serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok()
                         }
-                    })
-                    .map(|outcome_enum| outcome_enum.into_outcome());
+                    });
                 break outcome;
             }
             Err(ref err) => {
@@ -212,7 +197,7 @@ pub fn sleep_after_error(additional_message_for_name: String) {
 
 #[tracing::instrument(name = "Broadcasting delegate action via a relayer url", skip_all)]
 fn sending_delegate_action(
-    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+    signed_delegate_action: near_kit::SignedDelegateAction,
     meta_transaction_relayer_url: url::Url,
 ) -> Result<reqwest::blocking::Response, reqwest::Error> {
     tracing::Span::current().pb_set_message(meta_transaction_relayer_url.as_str());

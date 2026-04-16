@@ -56,14 +56,14 @@ pub enum TopLevelCommand {
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
     dyn Fn(
-        &mut near_primitives::transaction::TransactionV0,
+        &mut near_kit::Transaction,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;
 
 pub type OnAfterSigningCallback = std::sync::Arc<
     dyn Fn(
-        &mut near_primitives::transaction::SignedTransaction,
+        &mut near_kit::SignedTransaction,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;
@@ -77,14 +77,6 @@ pub struct PrepopulatedTransaction {
     pub signer_id: near_primitives::types::AccountId,
     pub receiver_id: near_primitives::types::AccountId,
     pub actions: Vec<near_kit::Action>,
-}
-
-impl PrepopulatedTransaction {
-    // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
-    /// Convert near_kit actions back to near_primitives for the signing boundary.
-    pub fn to_np_actions(&self) -> Vec<near_primitives::transaction::Action> {
-        self.actions.iter().map(nk_action_to_np).collect()
-    }
 }
 
 impl From<near_primitives::transaction::TransactionV0> for PrepopulatedTransaction {
@@ -105,15 +97,6 @@ impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction
             actions: value.take_actions().into_iter().map(np_action_to_nk).collect(),
         }
     }
-}
-
-// TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
-/// Convert a near_kit Action to near_primitives Action (for signing boundary).
-/// Uses borsh round-trip — safe because near_kit Action is byte-identical to
-/// near_primitives Action (verified in commit 106a671).
-pub fn nk_action_to_np(a: &near_kit::Action) -> near_primitives::transaction::Action {
-    let bytes = borsh::to_vec(a).expect("near_kit::Action borsh serialization should not fail");
-    borsh::from_slice(&bytes).expect("near_primitives::Action borsh deserialization should not fail")
 }
 
 /// Convert a near_primitives Action to near_kit Action (for From impls).
