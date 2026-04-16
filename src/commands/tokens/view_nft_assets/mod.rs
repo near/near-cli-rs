@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
-use crate::common::{blocking_view_function, to_call_result};
+use crate::common::{blocking_view_function};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
@@ -26,7 +26,7 @@ impl ViewNftAssetsContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let owner_account_id = previous_context.owner_account_id.clone();
-            let nft_contract_account_id: near_primitives::types::AccountId =
+            let nft_contract_account_id: near_kit::AccountId =
                 scope.nft_contract_account_id.clone().into();
 
             move |network_config, block_reference| {
@@ -76,10 +76,10 @@ impl ViewNftAssets {
 #[tracing::instrument(name = "Getting NFT balance ...", skip_all)]
 fn get_nft_balance(
     network_config: &crate::config::NetworkConfig,
-    nft_contract_account_id: &near_primitives::types::AccountId,
+    nft_contract_account_id: &near_kit::AccountId,
     args: Vec<u8>,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    block_reference: near_kit::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
     tracing::info!(target: "near_teach_me", "Getting NFT balance ...");
     let result = blocking_view_function(
         network_config,
@@ -94,5 +94,5 @@ fn get_nft_balance(
             network_config.network_name
         )
     })?;
-    Ok(to_call_result(&result))
+    Ok(result)
 }

@@ -5,8 +5,7 @@ use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize};
 use inquire::{CustomType, Select};
 
 use crate::common::{
-    CallResultExt, blocking_view_access_key, blocking_view_function, from_nk_access_key_permission,
-    to_call_result,
+    CallResultExt, blocking_view_access_key, blocking_view_function,
 };
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -24,9 +23,9 @@ pub struct Signer {
 #[derive(Clone)]
 pub struct SignerContext {
     pub global_context: crate::GlobalContext,
-    pub account_id: near_primitives::types::AccountId,
+    pub account_id: near_kit::AccountId,
     pub data: Vec<u8>,
-    pub signer_account_id: near_primitives::types::AccountId,
+    pub signer_account_id: near_kit::AccountId,
 }
 
 impl SignerContext {
@@ -60,7 +59,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
             let signer_account_id = item.signer_account_id.clone();
             let account_id = item.account_id.clone();
             move |prepopulated_unsigned_transaction, network_config| {
-                let public_key: near_crypto::PublicKey = prepopulated_unsigned_transaction
+                let public_key: near_kit::PublicKey = prepopulated_unsigned_transaction
                     .public_key
                     .to_string()
                     .parse()
@@ -165,8 +164,8 @@ impl Signer {
 )]
 fn get_prepopulated_transaction(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-    signer_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
+    signer_id: &near_kit::AccountId,
     data: &[u8],
 ) -> color_eyre::eyre::Result<crate::commands::PrepopulatedTransaction> {
     tracing::info!(target: "near_teach_me", "Creating a pre-populated transaction for signature ...");
@@ -189,10 +188,10 @@ fn get_prepopulated_transaction(
         Some(&remote_profile),
     )?;
 
-    let new_social_db_state = near_socialdb_client::types::socialdb_types::SocialDb {
+    let new_social_db_state = crate::types::socialdb::SocialDb {
         accounts: HashMap::from([(
             account_id.clone(),
-            near_socialdb_client::types::socialdb_types::AccountProfile {
+            crate::types::socialdb::AccountProfile {
                 profile: serde_json::from_value(local_profile)?,
             },
         )]),
@@ -218,8 +217,8 @@ fn get_prepopulated_transaction(
 #[tracing::instrument(name = "Calculation of the required deposit ...", skip_all)]
 fn required_deposit(
     network_config: &crate::config::NetworkConfig,
-    near_social_account_id: &near_primitives::types::AccountId,
-    account_id: &near_primitives::types::AccountId,
+    near_social_account_id: &near_kit::AccountId,
+    account_id: &near_kit::AccountId,
     data: &serde_json::Value,
     prev_data: Option<&serde_json::Value>,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
@@ -230,7 +229,7 @@ fn required_deposit(
     const INITIAL_ACCOUNT_STORAGE_BALANCE: i128 = STORAGE_COST_PER_BYTE * 500;
     const EXTRA_STORAGE_BALANCE: i128 = STORAGE_COST_PER_BYTE * 5000;
 
-    let storage_balance_result: color_eyre::eyre::Result<near_socialdb_client::StorageBalance> = {
+    let storage_balance_result: color_eyre::eyre::Result<crate::types::socialdb::StorageBalance> = {
         let result = blocking_view_function(
             network_config,
             near_social_account_id,
@@ -238,11 +237,11 @@ fn required_deposit(
             serde_json::json!({ "account_id": account_id })
                 .to_string()
                 .into_bytes(),
-            near_primitives::types::Finality::Final.into(),
+            near_kit::Finality::Final.into(),
         )
         .wrap_err("Failed to fetch query for view method: 'storage_balance_of'")?;
-        to_call_result(&result)
-            .parse_result_from_json::<near_socialdb_client::StorageBalance>()
+        result
+            .parse_result_from_json::<crate::types::socialdb::StorageBalance>()
     };
 
     let (available_storage, initial_account_storage_balance, min_storage_balance) =
@@ -309,16 +308,16 @@ fn estimate_data_size(data: &serde_json::Value, prev_data: Option<&serde_json::V
 }
 
 fn is_signer_access_key_function_call_access_can_call_set_on_social_db_account(
-    near_social_account_id: &near_primitives::types::AccountId,
-    access_key_permission: &near_primitives::views::AccessKeyPermissionView,
+    near_social_account_id: &near_kit::AccountId,
+    access_key_permission: &near_kit::AccessKeyPermissionView,
 ) -> color_eyre::eyre::Result<bool> {
-    if let near_primitives::views::AccessKeyPermissionView::FunctionCall {
+    if let near_kit::AccessKeyPermissionView::FunctionCall {
         allowance: _,
         receiver_id,
         method_names,
     } = access_key_permission
     {
-        Ok(receiver_id == &near_social_account_id.to_string()
+        Ok(receiver_id == near_social_account_id
             && (method_names.contains(&"set".to_string()) || method_names.is_empty()))
     } else {
         Ok(false)
@@ -327,7 +326,7 @@ fn is_signer_access_key_function_call_access_can_call_set_on_social_db_account(
 
 fn is_write_permission_granted(
     network_config: &crate::config::NetworkConfig,
-    near_social_account_id: &near_primitives::types::AccountId,
+    near_social_account_id: &near_kit::AccountId,
     permission_key_json: serde_json::Value,
     key: String,
 ) -> color_eyre::eyre::Result<bool> {
@@ -344,10 +343,10 @@ fn is_write_permission_granted(
         "is_write_permission_granted",
         serde_json::to_vec(&args)
             .wrap_err("Internal error: could not serialize `is_write_permission_granted` input args")?,
-        near_primitives::types::Finality::Final.into(),
+        near_kit::Finality::Final.into(),
     )
     .wrap_err("Failed to fetch query for view method: 'is_write_permission_granted'")?;
-    let serde_call_result: serde_json::Value = to_call_result(&result)
+    let serde_call_result: serde_json::Value = result
         .parse_result_from_json::<serde_json::Value>()
         .wrap_err("Failed to parse is_write_permission_granted return value")?;
     Ok(serde_call_result.as_bool().expect("Unexpected response"))
@@ -356,11 +355,11 @@ fn is_write_permission_granted(
 #[tracing::instrument(name = "Update the required deposit ...", skip_all)]
 fn get_deposit(
     network_config: &crate::config::NetworkConfig,
-    signer_account_id: &near_primitives::types::AccountId,
-    signer_public_key: &near_crypto::PublicKey,
-    account_id: &near_primitives::types::AccountId,
+    signer_account_id: &near_kit::AccountId,
+    signer_public_key: &near_kit::PublicKey,
+    account_id: &near_kit::AccountId,
     key: &str,
-    near_social_account_id: &near_primitives::types::AccountId,
+    near_social_account_id: &near_kit::AccountId,
     required_deposit: near_token::NearToken,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::info!(target: "near_teach_me", "Update the required deposit ...");
@@ -369,16 +368,14 @@ fn get_deposit(
         network_config,
         signer_account_id,
         signer_public_key,
-        near_primitives::types::Finality::Final.into(),
+        near_kit::Finality::Final.into(),
     )
     .wrap_err_with(|| {
         format!("Failed to fetch query 'view access key' for <{signer_public_key}>")
     })?;
-    let signer_access_key_permission = from_nk_access_key_permission(&nk_access_key_view.permission);
-
     let is_signer_access_key_full_access = matches!(
-        signer_access_key_permission,
-        near_primitives::views::AccessKeyPermissionView::FullAccess
+        nk_access_key_view.permission,
+        near_kit::AccessKeyPermissionView::FullAccess
     );
 
     let is_write_permission_granted_to_public_key = is_write_permission_granted(
@@ -398,7 +395,7 @@ fn get_deposit(
     let deposit = if is_signer_access_key_full_access
         || is_signer_access_key_function_call_access_can_call_set_on_social_db_account(
             near_social_account_id,
-            &signer_access_key_permission,
+            &nk_access_key_view.permission,
         )? {
         if is_write_permission_granted_to_public_key || is_write_permission_granted_to_signer {
             if required_deposit.is_zero() {
@@ -434,8 +431,8 @@ fn get_deposit(
 #[tracing::instrument(name = "Getting data about a remote profile ...", skip_all)]
 fn get_remote_profile(
     network_config: &crate::config::NetworkConfig,
-    near_social_account_id: &near_primitives::types::AccountId,
-    account_id: near_primitives::types::AccountId,
+    near_social_account_id: &near_kit::AccountId,
+    account_id: near_kit::AccountId,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
     tracing::info!(target: "near_teach_me", "Getting data about a remote profile ...");
     let result = blocking_view_function(
@@ -445,7 +442,7 @@ fn get_remote_profile(
         serde_json::to_vec(&serde_json::json!({
             "keys": vec![format!("{account_id}/profile/**")],
         }))?,
-        near_primitives::types::Finality::Final.into(),
+        near_kit::Finality::Final.into(),
     )
     .wrap_err_with(|| {
         format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
@@ -453,8 +450,8 @@ fn get_remote_profile(
             network_config.network_name
         )
     })?;
-    match to_call_result(&result)
-        .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
+    match result
+        .parse_result_from_json::<crate::types::socialdb::SocialDb>()
         .wrap_err_with(|| {
             format!("Failed to parse view function call return value for {account_id}/profile.")
         })?

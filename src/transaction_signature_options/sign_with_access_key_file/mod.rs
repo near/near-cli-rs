@@ -17,7 +17,7 @@ pub struct SignAccessKeyFile {
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_height: Option<near_primitives::types::BlockHeight>,
+    pub block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
@@ -54,8 +54,8 @@ impl SignAccessKeyFileContext {
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
             .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?;
 
-        let nk_public_key = crate::common::to_nk_public_key(&account_json.public_key);
-        let nk_secret_key = crate::common::to_nk_secret_key(&account_json.private_key);
+        let nk_public_key = account_json.public_key.clone();
+        let nk_secret_key = account_json.private_key.clone();
 
         let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
             (
@@ -75,7 +75,7 @@ impl SignAccessKeyFileContext {
                 &network_config,
                 &previous_context.prepopulated_transaction.signer_id,
                 &account_json.public_key,
-                near_primitives::types::BlockReference::latest(),
+                near_kit::BlockReference::optimistic(),
             )
             .wrap_err_with(||
                 format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
@@ -193,10 +193,10 @@ impl SignAccessKeyFile {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
+                CustomType::<u64>::new(
                     "Enter recent block height:",
                 )
                 .prompt()?,

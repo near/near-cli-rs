@@ -15,7 +15,7 @@ pub struct CallFunction {
 #[derive(Debug, Clone)]
 pub struct CallFunctionContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
 }
 
 impl CallFunctionContext {
@@ -62,7 +62,7 @@ pub struct Function {
 #[derive(Clone)]
 pub struct FunctionContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
 }
@@ -114,7 +114,7 @@ pub struct PrepaidGas {
 #[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -174,7 +174,7 @@ pub struct Deposit {
 #[derive(Debug, Clone)]
 pub struct DepositContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -224,12 +224,12 @@ pub struct SignerAccountId {
 #[derive(Debug, Clone)]
 pub struct SignerAccountIdContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
 }
 
 impl SignerAccountIdContext {

@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use std::io::Write;
 
 use crate::common::CallResultExt;
-use crate::common::{blocking_view_function, to_call_result};
+use crate::common::{blocking_view_function};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -19,7 +19,7 @@ pub struct CallFunctionView {
 #[derive(Clone)]
 pub struct CallFunctionViewContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
 }
 
 impl CallFunctionViewContext {
@@ -74,7 +74,7 @@ impl FunctionContext {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let function_args = scope.function_args.clone();
             let function_args_type = scope.function_args_type.clone();
-            let account_id: near_primitives::types::AccountId = previous_context.contract_account_id.clone();
+            let account_id: near_kit::AccountId = previous_context.contract_account_id.clone();
             let function_name = scope.function_name.clone();
 
             move |network_config, block_reference| {
@@ -121,11 +121,11 @@ impl Function {
 #[tracing::instrument(name = "Getting a response to a read-only function call ...", skip_all)]
 fn call_view_function(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     function_name: &str,
     function_args: String,
     function_args_type: super::call_function_args_type::FunctionArgsType,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
     verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Getting a response to a read-only function call ...");
@@ -143,7 +143,7 @@ fn call_view_function(
             function_name, account_id, network_config.network_name
         )
     })?;
-    let call_result = to_call_result(&nk_result);
+    let call_result = nk_result;
 
     let info_str = if call_result.result.is_empty() {
         "Empty return value".to_string()

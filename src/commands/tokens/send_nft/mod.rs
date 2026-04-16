@@ -26,9 +26,9 @@ pub struct SendNftCommand {
 #[derive(Debug, Clone)]
 pub struct SendNftCommandContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    nft_contract_account_id: near_primitives::types::AccountId,
-    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
+    nft_contract_account_id: near_kit::AccountId,
+    receiver_account_id: near_kit::AccountId,
     token_id: String,
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,

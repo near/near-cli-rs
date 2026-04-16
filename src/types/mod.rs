@@ -19,6 +19,7 @@ pub mod signature;
 pub mod signed_delegate_action;
 pub mod signed_transaction;
 pub mod slip10;
+pub mod socialdb;
 pub mod transaction;
 pub mod tx_execution_status;
 pub mod url;

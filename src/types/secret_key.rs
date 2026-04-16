@@ -19,10 +19,10 @@ impl std::str::FromStr for SecretKey {
     }
 }
 
-impl From<SecretKey> for near_crypto::SecretKey {
+impl From<SecretKey> for near_kit::SecretKey {
     fn from(item: SecretKey) -> Self {
         // Both use identical "keytype:base58" format
-        near_crypto::SecretKey::from_str(&item.0.to_string())
+        near_kit::SecretKey::from_str(&item.0.to_string())
             .expect("near-kit and near-crypto use compatible secret key formats")
     }
 }

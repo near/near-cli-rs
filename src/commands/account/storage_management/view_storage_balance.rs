@@ -1,7 +1,7 @@
 use color_eyre::eyre::WrapErr;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::{CallResultExt, blocking_view_function, to_call_result};
+use crate::common::{CallResultExt, blocking_view_function};
 
 const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 
@@ -79,10 +79,10 @@ impl Account {
 #[tracing::instrument(name = "Getting storage balance for", skip_all)]
 fn get_storage_balance(
     network_config: &crate::config::NetworkConfig,
-    contract_account_id: &near_primitives::types::AccountId,
+    contract_account_id: &near_kit::AccountId,
     account_id: &crate::types::account_id::AccountId,
-    block_reference: &near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_socialdb_client::StorageBalance> {
+    block_reference: &near_kit::BlockReference,
+) -> color_eyre::eyre::Result<crate::types::socialdb::StorageBalance> {
     tracing::Span::current().pb_set_message(account_id.as_ref());
     tracing::info!(target: "near_teach_me", "Getting storage balance for {account_id}");
     let result = blocking_view_function(
@@ -100,7 +100,7 @@ fn get_storage_balance(
             network_config.network_name
         )
     })?;
-    to_call_result(&result)
-        .parse_result_from_json::<near_socialdb_client::StorageBalance>()
+    result
+        .parse_result_from_json::<crate::types::socialdb::StorageBalance>()
         .wrap_err("Failed to parse return value of view function call for StorageBalance.")
 }

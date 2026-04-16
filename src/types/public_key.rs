@@ -19,19 +19,9 @@ impl std::str::FromStr for PublicKey {
     }
 }
 
-impl From<PublicKey> for near_crypto::PublicKey {
+impl From<PublicKey> for near_kit::PublicKey {
     fn from(item: PublicKey) -> Self {
-        // Both use identical "keytype:base58" format
-        near_crypto::PublicKey::from_str(&item.0.to_string())
-            .expect("near-kit and near-crypto use compatible public key formats")
-    }
-}
-
-impl From<near_crypto::PublicKey> for PublicKey {
-    fn from(item: near_crypto::PublicKey) -> Self {
-        // Both use identical "keytype:base58" format
-        Self(near_kit::PublicKey::from_str(&item.to_string())
-            .expect("near-crypto and near-kit use compatible public key formats"))
+        item.0
     }
 }
 

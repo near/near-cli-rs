@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use borsh::BorshDeserialize;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -34,7 +35,7 @@ impl From<SignedTransactionAsBase64> for near_kit::SignedTransaction {
 impl std::str::FromStr for SignedTransactionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bytes = near_primitives::serialize::from_base64(s)
+        let bytes = base64::engine::general_purpose::STANDARD.decode(s)
             .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?;
         let inner = near_kit::SignedTransaction::deserialize(&mut &bytes[..])
             .map_err(|err| format!("transaction could not be parsed: {err}"))?;

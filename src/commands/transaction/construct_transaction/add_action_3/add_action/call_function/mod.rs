@@ -22,8 +22,8 @@ pub struct FunctionCallAction {
 #[derive(Debug, Clone)]
 pub struct FunctionCallActionContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
+    receiver_account_id: near_kit::AccountId,
     actions: Vec<near_kit::Action>,
     function_name: String,
     function_args: Vec<u8>,
@@ -87,8 +87,8 @@ pub struct PrepaidGas {
 #[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
+    receiver_account_id: near_kit::AccountId,
     actions: Vec<near_kit::Action>,
     function_name: String,
     function_args: Vec<u8>,

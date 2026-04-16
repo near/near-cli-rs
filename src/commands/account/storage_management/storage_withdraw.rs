@@ -51,7 +51,7 @@ impl SignerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let signer_account_id: near_primitives::types::AccountId =
+                let signer_account_id: near_kit::AccountId =
                     scope.signer_account_id.clone().into();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
                 let amount = previous_context.amount;
@@ -75,7 +75,7 @@ impl SignerAccountIdContext {
             });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
-            let signer_account_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
+            let signer_account_id: near_kit::AccountId = scope.signer_account_id.clone().into();
             let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, network_config| {

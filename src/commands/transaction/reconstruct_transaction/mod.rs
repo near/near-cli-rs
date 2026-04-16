@@ -26,7 +26,7 @@ impl TransactionInfoContext {
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let tx_hash: near_primitives::hash::CryptoHash = scope.transaction_hash.into();
+                let tx_hash: near_kit::CryptoHash = scope.transaction_hash.into();
 
                 move |network_config: &crate::config::NetworkConfig| {
                     let query_view_transaction_status = super::view_status::get_transaction_info(network_config, tx_hash)?
@@ -44,12 +44,9 @@ impl TransactionInfoContext {
                             .transaction
                             .actions
                             .into_iter()
-                            .map(near_primitives::transaction::Action::try_from)
-                            .collect::<Result<Vec<near_primitives::transaction::Action>, _>>()
-                            .expect("Internal error: can not convert the action_view to action.")
-                            .into_iter()
-                            .map(crate::commands::np_action_to_nk)
-                            .collect(),
+                            .map(action_view_to_action)
+                            .collect::<Result<Vec<near_kit::Action>, _>>()
+                            .expect("Internal error: can not convert the action_view to action."),
                     };
 
                     tracing::info!(
@@ -102,12 +99,10 @@ impl TransactionInfoContext {
                                     transaction_action,
                                     prepopulated_transaction.receiver_id.clone(),
                                     network_config,
-                                    near_primitives::types::BlockReference::BlockId(
-                                        near_primitives::types::BlockId::Hash(
-                                            query_view_transaction_status
-                                                .transaction_outcome
-                                                .block_hash,
-                                        ),
+                                    near_kit::BlockReference::at_hash(
+                                        query_view_transaction_status
+                                            .transaction_outcome
+                                            .block_hash,
                                     ),
                                 )?,
                             },
@@ -159,9 +154,9 @@ impl From<TransactionInfoContext> for crate::network::NetworkContext {
 
 fn action_transformation(
     archival_action: near_kit::Action,
-    receiver_id: near_primitives::types::AccountId,
+    receiver_id: near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<
     Option<super::construct_transaction::add_action_1::add_action::CliActionSubcommand>,
 > {
@@ -279,12 +274,12 @@ fn action_transformation(
                 near_kit::GlobalContractDeployMode::AccountId => {
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId {
                         account_id: receiver_id.clone(),
-                        code_hash: Some(near_primitives::hash::CryptoHash(*code_hash.as_bytes()))
+                        code_hash: Some(near_kit::CryptoHash::from_bytes(*code_hash.as_bytes()))
                     }
                 }
                 near_kit::GlobalContractDeployMode::CodeHash => {
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(
-                        near_primitives::hash::CryptoHash(*code_hash.as_bytes())
+                        near_kit::CryptoHash::from_bytes(*code_hash.as_bytes())
                     )
                 }
             };
@@ -421,7 +416,7 @@ fn get_access_key_permission(
 fn download_code(
     contract_type: &crate::commands::contract::download_wasm::ContractType,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
     file_path: &crate::types::path_buf::PathBuf,
     hash_to_match: &near_kit::CryptoHash,
 ) -> color_eyre::eyre::Result<()> {
@@ -459,4 +454,56 @@ fn download_code(
     );
 
     Ok(())
+}
+
+/// Convert a near_kit `ActionView` (RPC response type) to a near_kit `Action` (borsh type).
+fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action, String> {
+    use base64::Engine as _;
+    let b64 = base64::engine::general_purpose::STANDARD;
+    match view {
+        near_kit::ActionView::CreateAccount => Ok(near_kit::Action::CreateAccount(near_kit::CreateAccountAction)),
+        near_kit::ActionView::DeployContract { code } => {
+            let code_bytes = b64.decode(&code).map_err(|e| format!("base64 decode error: {e}"))?;
+            Ok(near_kit::Action::DeployContract(near_kit::DeployContractAction { code: code_bytes }))
+        }
+        near_kit::ActionView::FunctionCall { method_name, args, gas, deposit } => {
+            let args_bytes = b64.decode(&args).map_err(|e| format!("base64 decode error: {e}"))?;
+            Ok(near_kit::Action::FunctionCall(near_kit::FunctionCallAction {
+                method_name,
+                args: args_bytes,
+                gas,
+                deposit: near_token::NearToken::from_yoctonear(deposit.as_yoctonear()),
+            }))
+        }
+        near_kit::ActionView::Transfer { deposit } => {
+            Ok(near_kit::Action::Transfer(near_kit::TransferAction { deposit: near_token::NearToken::from_yoctonear(deposit.as_yoctonear()) }))
+        }
+        near_kit::ActionView::Stake { stake, public_key } => {
+            Ok(near_kit::Action::Stake(near_kit::StakeAction { stake: near_token::NearToken::from_yoctonear(stake.as_yoctonear()), public_key }))
+        }
+        near_kit::ActionView::AddKey { public_key, access_key } => {
+            let permission = match access_key.permission {
+                near_kit::AccessKeyPermissionView::FullAccess => near_kit::AccessKeyPermission::FullAccess,
+                near_kit::AccessKeyPermissionView::FunctionCall { allowance, receiver_id, method_names } => {
+                    near_kit::AccessKeyPermission::FunctionCall(near_kit::FunctionCallPermission {
+                        allowance: allowance.clone(),
+                        receiver_id: receiver_id.clone(),
+                        method_names,
+                    })
+                }
+                _ => return Err("Unsupported access key permission type".to_string()),
+            };
+            Ok(near_kit::Action::AddKey(near_kit::AddKeyAction {
+                public_key,
+                access_key: near_kit::AccessKey { nonce: access_key.nonce, permission },
+            }))
+        }
+        near_kit::ActionView::DeleteKey { public_key } => {
+            Ok(near_kit::Action::DeleteKey(near_kit::DeleteKeyAction { public_key }))
+        }
+        near_kit::ActionView::DeleteAccount { beneficiary_id } => {
+            Ok(near_kit::Action::DeleteAccount(near_kit::DeleteAccountAction { beneficiary_id }))
+        }
+        _ => Err(format!("Unsupported action view type for reconstruction")),
+    }
 }

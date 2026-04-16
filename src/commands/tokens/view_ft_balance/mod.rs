@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
-use crate::common::{blocking_view_function, to_call_result};
+use crate::common::{blocking_view_function};
 
 use super::send_ft::input_ft_contract_account_id;
 
@@ -28,7 +28,7 @@ impl ViewFtBalanceContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let owner_account_id = previous_context.owner_account_id.clone();
-            let ft_contract_account_id: near_primitives::types::AccountId =
+            let ft_contract_account_id: near_kit::AccountId =
                 scope.ft_contract_account_id.clone().into();
             let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
 
@@ -94,10 +94,10 @@ impl ViewFtBalance {
 #[tracing::instrument(name = "Getting FT balance ...", skip_all, parent = None)]
 pub fn get_ft_balance(
     network_config: &crate::config::NetworkConfig,
-    ft_contract_account_id: &near_primitives::types::AccountId,
+    ft_contract_account_id: &near_kit::AccountId,
     args: Vec<u8>,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    block_reference: near_kit::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
     tracing::info!(target: "near_teach_me", "Getting FT balance ...");
     let result = blocking_view_function(
             network_config,
@@ -112,5 +112,5 @@ pub fn get_ft_balance(
                 network_config.network_name
             )
         })?;
-    Ok(to_call_result(&result))
+    Ok(result)
 }

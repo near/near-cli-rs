@@ -25,7 +25,7 @@ impl ViewAccountSummaryContext {
         scope: &<ViewAccountSummary as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
                 get_account_inquiry(&account_id, network_config, block_reference)
@@ -58,9 +58,9 @@ impl ViewAccountSummary {
 
 #[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
 pub fn get_account_inquiry(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Receiving an inquiry about your account ...");
 
@@ -113,7 +113,7 @@ pub fn get_account_inquiry(
 
     let client = network_config.client();
     let rpc = client.rpc();
-    let nk_block_ref = crate::common::to_nk_block_reference(block_reference);
+    let nk_block_ref = block_reference.clone();
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -125,7 +125,7 @@ pub fn get_account_inquiry(
     let concurrency = 10; // Process 10 requests concurrently within each batch
 
     let delegated_stake: color_eyre::Result<
-        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+        std::collections::BTreeMap<near_kit::AccountId, near_token::NearToken>,
     > = match pools_to_query {
         Ok(validators) => {
             let mut all_results = Ok(std::collections::BTreeMap::new());
@@ -206,8 +206,8 @@ pub fn get_account_inquiry(
 async fn get_delegated_staked_balance(
     rpc: &near_kit::RpcClient,
     block_reference: &near_kit::BlockReference,
-    staking_pool_account_id: &near_primitives::types::AccountId,
-    account_id: &near_primitives::types::AccountId,
+    staking_pool_account_id: &near_kit::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::Span::current().pb_set_message(staking_pool_account_id.as_str());
     tracing::info!(target: "near_teach_me", "Receiving the delegated staked balance from validator {staking_pool_account_id}");
@@ -239,10 +239,10 @@ async fn get_delegated_staked_balance(
 
 #[tracing::instrument(name = "Getting an account profile ...", skip_all)]
 fn get_account_profile(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
-) -> color_eyre::Result<Option<near_socialdb_client::types::socialdb_types::AccountProfile>> {
+    block_reference: &near_kit::BlockReference,
+) -> color_eyre::Result<Option<crate::types::socialdb::AccountProfile>> {
     tracing::info!(target: "near_teach_me", "Getting an account profile ...");
     if let Ok(contract_account_id) = network_config.get_near_social_account_id_from_network() {
         let result = crate::common::blocking_view_function(
@@ -260,8 +260,8 @@ fn get_account_profile(
                 network_config.network_name
             )
         })?;
-        let mut social_db = crate::common::to_call_result(&result)
-            .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
+        let mut social_db = result
+            .parse_result_from_json::<crate::types::socialdb::SocialDb>()
             .wrap_err_with(|| {
                 format!("Failed to parse view function call return value for {account_id}/profile.")
             })?;

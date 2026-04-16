@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use inquire::CustomType;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -15,8 +16,8 @@ pub struct AmountFt {
 #[derive(Debug, Clone)]
 pub struct AmountFtContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
+    receiver_account_id: near_kit::AccountId,
     ft_contract: crate::types::ft_properties::FtContract,
     ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
 }
@@ -116,7 +117,7 @@ impl FtTransferParamsContext {
                             network_config,
                             &signer_account_id,
                             &ft_contract_account_id,
-                            near_primitives::types::Finality::Final.into()
+                            near_kit::Finality::Final.into()
                         )?
                     };
 
@@ -143,13 +144,13 @@ impl FtTransferParamsContext {
                 if outcome_view.is_success() {
                     for action in outcome_view.transaction.actions.clone() {
                         if let near_kit::ActionView::FunctionCall { method_name: _, args, gas: _, deposit: _ } = action
-                            && let Ok(args_bytes) = near_primitives::serialize::from_base64(&args)
+                            && let Ok(args_bytes) = base64::engine::general_purpose::STANDARD.decode(&args)
                             && let Ok(ft_transfer) = serde_json::from_slice::<crate::types::ft_properties::FtTransfer>(&args_bytes)
                                 && let Ok(ft_balance) = super::get_ft_balance_for_account(
                                     network_config,
                                     &signer_account_id,
                                     &ft_contract_account_id,
-                                    near_primitives::types::BlockId::Hash(crate::common::from_nk_crypto_hash(&outcome_view.receipts_outcome.last().expect("FT transfer should have at least one receipt outcome, but none was received").block_hash)).into()
+                                    near_kit::BlockReference::at_hash(outcome_view.receipts_outcome.last().expect("FT transfer should have at least one receipt outcome, but none was received").block_hash)
                                 ) {
                                     let ft_transfer_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
                                         ft_transfer.amount,

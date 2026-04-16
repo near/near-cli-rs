@@ -76,7 +76,7 @@ impl SubmitContext {
             crate::transaction_signature_options::send::sending_signed_transaction(
                 &previous_context.network_config,
                 &previous_context.signed_transaction,
-                near_primitives::views::TxExecutionStatus::Final,
+                near_kit::TxExecutionStatus::Final,
             )?;
 
         if let Some(transaction_info) = transaction_info {

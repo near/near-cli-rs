@@ -1,5 +1,4 @@
 use hex::FromHex;
-use near_crypto::Secp256K1Signature;
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct AffinePoint {
@@ -18,11 +17,11 @@ pub struct SignResultSecp256K1 {
     pub recovery_id: u8,
 }
 
-impl From<SignResultSecp256K1> for Secp256K1Signature {
-    fn from(value: SignResultSecp256K1) -> Self {
+impl SignResultSecp256K1 {
+    fn to_signature_bytes(&self) -> [u8; 65] {
         // Get r and s from the sign result
-        let big_r = value.big_r.affine_point;
-        let s = value.s.scalar;
+        let big_r = &self.big_r.affine_point;
+        let s = &self.s.scalar;
 
         // Remove first two bytes
         let r = &big_r[2..];
@@ -35,9 +34,9 @@ impl From<SignResultSecp256K1> for Secp256K1Signature {
         let mut signature_bytes = [0u8; 65];
         signature_bytes[..32].copy_from_slice(&r_bytes);
         signature_bytes[32..64].copy_from_slice(&s_bytes);
-        signature_bytes[64] = value.recovery_id;
+        signature_bytes[64] = self.recovery_id;
 
-        Secp256K1Signature::from(signature_bytes)
+        signature_bytes
     }
 }
 
@@ -48,23 +47,6 @@ pub struct SignResultEd25519 {
     pub signature: Vec<u8>,
 }
 
-impl From<SignResultEd25519> for ed25519_dalek::Signature {
-    fn from(value: SignResultEd25519) -> Self {
-        let signature_bytes: [u8; ed25519_dalek::SIGNATURE_LENGTH] = value
-            .signature
-            .try_into()
-            .expect("Invalid signature length for Ed25519");
-
-        // Sanity check from near_crypto
-        assert!(
-            signature_bytes[ed25519_dalek::SIGNATURE_LENGTH - 1] & 0b1110_0000 == 0,
-            "Signature error: Sanity check failed"
-        );
-
-        ed25519_dalek::Signature::from_bytes(&signature_bytes)
-    }
-}
-
 #[derive(serde::Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum SignResult {
@@ -72,11 +54,24 @@ pub enum SignResult {
     Ed25519(SignResultEd25519),
 }
 
-impl From<SignResult> for near_crypto::Signature {
+impl From<SignResult> for near_kit::Signature {
     fn from(value: SignResult) -> Self {
         match value {
-            SignResult::Secp256K1(secp) => near_crypto::Signature::SECP256K1(secp.into()),
-            SignResult::Ed25519(ed) => near_crypto::Signature::ED25519(ed.into()),
+            SignResult::Secp256K1(secp) => {
+                near_kit::Signature::secp256k1_from_bytes(secp.to_signature_bytes())
+            }
+            SignResult::Ed25519(ed) => {
+                let signature_bytes: [u8; ed25519_dalek::SIGNATURE_LENGTH] = ed
+                    .signature
+                    .try_into()
+                    .expect("Invalid signature length for Ed25519");
+                // Sanity check from near_crypto
+                assert!(
+                    signature_bytes[ed25519_dalek::SIGNATURE_LENGTH - 1] & 0b1110_0000 == 0,
+                    "Signature error: Sanity check failed"
+                );
+                near_kit::Signature::ed25519_from_bytes(signature_bytes)
+            }
         }
     }
 }

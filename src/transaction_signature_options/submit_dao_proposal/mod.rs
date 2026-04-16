@@ -22,8 +22,8 @@ pub struct DaoProposalContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_kind: dao_kind_arguments::ProposalKind,
 }
 
@@ -88,8 +88,8 @@ pub struct DaoProposalArgumentsContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
 }
 
@@ -145,8 +145,8 @@ pub struct PrepaidGasContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
     gas: crate::common::NearGas,
 }
@@ -211,8 +211,8 @@ pub struct DepositContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,

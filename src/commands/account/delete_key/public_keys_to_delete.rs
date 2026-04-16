@@ -19,8 +19,8 @@ pub struct PublicKeyList {
 #[derive(Debug, Clone)]
 pub struct PublicKeyListContext {
     global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
-    public_keys: Vec<near_crypto::PublicKey>,
+    owner_account_id: near_kit::AccountId,
+    public_keys: Vec<near_kit::PublicKey>,
 }
 
 impl PublicKeyListContext {
@@ -105,7 +105,7 @@ impl PublicKeyList {
             match blocking_view_access_key_list(
                 network_config,
                 &context.owner_account_id,
-                near_primitives::types::Finality::Final.into(),
+                near_kit::Finality::Final.into(),
             ) {
                 Ok(nk_list) => {
                     access_key_list.extend(nk_list.keys.iter().map(
@@ -173,7 +173,7 @@ impl PublicKeyList {
 
 #[derive(Debug, Clone)]
 struct AccessKeyInfo {
-    public_key: near_crypto::PublicKey,
+    public_key: near_kit::PublicKey,
     permission: near_kit::AccessKeyPermissionView,
     network_name: String,
 }

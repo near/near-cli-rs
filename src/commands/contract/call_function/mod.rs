@@ -28,7 +28,7 @@ pub enum CallFunctionActions {
 
 pub fn input_call_function_name(
     global_context: &crate::GlobalContext,
-    contract_account_id: &near_primitives::types::AccountId,
+    contract_account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<Option<String>> {
     input_function_name(
         global_context,
@@ -40,7 +40,7 @@ pub fn input_call_function_name(
 
 pub fn input_view_function_name(
     global_context: &crate::GlobalContext,
-    contract_account_id: &near_primitives::types::AccountId,
+    contract_account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<Option<String>> {
     input_function_name(
         global_context,
@@ -52,7 +52,7 @@ pub fn input_view_function_name(
 
 fn input_function_name(
     global_context: &crate::GlobalContext,
-    contract_account_id: &near_primitives::types::AccountId,
+    contract_account_id: &near_kit::AccountId,
     function_kind: near_abi::AbiFunctionKind,
     message: &str,
 ) -> color_eyre::eyre::Result<Option<String>> {
@@ -70,7 +70,7 @@ fn input_function_name(
                 .unwrap()
                 .block_on(super::get_contract_abi(
                     &network_config,
-                    &near_primitives::types::Finality::Final.into(),
+                    &near_kit::Finality::Final.into(),
                     contract_account_id,
                 ))
     {

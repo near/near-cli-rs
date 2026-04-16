@@ -12,10 +12,9 @@ pub struct PartialRuntimeConfigView {
 
 pub async fn get_partial_protocol_config(
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<PartialProtocolConfigView> {
-    let nk_block_ref = crate::common::to_nk_block_reference(block_reference);
-    let params = nk_block_ref.to_rpc_params();
+    let params = block_reference.to_rpc_params();
 
     network_config
         .client()

@@ -15,7 +15,7 @@ pub struct Network {
 #[derive(Clone)]
 pub struct NetworkContext {
     new_account_id: crate::types::account_id::AccountId,
-    public_key: near_crypto::PublicKey,
+    public_key: near_kit::PublicKey,
     network_config: crate::config::NetworkConfig,
     on_after_getting_network_callback: OnAfterGettingNetworkCallback,
     on_before_creating_account_callback: OnBeforeCreatingAccountCallback,
@@ -113,7 +113,7 @@ pub type OnBeforeCreatingAccountCallback = std::sync::Arc<
     dyn Fn(
         &crate::config::NetworkConfig,
         &crate::types::account_id::AccountId,
-        &near_crypto::PublicKey,
+        &near_kit::PublicKey,
         String,
     ) -> crate::CliResult,
 >;

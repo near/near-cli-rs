@@ -17,14 +17,14 @@ pub struct ActionCall {
 pub struct TransferArgs {
     #[serde(default)]
     token_id: String,
-    receiver_id: near_primitives::types::AccountId,
+    receiver_id: near_kit::AccountId,
     amount: crate::types::near_token::NearToken,
     msg: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FunctionCallArgs {
-    receiver_id: near_primitives::types::AccountId,
+    receiver_id: near_kit::AccountId,
     actions: Vec<ActionCall>,
 }
 

@@ -5,7 +5,7 @@ use inquire::{CustomType, Select, Text};
 #[derive(Debug, Clone)]
 pub struct AccessTypeContext {
     pub global_context: crate::GlobalContext,
-    pub signer_account_id: near_primitives::types::AccountId,
+    pub signer_account_id: near_kit::AccountId,
     pub permission: near_kit::AccessKeyPermission,
 }
 
@@ -20,7 +20,7 @@ pub struct FullAccessType {
 #[derive(Debug, Clone)]
 pub struct FullAccessTypeContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     permission: near_kit::AccessKeyPermission,
 }
 
@@ -67,7 +67,7 @@ pub struct FunctionCallType {
 #[derive(Debug, Clone)]
 pub struct FunctionCallTypeContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     allowance: Option<crate::types::near_token::NearToken>,
     contract_account_id: crate::types::account_id::AccountId,
     function_names: crate::types::vec_string::VecString,

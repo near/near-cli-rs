@@ -19,7 +19,7 @@ impl KeysStartWithBytesAsBase64Context {
         Ok(Self(super::KeysContext {
             global_context: previous_context.global_context,
             contract_account_id: previous_context.contract_account_id,
-            prefix: near_primitives::types::StoreKey::from(
+            prefix: Vec::<u8>::from(
                 scope.keys_begin_with.clone().into_bytes(),
             ),
         }))

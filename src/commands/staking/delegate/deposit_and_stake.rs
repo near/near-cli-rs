@@ -23,7 +23,7 @@ impl DepositAndStakeContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_id = previous_context.account_id.clone();
-                let validator_account_id: near_primitives::types::AccountId =
+                let validator_account_id: near_kit::AccountId =
                     scope.validator_account_id.clone().into();
                 let amount = scope.amount;
 

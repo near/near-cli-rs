@@ -32,8 +32,8 @@ impl SignLaterContext {
         scope: &<SignLater as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let nk_public_key: near_kit::PublicKey = {
-            let nc_pk: near_crypto::PublicKey = scope.signer_public_key.clone().into();
-            crate::common::to_nk_public_key(&nc_pk)
+            let nc_pk: near_kit::PublicKey = scope.signer_public_key.clone().into();
+            nc_pk
         };
         let unsigned_transaction = near_kit::Transaction {
             signer_id: previous_context.prepopulated_transaction.signer_id,

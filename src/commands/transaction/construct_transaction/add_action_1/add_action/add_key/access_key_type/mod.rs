@@ -5,8 +5,8 @@ use inquire::{CustomType, Select, Text};
 #[derive(Debug, Clone)]
 pub struct AccessKeyPermissionContext {
     pub global_context: crate::GlobalContext,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub receiver_account_id: near_primitives::types::AccountId,
+    pub signer_account_id: near_kit::AccountId,
+    pub receiver_account_id: near_kit::AccountId,
     pub actions: Vec<near_kit::Action>,
     pub access_key_permission: near_kit::AccessKeyPermission,
     pub sign_as_delegate_action: bool,

@@ -16,9 +16,9 @@ pub struct AddKeyWithMpcDerivedKey {
 #[derive(Debug, Clone)]
 pub struct AddKeyWithMpcDerivedKeyContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     key_permission: near_kit::AccessKeyPermission,
-    admin_account_id: near_primitives::types::AccountId,
+    admin_account_id: near_kit::AccountId,
 }
 
 impl AddKeyWithMpcDerivedKeyContext {
@@ -69,10 +69,10 @@ pub enum MpcKeyType {
 #[derive(Clone)]
 pub struct MpcKeyTypeContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     key_permission: near_kit::AccessKeyPermission,
-    admin_account_id: near_primitives::types::AccountId,
-    key_type: near_crypto::KeyType,
+    admin_account_id: near_kit::AccountId,
+    key_type: near_kit::KeyType,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -97,7 +97,7 @@ impl MpcKeyTypeSecpContext {
             admin_account_id: previous_context.admin_account_id,
             signer_account_id: previous_context.signer_account_id,
             key_permission: previous_context.key_permission,
-            key_type: near_crypto::KeyType::SECP256K1,
+            key_type: near_kit::KeyType::Secp256k1,
         }))
     }
 }
@@ -130,7 +130,7 @@ impl MpcKeyTypeEdContext {
             signer_account_id: previous_context.signer_account_id,
             key_permission: previous_context.key_permission,
             admin_account_id: previous_context.admin_account_id,
-            key_type: near_crypto::KeyType::ED25519,
+            key_type: near_kit::KeyType::Ed25519,
         }))
     }
 }
@@ -157,10 +157,10 @@ pub struct MpcDeriveKeyToAdd {
 #[derive(Debug, Clone)]
 pub struct MpcDeriveKeyToAddContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    admin_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
+    admin_account_id: near_kit::AccountId,
     key_permission: near_kit::AccessKeyPermission,
-    key_type: near_crypto::KeyType,
+    key_type: near_kit::KeyType,
     derivation_path: String,
 }
 

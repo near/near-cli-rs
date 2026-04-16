@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -97,8 +98,8 @@ pub enum Submit {
 
 #[derive(Debug, Deserialize)]
 pub struct AccountKeyPair {
-    pub public_key: near_crypto::PublicKey,
-    pub private_key: near_crypto::SecretKey,
+    pub public_key: near_kit::PublicKey,
+    pub private_key: near_kit::SecretKey,
 }
 
 pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
@@ -142,7 +143,7 @@ impl serde::Serialize for SignedTransactionOrSignedDelegateAction {
                 map.serialize_entry("SignedTransaction", &tx.to_base64())?;
             }
             Self::SignedDelegateAction(da) => {
-                let b64 = near_primitives::serialize::to_base64(
+                let b64 = base64::engine::general_purpose::STANDARD.encode(
                     &borsh::to_vec(da).expect("borsh serialization should not fail"),
                 );
                 map.serialize_entry("SignedDelegateAction", &b64)?;
@@ -164,7 +165,7 @@ impl<'de> serde::Deserialize<'de> for SignedTransactionOrSignedDelegateAction {
                 .map_err(serde::de::Error::custom)?;
             Ok(Self::SignedTransaction(tx))
         } else if let Some(b64) = map.get("SignedDelegateAction") {
-            let bytes = near_primitives::serialize::from_base64(b64)
+            let bytes = base64::engine::general_purpose::STANDARD.decode(b64)
                 .map_err(serde::de::Error::custom)?;
             let da: near_kit::SignedDelegateAction =
                 borsh::from_slice(&bytes).map_err(serde::de::Error::custom)?;

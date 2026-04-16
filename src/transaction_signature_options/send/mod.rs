@@ -23,12 +23,12 @@ impl SendContext {
     ) -> color_eyre::eyre::Result<Self> {
         tracing::info!(target: "near_teach_me", "Sending transaction ...");
 
-        let wait_until: near_primitives::views::TxExecutionStatus = scope
+        let wait_until: near_kit::TxExecutionStatus = scope
             .wait_until
             .clone()
             .or_else(|| previous_context.network_config.tx_wait_until.clone())
             .map(|s| s.into())
-            .unwrap_or(near_primitives::views::TxExecutionStatus::Final);
+            .unwrap_or(near_kit::TxExecutionStatus::Final);
 
         let storage_message = (previous_context.on_before_sending_transaction_callback)(
             &previous_context.signed_transaction_or_signed_delegate_action,
@@ -118,12 +118,12 @@ impl SendContext {
 pub fn sending_signed_transaction(
     network_config: &crate::config::NetworkConfig,
     signed_transaction: &near_kit::SignedTransaction,
-    wait_until: near_primitives::views::TxExecutionStatus,
+    wait_until: near_kit::TxExecutionStatus,
 ) -> color_eyre::Result<Option<near_kit::FinalExecutionOutcome>> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
     tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
 
-    let nk_wait_until = crate::common::to_nk_tx_execution_status(&wait_until);
+    let nk_wait_until = wait_until.clone();
 
     let retries_number = 5;
     let mut retries = (1..=retries_number).rev();

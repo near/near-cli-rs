@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -27,8 +28,10 @@ impl AsTextContext {
 
                 let mut info_str = String::new();
                 for value in &result.values {
-                    info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&value.key)?.green()));
-                    info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&value.value)?.yellow()));
+                    let key_bytes = base64::engine::general_purpose::STANDARD.decode(&value.key).unwrap_or_default();
+                    let val_bytes = base64::engine::general_purpose::STANDARD.decode(&value.value).unwrap_or_default();
+                    info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&key_bytes)?.green()));
+                    info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&val_bytes)?.yellow()));
                     info_str.push_str("\n\t--------------------------------");
                 }
                 println!("Contract state (values):{info_str}\n");

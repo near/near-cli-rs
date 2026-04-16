@@ -10,10 +10,10 @@ pub struct PrintKeypairToTerminal {
 #[derive(Debug, Clone)]
 pub struct PrintKeypairToTerminalContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     permission: near_kit::AccessKeyPermission,
     key_pair_properties: crate::common::KeyPairProperties,
-    public_key: near_crypto::PublicKey,
+    public_key: near_kit::PublicKey,
 }
 
 impl PrintKeypairToTerminalContext {

@@ -2636,7 +2636,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965"
 dependencies = [
  "scopeguard",
- "serde",
 ]
 
 [[package]]
@@ -2743,34 +2742,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "near-chain-configs"
-version = "0.35.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28d8078137a270c2b71e877d0696fa7bd45fa235519c7a5d5ccdaa02e106c47c"
-dependencies = [
- "anyhow",
- "bytesize",
- "chrono",
- "derive_more",
- "near-config-utils",
- "near-crypto",
- "near-parameters",
- "near-primitives",
- "near-time",
- "num-rational",
- "parking_lot",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "smart-default",
- "time",
- "tracing",
-]
-
-[[package]]
 name = "near-cli-rs"
 version = "0.25.0"
 dependencies = [
+ "base64 0.22.1",
  "bip39",
  "borsh",
  "bs58 0.5.1",
@@ -2796,13 +2771,10 @@ dependencies = [
  "near-abi",
  "near-crypto",
  "near-gas",
- "near-jsonrpc-client",
- "near-jsonrpc-primitives",
  "near-kit",
  "near-ledger",
  "near-primitives",
  "near-sandbox",
- "near-socialdb-client",
  "near-token",
  "near-verify-rs",
  "open",
@@ -2890,43 +2862,6 @@ dependencies = [
  "borsh",
  "interactive-clap",
  "serde",
-]
-
-[[package]]
-name = "near-jsonrpc-client"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "161161e235b7b5a69120ce0e82cfcef93b859977f50876aced77c0efdd54e81f"
-dependencies = [
- "borsh",
- "lazy_static",
- "log",
- "near-chain-configs",
- "near-crypto",
- "near-jsonrpc-primitives",
- "near-primitives",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "near-jsonrpc-primitives"
-version = "0.35.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2b339465b7c74e008037c3ca1f413038741ea91ca829a463f9a382a8a12e185"
-dependencies = [
- "arbitrary",
- "near-chain-configs",
- "near-crypto",
- "near-primitives",
- "near-schema-checker-lib",
- "near-time",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "time",
 ]
 
 [[package]]
@@ -3038,8 +2973,6 @@ dependencies = [
  "num-rational",
  "ordered-float 4.6.0",
  "primitive-types",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
  "serde",
  "serde_json",
  "serde_with",
@@ -3119,23 +3052,6 @@ name = "near-schema-checker-macro"
 version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b61eccf333a27e5dc076290f9eb59b18fc848188377bf3e99e0fe0a93627e18"
-
-[[package]]
-name = "near-socialdb-client"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb8c51a3c10d7acaaa1c4905a1f569471df82e4c4ef343669f02b5484be31d3a"
-dependencies = [
- "eyre",
- "near-crypto",
- "near-jsonrpc-client",
- "near-jsonrpc-primitives",
- "near-primitives",
- "near-token",
- "serde",
- "serde_json",
- "url",
-]
 
 [[package]]
 name = "near-stdx"

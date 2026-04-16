@@ -3,6 +3,8 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::str::FromStr;
 
+use base64::Engine as _;
+
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
@@ -11,7 +13,7 @@ use rust_decimal::prelude::FromPrimitive;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
-use near_primitives::types::BlockReference;
+use near_kit::BlockReference;
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
@@ -100,7 +102,7 @@ impl From<TransferAmount> for near_token::NearToken {
 
 #[derive(Debug)]
 pub struct AccountTransferAllowance {
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
     account_liquid_balance: near_token::NearToken,
     account_locked_balance: near_token::NearToken,
     storage_stake: near_token::NearToken,
@@ -162,7 +164,7 @@ pub async fn sleep_after_error(additional_message_for_name: String) {
 #[tracing::instrument(name = "Getting the transfer allowance for the account ...", skip_all)]
 pub async fn get_account_transfer_allowance(
     network_config: &crate::config::NetworkConfig,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
     tracing::info!(target: "near_teach_me", "Getting the transfer allowance for the account ...");
@@ -215,11 +217,11 @@ pub async fn get_account_transfer_allowance(
 #[allow(clippy::result_large_err)]
 #[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
-    account_id: near_primitives::types::AccountId,
-    public_key: near_crypto::PublicKey,
+    account_id: near_kit::AccountId,
+    public_key: near_kit::PublicKey,
     network_config: crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<
-    near_primitives::views::AccessKeyView,
+    near_kit::AccessKeyView,
     AccountStateError,
 > {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
@@ -228,10 +230,10 @@ pub fn verify_account_access_key(
             &network_config,
             &account_id,
             &public_key,
-            near_primitives::types::BlockReference::latest(),
+            near_kit::BlockReference::optimistic(),
         ) {
-            Ok(nk_access_key_view) => {
-                return Ok(from_nk_access_key_view(&nk_access_key_view));
+            Ok(access_key_view) => {
+                return Ok(access_key_view);
             }
             Err(err) => {
                 let err_str = format!("{err}");
@@ -275,7 +277,7 @@ pub fn verify_account_access_key(
 #[tracing::instrument(name = "Checking the existence of the account ...", skip_all)]
 pub fn is_account_exist(
     context: &crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
     tracing::info!(target: "near_teach_me", "Checking the existence of the account ...");
     loop {
@@ -306,7 +308,7 @@ pub fn is_account_exist(
 #[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
 pub fn find_network_where_account_exist(
     context: &crate::GlobalContext,
-    new_account_id: near_primitives::types::AccountId,
+    new_account_id: near_kit::AccountId,
 ) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
     tracing::Span::current().pb_set_message(new_account_id.as_str());
     tracing::info!(target: "near_teach_me", "Searching for a network where an account exists for {new_account_id} ...");
@@ -335,7 +337,7 @@ pub fn find_network_where_account_exist(
             .block_on(get_account_state(
                 network_config,
                 &new_account_id,
-                near_primitives::types::BlockReference::latest(),
+                near_kit::BlockReference::optimistic(),
             ));
 
         match result {
@@ -402,7 +404,7 @@ pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
 pub enum ViewAccountError {
     /// The account does not exist on-chain.
     UnknownAccount {
-        account_id: near_primitives::types::AccountId,
+        account_id: near_kit::AccountId,
     },
     /// A transport / connectivity error occurred.
     TransportError(String),
@@ -427,7 +429,7 @@ impl std::error::Error for ViewAccountError {}
 /// Classify a near-kit `RpcError` into a `ViewAccountError`.
 fn classify_view_account_error(
     err: near_kit::RpcError,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> ViewAccountError {
     match &err {
         near_kit::RpcError::AccountNotFound(_) => ViewAccountError::UnknownAccount {
@@ -443,9 +445,9 @@ fn classify_view_account_error(
 #[tracing::instrument(name = "Getting account status information for", skip_all)]
 pub async fn get_account_state(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     block_reference: BlockReference,
-) -> Result<near_primitives::views::AccountView, ViewAccountError> {
+) -> Result<near_kit::AccountView, ViewAccountError> {
     tracing::Span::current().pb_set_message(&format!(
         "<{account_id}> on network <{}> ...",
         network_config.network_name
@@ -458,7 +460,7 @@ pub async fn get_account_state(
         account_id
     );
 
-    let nk_block_ref = to_nk_block_reference(&block_reference);
+    let nk_block_ref = block_reference.clone();
 
     let mut retries_left = (0..5).rev();
     loop {
@@ -469,22 +471,8 @@ pub async fn get_account_state(
             .await;
 
         match result {
-            Ok(nk_account_view) => {
-                return Ok(near_primitives::views::AccountView {
-                    amount: nk_account_view.amount,
-                    locked: nk_account_view.locked,
-                    code_hash: near_primitives::hash::CryptoHash(
-                        *nk_account_view.code_hash.as_bytes(),
-                    ),
-                    storage_usage: nk_account_view.storage_usage,
-                    storage_paid_at: nk_account_view.storage_paid_at,
-                    global_contract_hash: nk_account_view.global_contract_hash.map(|h| {
-                        near_primitives::hash::CryptoHash(*h.as_bytes())
-                    }),
-                    global_contract_account_id: nk_account_view
-                        .global_contract_account_id
-                        .map(|a| a.to_string().parse().expect("AccountId round-trip")),
-                });
+            Ok(account_view) => {
+                return Ok(account_view);
             }
             Err(err) => {
                 let classified = classify_view_account_error(err, account_id);
@@ -531,7 +519,7 @@ fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub master_seed_phrase: String,
-    pub implicit_account_id: near_primitives::types::AccountId,
+    pub implicit_account_id: near_kit::AccountId,
     #[serde(rename = "public_key")]
     pub public_key_str: String,
     #[serde(rename = "private_key")]
@@ -555,7 +543,7 @@ pub fn get_key_pair_properties_from_seed_phrase(
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
     let public_key = signing_key.verifying_key();
-    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public_key))?;
+    let implicit_account_id = near_kit::AccountId::try_from(hex::encode(public_key))?;
     let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
@@ -574,7 +562,7 @@ pub fn get_key_pair_properties_from_seed_phrase(
 pub fn get_public_key_from_seed_phrase(
     seed_phrase_hd_path: slipped10::BIP32Path,
     master_seed_phrase: &str,
-) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
+) -> color_eyre::eyre::Result<near_kit::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
     let derived_private_key = slipped10::derive_key_from_path(
         &master_seed,
@@ -589,7 +577,7 @@ pub fn get_public_key_from_seed_phrase(
         "ed25519:{}",
         bs58::encode(&signing_key.verifying_key()).into_string()
     );
-    Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
+    Ok(near_kit::PublicKey::from_str(&public_key_str)?)
 }
 
 pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
@@ -620,7 +608,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
     let public = signing_key.verifying_key();
-    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public))?;
+    let implicit_account_id = near_kit::AccountId::try_from(hex::encode(public))?;
     let public_key_str = format!("ed25519:{}", bs58::encode(&public).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
@@ -637,16 +625,6 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
 }
 
 pub fn print_full_signed_transaction(
-    transaction: near_primitives::transaction::SignedTransaction,
-) -> String {
-    let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
-    info_str.push_str(&crate::common::print_full_unsigned_transaction(
-        transaction.transaction,
-    ));
-    info_str
-}
-
-pub fn print_full_signed_transaction_nk(
     transaction: &near_kit::SignedTransaction,
 ) -> String {
     let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
@@ -679,7 +657,7 @@ pub fn print_full_signed_transaction_nk(
 }
 
 pub fn print_full_unsigned_transaction(
-    transaction: near_primitives::transaction::Transaction,
+    transaction: &near_kit::Transaction,
 ) -> String {
     let mut info_str = format!(
         "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
@@ -689,20 +667,24 @@ pub fn print_full_unsigned_transaction(
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "public_key:",
-        &transaction.public_key()
+        &transaction.public_key
     ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "nonce:",
-        transaction.nonce().nonce()
+        transaction.nonce
     ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "block_hash:",
-        &transaction.block_hash()
+        &transaction.block_hash
     ));
 
-    let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
+    let prepopulated = crate::commands::PrepopulatedTransaction {
+        signer_id: transaction.signer_id.clone(),
+        receiver_id: transaction.receiver_id.clone(),
+        actions: transaction.actions.clone(),
+    };
 
     info_str.push_str(&print_unsigned_transaction(&prepopulated));
 
@@ -1155,7 +1137,7 @@ pub fn print_transaction_status(
             Err(color_eyre::eyre::eyre!("{}", tx_execution_error))
         }
         near_kit::FinalExecutionStatus::SuccessValue(base64_result) => {
-            let bytes_result = near_primitives::serialize::from_base64(base64_result)
+            let bytes_result = base64::engine::general_purpose::STANDARD.decode(base64_result)
                 .unwrap_or_default();
             if let crate::Verbosity::Quiet = verbosity {
                 std::io::stdout().write_all(&bytes_result)?;
@@ -1449,7 +1431,7 @@ fn path_directories() -> Vec<std::path::PathBuf> {
 
 pub fn get_delegated_validator_list_from_mainnet(
     network_connection: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
-) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_kit::AccountId>> {
     let network_config = network_connection
         .get("mainnet")
         .wrap_err("There is no 'mainnet' network in your configuration.")?;
@@ -1481,13 +1463,13 @@ pub fn get_delegated_validator_list_from_mainnet(
 )]
 pub fn get_used_delegated_validator_list(
     config: &crate::config::Config,
-) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
+) -> color_eyre::eyre::Result<VecDeque<near_kit::AccountId>> {
     tracing::info!(target: "near_teach_me", "Retrieving a list of delegated validators from \"mainnet\" ...");
     let used_account_list: VecDeque<UsedAccount> =
         get_used_account_list(&config.credentials_home_dir);
     let mut delegated_validator_list =
         get_delegated_validator_list_from_mainnet(&config.network_connection)?;
-    let mut used_delegated_validator_list: VecDeque<near_primitives::types::AccountId> =
+    let mut used_delegated_validator_list: VecDeque<near_kit::AccountId> =
         VecDeque::new();
 
     for used_account in used_account_list {
@@ -1516,7 +1498,7 @@ pub fn input_staking_pool_validator_account_id(
                 .collect())
         })
         .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
+            match near_kit::AccountId::validate(account_id_str) {
                 Ok(_) => Ok(inquire::validator::Validation::Valid),
                 Err(err) => Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
@@ -1543,7 +1525,7 @@ pub fn input_staking_pool_validator_account_id(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StakingPoolInfo {
-    pub validator_id: near_primitives::types::AccountId,
+    pub validator_id: near_kit::AccountId,
     pub fee: Option<RewardFeeFraction>,
     pub delegators: Option<u64>,
     pub stake: near_token::NearToken,
@@ -1589,7 +1571,7 @@ pub fn get_validator_list(
 
 #[derive(Debug, serde::Deserialize)]
 struct StakingPool {
-    pool_id: near_primitives::types::AccountId,
+    pool_id: near_kit::AccountId,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -1600,8 +1582,8 @@ struct StakingResponse {
 #[tracing::instrument(name = "Getting historically delegated staking pools ...", skip_all)]
 pub fn fetch_historically_delegated_staking_pools(
     fastnear_url: &url::Url,
-    account_id: &near_primitives::types::AccountId,
-) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    account_id: &near_kit::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_kit::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting historically delegated staking pools ...");
     let request =
         reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{account_id}/staking"))?)?;
@@ -1617,8 +1599,8 @@ pub fn fetch_historically_delegated_staking_pools(
 #[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
     network_config: &crate::config::NetworkConfig,
-    staking_pools_factory_account_id: &near_primitives::types::AccountId,
-) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    staking_pools_factory_account_id: &near_kit::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_kit::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
 
     // near-kit does not expose a view_state helper, so use the raw RPC escape hatch.
@@ -1632,7 +1614,7 @@ pub fn fetch_currently_active_staking_pools(
     }
 
     let prefix_base64 =
-        near_primitives::serialize::to_base64(b"se");
+        base64::engine::general_purpose::STANDARD.encode(b"se");
 
     let result: ViewStateResult = tokio::runtime::Runtime::new()
         .unwrap()
@@ -1654,8 +1636,8 @@ pub fn fetch_currently_active_staking_pools(
         .values
         .into_iter()
         .filter_map(|item| {
-            let bytes = near_primitives::serialize::from_base64(&item.value).ok()?;
-            near_primitives::borsh::from_slice(&bytes).ok()
+            let bytes = base64::engine::general_purpose::STANDARD.decode(&item.value).ok()?;
+            borsh::from_slice(&bytes).ok()
         })
         .collect())
 }
@@ -1664,7 +1646,7 @@ pub fn fetch_currently_active_staking_pools(
 pub fn get_validators_stake(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<
-    std::collections::HashMap<near_primitives::types::AccountId, near_token::NearToken>,
+    std::collections::HashMap<near_kit::AccountId, near_token::NearToken>,
 > {
     tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
     let epoch_validator_info = blocking_validators(network_config)?;
@@ -1700,7 +1682,7 @@ pub fn get_validators_stake(
 
 async fn get_staking_pool_info(
     rpc: &near_kit::RpcClient,
-    validator_account_id: near_primitives::types::AccountId,
+    validator_account_id: near_kit::AccountId,
     stake: near_token::NearToken,
 ) -> color_eyre::Result<StakingPoolInfo> {
     let fee = match rpc
@@ -1756,13 +1738,13 @@ async fn get_staking_pool_info(
 }
 
 pub fn display_account_info(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     delegated_stake: color_eyre::Result<
-        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+        std::collections::BTreeMap<near_kit::AccountId, near_token::NearToken>,
     >,
     account_view: &near_kit::AccountView,
     access_key_list: Option<&near_kit::AccessKeyListView>,
-    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    optional_account_profile: Option<&crate::types::socialdb::AccountProfile>,
 ) {
     eprintln!();
     let mut table: Table = Table::new();
@@ -1880,8 +1862,8 @@ pub fn display_account_info(
 pub fn display_account_profile(
     viewed_at_block_hash: &near_kit::CryptoHash,
     viewed_at_block_height: &u64,
-    account_id: &near_primitives::types::AccountId,
-    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    account_id: &near_kit::AccountId,
+    optional_account_profile: Option<&crate::types::socialdb::AccountProfile>,
 ) {
     let mut table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
@@ -1898,8 +1880,8 @@ pub fn display_account_profile(
 fn profile_table(
     viewed_at_block_hash: &near_kit::CryptoHash,
     viewed_at_block_height: &u64,
-    account_id: &near_primitives::types::AccountId,
-    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    account_id: &near_kit::AccountId,
+    optional_account_profile: Option<&crate::types::socialdb::AccountProfile>,
     table: &mut Table,
 ) {
     if let Some(account_profile) = optional_account_profile {
@@ -2068,7 +2050,7 @@ pub fn display_access_key_list(access_keys: &[near_kit::AccessKeyInfoView]) {
 /// relevant at the top of the list.
 pub fn input_network_name(
     config: &crate::config::Config,
-    account_ids: &[near_primitives::types::AccountId],
+    account_ids: &[near_kit::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
     if config.network_connection.len() == 1 {
         return Ok(config.network_names().pop());
@@ -2112,84 +2094,6 @@ pub fn input_network_name(
     }
 }
 
-// ============================================================================
-// near-kit RPC bridge helpers
-// Bridge: needed until sign_with_* modules are ported to near-kit types
-// ============================================================================
-
-/// Convert a `near_primitives::types::BlockReference` to `near_kit::BlockReference`.
-pub fn to_nk_block_reference(
-    block_ref: &near_primitives::types::BlockReference,
-) -> near_kit::BlockReference {
-    match block_ref {
-        near_primitives::types::BlockReference::BlockId(
-            near_primitives::types::BlockId::Height(height),
-        ) => near_kit::BlockReference::Height(*height),
-        near_primitives::types::BlockReference::BlockId(
-            near_primitives::types::BlockId::Hash(hash),
-        ) => {
-            let nk_hash = near_kit::CryptoHash::from_bytes(hash.0);
-            near_kit::BlockReference::Hash(nk_hash)
-        }
-        near_primitives::types::BlockReference::Finality(finality) => match finality {
-            near_primitives::types::Finality::Final => near_kit::BlockReference::final_(),
-            near_primitives::types::Finality::DoomSlug => near_kit::BlockReference::near_final(),
-            near_primitives::types::Finality::None => near_kit::BlockReference::optimistic(),
-        },
-        near_primitives::types::BlockReference::SyncCheckpoint(
-            near_primitives::types::SyncCheckpoint::Genesis,
-        ) => near_kit::BlockReference::genesis(),
-        near_primitives::types::BlockReference::SyncCheckpoint(
-            near_primitives::types::SyncCheckpoint::EarliestAvailable,
-        ) => near_kit::BlockReference::earliest_available(),
-    }
-}
-
-/// Convert a `near_crypto::PublicKey` to `near_kit::PublicKey`.
-pub fn to_nk_public_key(
-    key: &near_crypto::PublicKey,
-) -> near_kit::PublicKey {
-    key.to_string()
-        .parse()
-        .expect("near_crypto::PublicKey should always produce a valid near_kit::PublicKey string")
-}
-
-/// Convert a `near_crypto::SecretKey` to `near_kit::SecretKey`.
-pub fn to_nk_secret_key(
-    key: &near_crypto::SecretKey,
-) -> near_kit::SecretKey {
-    key.to_string()
-        .parse()
-        .expect("near_crypto::SecretKey should always produce a valid near_kit::SecretKey string")
-}
-
-/// Convert a `near_crypto::Signature` to `near_kit::Signature`.
-pub fn to_nk_signature(
-    sig: &near_crypto::Signature,
-) -> near_kit::Signature {
-    sig.to_string()
-        .parse()
-        .expect("near_crypto::Signature should always produce a valid near_kit::Signature string")
-}
-
-/// Convert a `near_kit::CryptoHash` to `near_primitives::hash::CryptoHash`.
-pub fn from_nk_crypto_hash(hash: &near_kit::CryptoHash) -> near_primitives::hash::CryptoHash {
-    near_primitives::hash::CryptoHash(*hash.as_bytes())
-}
-
-/// Convert a `near_primitives::views::TxExecutionStatus` to `near_kit::TxExecutionStatus`.
-pub fn to_nk_tx_execution_status(
-    status: &near_primitives::views::TxExecutionStatus,
-) -> near_kit::TxExecutionStatus {
-    match status {
-        near_primitives::views::TxExecutionStatus::None => near_kit::TxExecutionStatus::None,
-        near_primitives::views::TxExecutionStatus::Included => near_kit::TxExecutionStatus::Included,
-        near_primitives::views::TxExecutionStatus::ExecutedOptimistic => near_kit::TxExecutionStatus::ExecutedOptimistic,
-        near_primitives::views::TxExecutionStatus::IncludedFinal => near_kit::TxExecutionStatus::IncludedFinal,
-        near_primitives::views::TxExecutionStatus::Executed => near_kit::TxExecutionStatus::Executed,
-        near_primitives::views::TxExecutionStatus::Final => near_kit::TxExecutionStatus::Final,
-    }
-}
 
 /// Blocking helper: fetch an access key via near-kit.
 ///
@@ -2198,9 +2102,9 @@ pub fn to_nk_tx_execution_status(
 #[tracing::instrument(name = "Getting access key information:", skip_all)]
 pub fn blocking_view_access_key(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-    public_key: &near_crypto::PublicKey,
-    block_reference: near_primitives::types::BlockReference,
+    account_id: &near_kit::AccountId,
+    public_key: &near_kit::PublicKey,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<near_kit::AccessKeyView> {
     tracing::Span::current().pb_set_message(&format!(
         "public key {public_key} on account <{account_id}>..."
@@ -2214,16 +2118,13 @@ pub fn blocking_view_access_key(
         account_id
     );
 
-    let nk_block_ref = to_nk_block_reference(&block_reference);
-    let nk_public_key = to_nk_public_key(public_key);
-
     tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(
             network_config
                 .client()
                 .rpc()
-                .view_access_key(account_id, &nk_public_key, nk_block_ref),
+                .view_access_key(account_id, public_key, block_reference),
         )
         .map_err(|err| color_eyre::eyre::eyre!("{}", err))
 }
@@ -2232,8 +2133,8 @@ pub fn blocking_view_access_key(
 #[tracing::instrument(name = "Getting a list of", skip_all)]
 pub fn blocking_view_access_key_list(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-    block_reference: near_primitives::types::BlockReference,
+    account_id: &near_kit::AccountId,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<near_kit::AccessKeyListView> {
     tracing::Span::current()
         .pb_set_message(&format!("access keys on account <{account_id}>..."));
@@ -2245,15 +2146,13 @@ pub fn blocking_view_access_key_list(
         account_id
     );
 
-    let nk_block_ref = to_nk_block_reference(&block_reference);
-
     tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(
             network_config
                 .client()
                 .rpc()
-                .view_access_key_list(account_id, nk_block_ref),
+                .view_access_key_list(account_id, block_reference),
         )
         .map_err(|err| color_eyre::eyre::eyre!("{}", err))
 }
@@ -2262,8 +2161,8 @@ pub fn blocking_view_access_key_list(
 #[tracing::instrument(name = "Getting information about", skip_all)]
 pub fn blocking_view_account(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-    block_reference: near_primitives::types::BlockReference,
+    account_id: &near_kit::AccountId,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<near_kit::AccountView> {
     tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
     tracing::info!(target: "near_teach_me", "Getting information about account <{account_id}>...");
@@ -2274,15 +2173,13 @@ pub fn blocking_view_account(
         account_id
     );
 
-    let nk_block_ref = to_nk_block_reference(&block_reference);
-
     tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(
             network_config
                 .client()
                 .rpc()
-                .view_account(account_id, nk_block_ref),
+                .view_account(account_id, block_reference),
         )
         .map_err(|err| color_eyre::eyre::eyre!("{}", err))
 }
@@ -2291,10 +2188,10 @@ pub fn blocking_view_account(
 #[tracing::instrument(name = "Getting the result of executing", skip_all)]
 pub fn blocking_view_function(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     function_name: &str,
     args: Vec<u8>,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
     tracing::Span::current().pb_set_message(&format!(
         "a read-only function '{function_name}' of the <{account_id}> contract ..."
@@ -2308,15 +2205,13 @@ pub fn blocking_view_function(
         account_id
     );
 
-    let nk_block_ref = to_nk_block_reference(&block_reference);
-
     tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(
             network_config
                 .client()
                 .rpc()
-                .view_function(account_id, function_name, &args, nk_block_ref),
+                .view_function(account_id, function_name, &args, block_reference),
         )
         .map_err(|err| color_eyre::eyre::eyre!("{}", err))
 }
@@ -2334,28 +2229,23 @@ pub fn blocking_validators(
 /// Blocking helper: fetch block info via near-kit.
 pub fn blocking_block(
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<near_kit::BlockView> {
-    let nk_block_ref = to_nk_block_reference(&block_reference);
-
     tokio::runtime::Runtime::new()
         .unwrap()
-        .block_on(network_config.client().rpc().block(nk_block_ref))
+        .block_on(network_config.client().rpc().block(block_reference))
         .map_err(|err| color_eyre::eyre::eyre!("{}", err))
 }
 
 /// Blocking helper: send a signed transaction via near-kit.
 pub fn blocking_send_tx(
     network_config: &crate::config::NetworkConfig,
-    signed_transaction: &near_primitives::transaction::SignedTransaction,
+    signed_transaction: &near_kit::SignedTransaction,
     wait_until: near_kit::TxExecutionStatus,
 ) -> Result<near_kit::RawTransactionResponse, near_kit::RpcError> {
-    // near-kit's send_tx expects near_kit::SignedTransaction, but the caller has
-    // near_primitives::transaction::SignedTransaction. We serialize to base64 and
-    // use the raw RPC call escape hatch.
-    let tx_bytes = near_primitives::borsh::to_vec(signed_transaction)
+    let tx_bytes = borsh::to_vec(signed_transaction)
         .expect("SignedTransaction borsh serialization should never fail");
-    let tx_base64 = near_primitives::serialize::to_base64(&tx_bytes);
+    let tx_base64 = base64::engine::general_purpose::STANDARD.encode(&tx_bytes);
 
     let params = serde_json::json!({
         "signed_tx_base64": tx_base64,
@@ -2375,82 +2265,21 @@ pub fn blocking_send_tx(
 /// Blocking helper: get transaction status via near-kit.
 pub fn blocking_tx_status(
     network_config: &crate::config::NetworkConfig,
-    tx_hash: &near_primitives::hash::CryptoHash,
-    sender_id: &near_primitives::types::AccountId,
+    tx_hash: &near_kit::CryptoHash,
+    sender_id: &near_kit::AccountId,
     wait_until: near_kit::TxExecutionStatus,
 ) -> Result<near_kit::RawTransactionResponse, near_kit::RpcError> {
-    let nk_hash = near_kit::CryptoHash::from_bytes(tx_hash.0);
-
     tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(
             network_config
                 .client()
                 .rpc()
-                .tx_status(&nk_hash, sender_id, wait_until),
+                .tx_status(tx_hash, sender_id, wait_until),
         )
 }
 
-/// Convert near-kit `ViewFunctionResult` to `near_primitives::views::CallResult`
-/// for compatibility with `CallResultExt`.
-pub fn to_call_result(
-    result: &near_kit::ViewFunctionResult,
-) -> near_primitives::views::CallResult {
-    near_primitives::views::CallResult {
-        result: result.result.clone(),
-        logs: result.logs.clone(),
-    }
-}
 
-/// Convert near-kit `AccessKeyPermissionView` to `near_primitives::views::AccessKeyPermissionView`.
-pub fn from_nk_access_key_permission(
-    nk: &near_kit::AccessKeyPermissionView,
-) -> near_primitives::views::AccessKeyPermissionView {
-    match nk {
-        near_kit::AccessKeyPermissionView::FullAccess => {
-            near_primitives::views::AccessKeyPermissionView::FullAccess
-        }
-        near_kit::AccessKeyPermissionView::FunctionCall {
-            allowance,
-            receiver_id,
-            method_names,
-        } => near_primitives::views::AccessKeyPermissionView::FunctionCall {
-            allowance: allowance.map(|a| a),
-            receiver_id: receiver_id.to_string(),
-            method_names: method_names.clone(),
-        },
-        near_kit::AccessKeyPermissionView::GasKeyFunctionCall {
-            balance,
-            num_nonces,
-            allowance,
-            receiver_id,
-            method_names,
-        } => near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall {
-            balance: *balance,
-            num_nonces: *num_nonces,
-            allowance: allowance.map(|a| a),
-            receiver_id: receiver_id.to_string(),
-            method_names: method_names.clone(),
-        },
-        near_kit::AccessKeyPermissionView::GasKeyFullAccess {
-            balance,
-            num_nonces,
-        } => near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess {
-            balance: *balance,
-            num_nonces: *num_nonces,
-        },
-    }
-}
-
-/// Convert near-kit `AccessKeyView` to `near_primitives::views::AccessKeyView`.
-pub fn from_nk_access_key_view(
-    nk: &near_kit::AccessKeyView,
-) -> near_primitives::views::AccessKeyView {
-    near_primitives::views::AccessKeyView {
-        nonce: nk.nonce,
-        permission: from_nk_access_key_permission(&nk.permission),
-    }
-}
 
 /// Blocking helper: query view state via near-kit escape hatch.
 ///
@@ -2459,19 +2288,18 @@ pub fn from_nk_access_key_view(
 /// Returns a JSON value that must be extracted by the caller.
 pub fn blocking_view_state(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     prefix: &[u8],
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
-    let nk_block_ref = to_nk_block_reference(&block_reference);
     let mut params = serde_json::json!({
         "request_type": "view_state",
         "account_id": account_id.to_string(),
-        "prefix_base64": near_primitives::serialize::to_base64(prefix),
+        "prefix_base64": base64::engine::general_purpose::STANDARD.encode(prefix),
         "include_proof": false,
     });
     // Merge block reference params
-    if let serde_json::Value::Object(block_params) = nk_block_ref.to_rpc_params() {
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
         if let serde_json::Value::Object(map) = &mut params {
             map.extend(block_params);
         }
@@ -2495,15 +2323,14 @@ pub fn blocking_view_state(
 /// Returns a JSON value that must be extracted by the caller.
 pub fn blocking_view_code(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-    block_reference: near_primitives::types::BlockReference,
+    account_id: &near_kit::AccountId,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
-    let nk_block_ref = to_nk_block_reference(&block_reference);
     let mut params = serde_json::json!({
         "request_type": "view_code",
         "account_id": account_id.to_string(),
     });
-    if let serde_json::Value::Object(block_params) = nk_block_ref.to_rpc_params() {
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
         if let serde_json::Value::Object(map) = &mut params {
             map.extend(block_params);
         }
@@ -2532,7 +2359,7 @@ pub fn indent_payload(s: &str) -> String {
 }
 
 #[easy_ext::ext(CallResultExt)]
-pub impl near_primitives::views::CallResult {
+pub impl near_kit::ViewFunctionResult {
     fn parse_result_from_json<T>(&self) -> Result<T, color_eyre::eyre::Error>
     where
         T: for<'de> serde::Deserialize<'de>,
@@ -2562,7 +2389,7 @@ pub impl near_primitives::views::CallResult {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct UsedAccount {
-    pub account_id: near_primitives::types::AccountId,
+    pub account_id: near_kit::AccountId,
     pub used_as_signer: bool,
 }
 
@@ -2573,7 +2400,7 @@ fn get_used_account_list_path(credentials_home_dir: &std::path::Path) -> std::pa
 pub fn create_used_account_list_from_legacy_keychain(
     credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<()> {
-    let mut used_account_list: std::collections::BTreeSet<near_primitives::types::AccountId> =
+    let mut used_account_list: std::collections::BTreeSet<near_kit::AccountId> =
         std::collections::BTreeSet::new();
     let read_dir =
         |dir: &std::path::Path| dir.read_dir().map(Iterator::flatten).into_iter().flatten();
@@ -2623,7 +2450,7 @@ pub fn create_used_account_list_from_legacy_keychain(
 
 pub fn update_used_account_list_as_signer(
     credentials_home_dir: &std::path::Path,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) {
     let account_is_signer = true;
     update_used_account_list(credentials_home_dir, account_id, account_is_signer);
@@ -2631,7 +2458,7 @@ pub fn update_used_account_list_as_signer(
 
 pub fn update_used_account_list_as_non_signer(
     credentials_home_dir: &std::path::Path,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) {
     let account_is_signer = false;
     update_used_account_list(credentials_home_dir, account_id, account_is_signer);
@@ -2639,7 +2466,7 @@ pub fn update_used_account_list_as_non_signer(
 
 fn update_used_account_list(
     credentials_home_dir: &std::path::Path,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     account_is_signer: bool,
 ) {
     let mut used_account_list = get_used_account_list(credentials_home_dir);
@@ -2714,7 +2541,7 @@ fn input_account_id_from_used_account_list(
                 .collect())
         })
         .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
+            match near_kit::AccountId::validate(account_id_str) {
                 Ok(_) => Ok(inquire::validator::Validation::Valid),
                 Err(err) => Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),

@@ -17,7 +17,7 @@ pub struct SignerAccountId {
 pub struct SignerAccountIdContext {
     global_context: crate::GlobalContext,
     account_properties: super::AccountProperties,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
 }
@@ -180,7 +180,7 @@ impl SignerAccountId {
 #[tracing::instrument(name = "Validation new account_id ...", skip_all)]
 fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Validation new account_id ...");
     let account_state =
@@ -189,7 +189,7 @@ fn validate_new_account_id(
             .block_on(crate::common::get_account_state(
                 network_config,
                 account_id,
-                near_primitives::types::BlockReference::latest(),
+                near_kit::BlockReference::optimistic(),
             ));
     match account_state {
         Ok(_) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(

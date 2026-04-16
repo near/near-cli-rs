@@ -23,7 +23,7 @@ impl ViewListKeysContext {
         scope: &<ViewListKeys as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
                 let nk_list = blocking_view_access_key_list(

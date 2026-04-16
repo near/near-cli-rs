@@ -238,15 +238,15 @@ pub struct NetworkConfig {
     pub wallet_url: url::Url,
     pub explorer_transaction_url: url::Url,
     // https://github.com/near/near-cli-rs/issues/116
-    pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
+    pub linkdrop_account_id: Option<near_kit::AccountId>,
     // https://docs.near.org/social/contract
-    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
+    pub near_social_db_contract_account_id: Option<near_kit::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
     pub fastnear_url: Option<url::Url>,
-    pub staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
+    pub staking_pools_factory_account_id: Option<near_kit::AccountId>,
     pub coingecko_url: Option<url::Url>,
-    pub mpc_contract_account_id: Option<near_primitives::types::AccountId>,
+    pub mpc_contract_account_id: Option<near_kit::AccountId>,
     pub tx_wait_until: Option<crate::types::tx_execution_status::TxExecutionStatus>,
 }
 
@@ -262,19 +262,6 @@ impl NetworkConfig {
             .collect())
     }
 
-    #[tracing::instrument(name = "Connecting to RPC", skip_all)]
-    pub fn json_rpc_client(&self) -> near_jsonrpc_client::JsonRpcClient {
-        tracing::Span::current().pb_set_message(self.rpc_url.as_str());
-        tracing::info!(target: "near_teach_me", "Connecting to RPC {}", self.rpc_url.as_str());
-        let mut json_rpc_client =
-            near_jsonrpc_client::JsonRpcClient::connect(self.rpc_url.as_ref());
-        if let Some(rpc_api_key) = &self.rpc_api_key {
-            json_rpc_client =
-                json_rpc_client.header(near_jsonrpc_client::auth::ApiKey::from(rpc_api_key.clone()))
-        };
-        json_rpc_client
-    }
-
     /// Build a near-kit `Near` client pointed at this network's RPC.
     ///
     /// The API key is silently dropped for now — near-kit does not yet
@@ -288,14 +275,14 @@ impl NetworkConfig {
 
     pub fn get_near_social_account_id_from_network(
         &self,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+    ) -> color_eyre::eyre::Result<near_kit::AccountId> {
         if let Some(account_id) = self.near_social_db_contract_account_id.clone() {
             return Ok(account_id);
         }
         match self.network_name.as_str() {
-            "mainnet" => near_primitives::types::AccountId::from_str("social.near")
+            "mainnet" => near_kit::AccountId::from_str("social.near")
                 .wrap_err("Internal error"),
-            "testnet" => near_primitives::types::AccountId::from_str("v1.social08.testnet")
+            "testnet" => near_kit::AccountId::from_str("v1.social08.testnet")
                 .wrap_err("Internal error"),
             _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "This network does not provide the \"near-social\" contract"
@@ -305,16 +292,16 @@ impl NetworkConfig {
 
     pub fn get_mpc_contract_account_id(
         &self,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+    ) -> color_eyre::eyre::Result<near_kit::AccountId> {
         if let Some(mpc_contract_account_id) = self.mpc_contract_account_id.clone() {
             return Ok(mpc_contract_account_id);
         }
 
         match self.network_name.as_str() {
             "mainnet" => {
-                near_primitives::types::AccountId::from_str("v1.signer").wrap_err("Internal error")
+                near_kit::AccountId::from_str("v1.signer").wrap_err("Internal error")
             }
-            "testnet" => near_primitives::types::AccountId::from_str("v1.signer-prod.testnet")
+            "testnet" => near_kit::AccountId::from_str("v1.signer-prod.testnet")
                 .wrap_err("Internal error"),
             _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "This network does not provide MPC contract account id"

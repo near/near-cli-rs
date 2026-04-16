@@ -23,7 +23,7 @@ impl RelayerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let signer_id: near_primitives::types::AccountId =
+                let signer_id: near_kit::AccountId =
                     scope.relayer_account_id.clone().into();
                 let signed_delegate_action = previous_context.signed_delegate_action.clone();
 

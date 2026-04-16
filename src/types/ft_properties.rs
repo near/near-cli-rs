@@ -3,7 +3,7 @@ use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use crate::common::CallResultExt;
-use crate::common::{blocking_view_function, to_call_result};
+use crate::common::{blocking_view_function};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub enum FungibleTokenTransferAmount {
@@ -200,9 +200,9 @@ pub struct FtMetadata {
 
 #[tracing::instrument(name = "Getting FT metadata ...", skip_all, parent = None)]
 pub fn params_ft_metadata(
-    ft_contract_account_id: near_primitives::types::AccountId,
+    ft_contract_account_id: near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
     tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
     let result = blocking_view_function(
@@ -218,7 +218,7 @@ pub fn params_ft_metadata(
             network_config.network_name
         )
     })?;
-    let ft_metadata: FtMetadata = to_call_result(&result).parse_result_from_json()?;
+    let ft_metadata: FtMetadata = result.parse_result_from_json()?;
     Ok(ft_metadata)
 }
 
@@ -227,12 +227,12 @@ pub struct FtContract {
     #[serde(flatten)]
     pub ft_metadata: FtMetadata,
     #[serde(rename = "contract")]
-    pub ft_contract_account_id: near_primitives::types::AccountId,
+    pub ft_contract_account_id: near_kit::AccountId,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransfer {
-    pub receiver_id: near_primitives::types::AccountId,
+    pub receiver_id: near_kit::AccountId,
     #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
     pub amount: u128,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -241,7 +241,7 @@ pub struct FtTransfer {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransferCall {
-    pub receiver_id: near_primitives::types::AccountId,
+    pub receiver_id: near_kit::AccountId,
     #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
     pub amount: u128,
     #[serde(skip_serializing_if = "Option::is_none")]

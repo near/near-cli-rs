@@ -42,7 +42,7 @@ impl PublicKeyFromKeychainContext {
                         let nk_list = blocking_view_access_key_list(
                             network_config,
                             &account_id.clone().into(),
-                            near_primitives::types::Finality::Final.into(),
+                            near_kit::Finality::Final.into(),
                         )
                         .wrap_err_with(|| {
                             format!("Failed to fetch access key list for {account_id}")

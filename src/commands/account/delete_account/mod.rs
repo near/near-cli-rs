@@ -16,7 +16,7 @@ pub struct DeleteAccount {
 #[derive(Debug, Clone)]
 pub struct DeleteAccountContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
 }
 
 impl DeleteAccountContext {
@@ -57,8 +57,8 @@ pub struct BeneficiaryAccount {
 #[derive(Debug, Clone)]
 pub struct BeneficiaryAccountContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
-    beneficiary_account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
+    beneficiary_account_id: near_kit::AccountId,
 }
 
 impl BeneficiaryAccountContext {

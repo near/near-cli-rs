@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
@@ -23,7 +24,7 @@ pub struct SignMpc {
 
 #[derive(Clone)]
 pub struct SignMpcContext {
-    admin_account_id: near_primitives::types::AccountId,
+    admin_account_id: near_kit::AccountId,
     tx_context: crate::commands::TransactionContext,
 }
 
@@ -84,8 +85,8 @@ pub enum MpcKeyType {
 
 #[derive(Clone)]
 pub struct MpcKeyTypeContext {
-    admin_account_id: near_primitives::types::AccountId,
-    key_type: near_crypto::KeyType,
+    admin_account_id: near_kit::AccountId,
+    key_type: near_kit::KeyType,
     tx_context: crate::commands::TransactionContext,
 }
 
@@ -108,7 +109,7 @@ impl MpcKeyTypeSecpContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(MpcKeyTypeContext {
             admin_account_id: previous_context.admin_account_id,
-            key_type: near_crypto::KeyType::SECP256K1,
+            key_type: near_kit::KeyType::Secp256k1,
             tx_context: previous_context.tx_context,
         }))
     }
@@ -139,7 +140,7 @@ impl MpcKeyTypeEdContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(MpcKeyTypeContext {
             admin_account_id: previous_context.admin_account_id,
-            key_type: near_crypto::KeyType::ED25519,
+            key_type: near_kit::KeyType::Ed25519,
             tx_context: previous_context.tx_context,
         }))
     }
@@ -165,10 +166,10 @@ pub struct MpcDeriveKey {
 
 #[derive(Clone)]
 pub struct MpcDeriveKeyContext {
-    admin_account_id: near_primitives::types::AccountId,
-    derived_public_key: near_crypto::PublicKey,
+    admin_account_id: near_kit::AccountId,
+    derived_public_key: near_kit::PublicKey,
     derivation_path: String,
-    nonce: near_primitives::types::Nonce,
+    nonce: u64,
     block_hash: near_kit::CryptoHash,
     tx_context: crate::commands::TransactionContext,
 }
@@ -196,8 +197,8 @@ impl MpcDeriveKeyContext {
         let access_key_view = blocking_view_access_key(
                     &network_config,
                     &controllable_account,
-                    &derived_public_key.clone(),
-                    near_primitives::types::BlockReference::latest(),
+                    &derived_public_key,
+                    near_kit::BlockReference::optimistic(),
                 )
                 .inspect_err(|err| {
                     if err.to_string().contains("AccessKeyNotFound") || err.to_string().contains("UnknownAccessKey") || err.to_string().contains("access_key_not_found") {
@@ -251,12 +252,12 @@ impl MpcDeriveKey {
 
 #[tracing::instrument(name = "Retrieving derived public key from MPC contract ...", skip_all)]
 pub fn derive_public_key(
-    mpc_contract_address: &near_primitives::types::AccountId,
-    admin_account_id: &near_primitives::types::AccountId,
+    mpc_contract_address: &near_kit::AccountId,
+    admin_account_id: &near_kit::AccountId,
     derivation_path: &str,
-    key_type: &near_crypto::KeyType,
+    key_type: &near_kit::KeyType,
     network_config: &crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
+) -> color_eyre::eyre::Result<near_kit::PublicKey> {
     tracing::info!(target: "near_teach_me", "Retrieving derived public key from MPC contract ...");
     let rpc_result = blocking_view_function(
             network_config,
@@ -267,10 +268,10 @@ pub fn derive_public_key(
                 "predecessor": admin_account_id,
                 "domain_id": near_key_type_to_mpc_domain_id(*key_type)
             }))?,
-            near_primitives::types::BlockReference::latest(),
+            near_kit::BlockReference::optimistic(),
         )?;
 
-    let public_key: near_crypto::PublicKey = serde_json::from_slice(&rpc_result.result)?;
+    let public_key: near_kit::PublicKey = serde_json::from_slice(&rpc_result.result)?;
 
     Ok(public_key)
 }
@@ -290,10 +291,10 @@ pub struct PrepaidGas {
 
 #[derive(Clone)]
 pub struct PrepaidGasContext {
-    admin_account_id: near_primitives::types::AccountId,
-    derived_public_key: near_crypto::PublicKey,
+    admin_account_id: near_kit::AccountId,
+    derived_public_key: near_kit::PublicKey,
     derivation_path: String,
-    nonce: near_primitives::types::Nonce,
+    nonce: u64,
     block_hash: near_kit::CryptoHash,
     tx_context: crate::commands::TransactionContext,
     gas: crate::common::NearGas,
@@ -361,8 +362,8 @@ pub struct Deposit {
 
 #[derive(Clone)]
 pub struct DepositContext {
-    admin_account_id: near_primitives::types::AccountId,
-    mpc_contract_address: near_primitives::types::AccountId,
+    admin_account_id: near_kit::AccountId,
+    mpc_contract_address: near_kit::AccountId,
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,
     original_payload_transaction: near_kit::Transaction,
@@ -377,7 +378,7 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let nk_derived_public_key = crate::common::to_nk_public_key(&previous_context.derived_public_key);
+        let nk_derived_public_key = previous_context.derived_public_key.clone();
         let controllable_account = previous_context
             .tx_context
             .prepopulated_transaction
@@ -388,7 +389,7 @@ impl DepositContext {
                 .tx_context
                 .prepopulated_transaction
                 .receiver_id,
-            public_key: nk_derived_public_key,
+            public_key: nk_derived_public_key.clone(),
             nonce: previous_context.nonce,
             block_hash: previous_context.block_hash,
             actions: previous_context.tx_context.prepopulated_transaction.actions,
@@ -404,10 +405,10 @@ impl DepositContext {
         let mpc_tx_payload = payload.clone();
         let payload: mpc_sign_request::MpcSignPayload =
             match previous_context.derived_public_key.key_type() {
-                near_crypto::KeyType::ED25519 => {
+                near_kit::KeyType::Ed25519 => {
                     mpc_sign_request::MpcSignPayload::Eddsa(hashed_payload.to_vec())
                 }
-                near_crypto::KeyType::SECP256K1 => {
+                near_kit::KeyType::Secp256k1 => {
                     mpc_sign_request::MpcSignPayload::Ecdsa(*hashed_payload.as_bytes())
                 }
             };
@@ -519,7 +520,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                         match crate::transaction_signature_options::send::sending_signed_transaction(
                             network_config,
                             &sign_request_tx,
-                            near_primitives::views::TxExecutionStatus::Final,
+                            near_kit::TxExecutionStatus::Final,
                         ) {
                             Ok(Some(outcome_view)) => outcome_view,
                             Ok(None) => {
@@ -532,13 +533,13 @@ impl From<DepositContext> for crate::commands::TransactionContext {
 
                     let signed_transaction = match sign_outcome_view.status {
                         near_kit::FinalExecutionStatus::SuccessValue(result_b64) => {
-                            let result_bytes = near_primitives::serialize::from_base64(&result_b64)
+                            let result_bytes = base64::engine::general_purpose::STANDARD.decode(&result_b64)
                                 .map_err(|e| color_eyre::eyre::eyre!("Failed to decode base64: {e}"))?;
                             let sign_result: mpc_sign_result::SignResult =
                                 serde_json::from_slice(&result_bytes)?;
-                            let signature: near_crypto::Signature = sign_result.into();
+                            let signature: near_kit::Signature = sign_result.into();
 
-                            unsigned_transaction.complete(crate::common::to_nk_signature(&signature))
+                            unsigned_transaction.complete(signature.clone())
                         }
                         _ => {
                             let error_msg = format!(
@@ -580,7 +581,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 if let Some(near_kit::ActionView::FunctionCall { method_name, args, .. }) =
       outcome_view.transaction.actions.first()
                     && method_name == "add_proposal"
-                        && let Ok(args_bytes) = near_primitives::serialize::from_base64(args)
+                        && let Ok(args_bytes) = base64::engine::general_purpose::STANDARD.decode(args)
                         && let Ok(Some(proposal)) = serde_json::from_slice::<serde_json::Value>(&args_bytes).map(|parsed_args| parsed_args.get("proposal").cloned())
                             && let Some(kind) = proposal.get("kind")
                                 && serde_json::from_value::<super::submit_dao_proposal::dao_kind_arguments::ProposalKind>(kind.clone()).is_ok() {
@@ -614,10 +615,10 @@ impl From<DepositContext> for crate::commands::TransactionContext {
     }
 }
 
-pub fn near_key_type_to_mpc_domain_id(key_type: near_crypto::KeyType) -> u64 {
+pub fn near_key_type_to_mpc_domain_id(key_type: near_kit::KeyType) -> u64 {
     match key_type {
-        near_crypto::KeyType::SECP256K1 => 0u64,
-        near_crypto::KeyType::ED25519 => 1u64,
+        near_kit::KeyType::Secp256k1 => 0u64,
+        near_kit::KeyType::Ed25519 => 1u64,
     }
 }
 
@@ -656,9 +657,9 @@ pub fn dao_sign_with_mpc_after_send_flow(
             outcome_view.transaction.receiver_id.clone(),
         ) {
             Ok(sign_result) => {
-                let signature: near_crypto::Signature = sign_result.into();
+                let signature: near_kit::Signature = sign_result.into();
 
-                unsigned_mpc_transaction.clone().complete(crate::common::to_nk_signature(&signature))
+                unsigned_mpc_transaction.clone().complete(signature.clone())
             }
             Err(err) => {
                 eprintln!(
@@ -696,9 +697,9 @@ pub fn dao_sign_with_mpc_after_send_flow(
 fn fetch_mpc_contract_response_from_dao_tx(
     network_config: &crate::config::NetworkConfig,
     original_sign_request: &mpc_sign_request::MpcSignRequest,
-    tx_hash: near_primitives::hash::CryptoHash,
-    sender_account_id: near_primitives::types::AccountId,
-    dao_address: near_primitives::types::AccountId,
+    tx_hash: near_kit::CryptoHash,
+    sender_account_id: near_kit::AccountId,
+    dao_address: near_kit::AccountId,
 ) -> color_eyre::eyre::Result<mpc_sign_result::SignResult> {
     tracing::info!(target: "near_teach_me", "Fetching executed DAO proposal ...");
 
@@ -736,7 +737,7 @@ fn fetch_mpc_contract_response_from_dao_tx(
                 && method_name == "act_proposal"
             {
                 // near-kit stores args as base64
-                return near_primitives::serialize::from_base64(args).ok();
+                return base64::engine::general_purpose::STANDARD.decode(args).ok();
             }
             None
         })

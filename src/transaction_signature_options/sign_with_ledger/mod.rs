@@ -29,7 +29,7 @@ pub struct SignLedger {
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    block_height: Option<near_primitives::types::BlockHeight>,
+    block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
@@ -43,7 +43,7 @@ pub struct SignLedgerContext {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub nonce: Option<u64>,
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
-    pub block_height: Option<near_primitives::types::BlockHeight>,
+    pub block_height: Option<u64>,
     pub meta_transaction_valid_for: Option<u64>,
 }
 
@@ -153,9 +153,9 @@ impl interactive_clap::FromCli for UsbConnection {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         let signer_public_key: crate::types::public_key::PublicKey =
-            near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+            near_kit::PublicKey::ed25519_from_bytes(
                 public_key.to_bytes(),
-            ))
+            )
             .into();
 
         let output_context = match sign_transaction_with_usb(
@@ -199,16 +199,16 @@ fn sign_transaction_with_usb(
     seed_phrase_hd_path: &crate::types::slip10::BIP32Path,
     nonce: Option<u64>,
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
-    block_height: Option<near_primitives::types::BlockHeight>,
+    block_height: Option<u64>,
     meta_transaction_valid_for: Option<u64>,
 ) -> color_eyre::eyre::Result<UsbConnectionContext> {
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via USB. Follow the instructions on the ledger ...");
 
     let network_config = previous_context.network_config.clone();
     let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
-    let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
+    let public_key: near_kit::PublicKey = signer_public_key.clone().into();
 
-    let nk_public_key = crate::common::to_nk_public_key(&public_key);
+    let nk_public_key = public_key.clone();
 
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
         (
@@ -224,7 +224,7 @@ fn sign_transaction_with_usb(
                 &network_config,
                 &previous_context.prepopulated_transaction.signer_id,
                 &public_key,
-                near_primitives::types::BlockReference::latest(),
+                near_kit::BlockReference::optimistic(),
             )
             .wrap_err_with(||
                 format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
@@ -401,9 +401,9 @@ impl interactive_clap::FromCli for BluetoothConnection {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         let signer_public_key: crate::types::public_key::PublicKey =
-            near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+            near_kit::PublicKey::ed25519_from_bytes(
                 public_key.to_bytes(),
-            ))
+            )
             .into();
 
         let output_context = match sign_transaction_with_ble(
@@ -451,16 +451,16 @@ fn sign_transaction_with_ble(
     ble_session: &ble_helpers::BleSession,
     nonce: Option<u64>,
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
-    block_height: Option<near_primitives::types::BlockHeight>,
+    block_height: Option<u64>,
     meta_transaction_valid_for: Option<u64>,
 ) -> color_eyre::eyre::Result<BluetoothConnectionContext> {
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via Bluetooth. Follow the instructions on the ledger ...");
 
     let network_config = previous_context.network_config.clone();
     let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
-    let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
+    let public_key: near_kit::PublicKey = signer_public_key.clone().into();
 
-    let nk_public_key = crate::common::to_nk_public_key(&public_key);
+    let nk_public_key = public_key.clone();
 
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
         (
@@ -476,7 +476,7 @@ fn sign_transaction_with_ble(
                 &network_config,
                 &previous_context.prepopulated_transaction.signer_id,
                 &public_key,
-                near_primitives::types::BlockReference::latest(),
+                near_kit::BlockReference::optimistic(),
             )
             .wrap_err_with(||
                 format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
@@ -639,10 +639,10 @@ impl SignLedger {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
+                CustomType::<u64>::new(
                     "Enter recent block height:",
                 )
                 .prompt()?,

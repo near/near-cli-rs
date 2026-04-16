@@ -14,7 +14,7 @@ pub struct AddAccessWithLedger {
 #[derive(Clone)]
 pub struct AddAccessWithLedgerContext {
     pub global_context: crate::GlobalContext,
-    pub new_account_id: near_primitives::types::AccountId,
+    pub new_account_id: near_kit::AccountId,
     pub initial_balance: crate::types::near_token::NearToken,
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
 }
@@ -82,9 +82,9 @@ impl UsbAddAccessContext {
                 ))
             },
         )?;
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(
             public_key.to_bytes(),
-        ));
+        );
 
         let account_properties = super::super::AccountProperties {
             new_account_id: previous_context.new_account_id,
@@ -131,9 +131,9 @@ impl BleAddAccessContext {
         let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
 
         let public_key = crate::transaction_signature_options::sign_with_ledger::ble_helpers::ble_connect_and_get_public_key(seed_phrase_hd_path.into())?;
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(
             public_key.to_bytes(),
-        ));
+        );
 
         let account_properties = super::super::AccountProperties {
             new_account_id: previous_context.new_account_id,

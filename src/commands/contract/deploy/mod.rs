@@ -43,8 +43,8 @@ pub enum DeployModes {
 #[derive(Debug, Clone)]
 pub struct ContractContext {
     global_context: crate::GlobalContext,
-    receiver_account_id: near_primitives::types::AccountId,
-    signer_account_id: near_primitives::types::AccountId,
+    receiver_account_id: near_kit::AccountId,
+    signer_account_id: near_kit::AccountId,
 }
 
 impl ContractContext {
@@ -74,8 +74,8 @@ impl Contract {
 #[derive(Debug, Clone)]
 pub struct GenericDeployContext {
     pub global_context: crate::GlobalContext,
-    pub receiver_account_id: near_primitives::types::AccountId,
-    pub signer_account_id: near_primitives::types::AccountId,
+    pub receiver_account_id: near_kit::AccountId,
+    pub signer_account_id: near_kit::AccountId,
     pub deploy_action: near_kit::Action,
 }
 

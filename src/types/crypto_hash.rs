@@ -1,15 +1,9 @@
 #[derive(Debug, Copy, Clone)]
 pub struct CryptoHash(pub near_kit::CryptoHash);
 
-impl From<CryptoHash> for near_primitives::hash::CryptoHash {
+impl From<CryptoHash> for near_kit::CryptoHash {
     fn from(item: CryptoHash) -> Self {
-        near_primitives::hash::CryptoHash(*item.0.as_bytes())
-    }
-}
-
-impl From<near_primitives::hash::CryptoHash> for CryptoHash {
-    fn from(item: near_primitives::hash::CryptoHash) -> Self {
-        Self(near_kit::CryptoHash::from_bytes(item.0))
+        item.0
     }
 }
 

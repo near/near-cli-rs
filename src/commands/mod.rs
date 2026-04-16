@@ -74,43 +74,25 @@ pub type GetPrepopulatedTransactionAfterGettingNetworkCallback = std::sync::Arc<
 
 #[derive(Debug, Clone)]
 pub struct PrepopulatedTransaction {
-    pub signer_id: near_primitives::types::AccountId,
-    pub receiver_id: near_primitives::types::AccountId,
+    pub signer_id: near_kit::AccountId,
+    pub receiver_id: near_kit::AccountId,
     pub actions: Vec<near_kit::Action>,
 }
 
-impl From<near_primitives::transaction::TransactionV0> for PrepopulatedTransaction {
-    fn from(value: near_primitives::transaction::TransactionV0) -> Self {
+impl From<near_kit::Transaction> for PrepopulatedTransaction {
+    fn from(value: near_kit::Transaction) -> Self {
         Self {
             signer_id: value.signer_id,
             receiver_id: value.receiver_id,
-            actions: value.actions.into_iter().map(np_action_to_nk).collect(),
+            actions: value.actions,
         }
     }
-}
-
-impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction {
-    fn from(value: near_primitives::transaction::Transaction) -> Self {
-        Self {
-            signer_id: value.signer_id().clone(),
-            receiver_id: value.receiver_id().clone(),
-            actions: value.take_actions().into_iter().map(np_action_to_nk).collect(),
-        }
-    }
-}
-
-/// Convert a near_primitives Action to near_kit Action (for From impls).
-/// Uses borsh round-trip — safe because near_kit Action is byte-identical to
-/// near_primitives Action (verified in commit 106a671).
-pub fn np_action_to_nk(a: near_primitives::transaction::Action) -> near_kit::Action {
-    let bytes = borsh::to_vec(&a).expect("near_primitives::Action borsh serialization should not fail");
-    borsh::from_slice(&bytes).expect("near_kit::Action borsh deserialization should not fail")
 }
 
 #[derive(Clone)]
 pub struct ActionContext {
     pub global_context: crate::GlobalContext,
-    pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
+    pub interacting_with_account_ids: Vec<near_kit::AccountId>,
     pub get_prepopulated_transaction_after_getting_network_callback:
         GetPrepopulatedTransactionAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,

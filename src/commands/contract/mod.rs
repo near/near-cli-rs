@@ -1,5 +1,5 @@
 use color_eyre::eyre::{Context, Report};
-use near_primitives::types::BlockReference;
+use near_kit::BlockReference;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 use thiserror::Error;
 
@@ -69,10 +69,10 @@ pub enum ContractActions {
 pub async fn get_contract_abi(
     network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> Result<near_abi::AbiRoot, FetchAbiError> {
     tracing::info!(target: "near_teach_me", "Obtaining the ABI for the contract ...");
-    let nk_block_ref = crate::common::to_nk_block_reference(block_reference);
+    let nk_block_ref = block_reference;
     let mut retries_left = (0..5).rev();
     loop {
         let result = network_config

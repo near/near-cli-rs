@@ -18,7 +18,7 @@ pub struct Contract {
 #[derive(Debug, Clone)]
 pub struct ContractContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
 }
 
 impl ContractContext {
@@ -103,10 +103,10 @@ impl DownloadContractAbi {
 
 #[tracing::instrument(name = "Download the ABI for the contract ...", skip_all)]
 fn download_contract_abi(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     file_path: &std::path::PathBuf,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
     verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Download the ABI for the contract ...");

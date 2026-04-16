@@ -22,7 +22,7 @@ impl TransactionInfoContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let tx_hash: near_primitives::hash::CryptoHash = scope.transaction_hash.into();
+                let tx_hash: near_kit::CryptoHash = scope.transaction_hash.into();
 
                 move |network_config| {
                     let query_view_transaction_status =
@@ -63,20 +63,16 @@ pub struct TransactionStatusResponse {
 }
 
 impl TransactionStatusResponse {
-    /// Extract the final execution outcome as a `near_primitives` type.
+    /// Extract the final execution outcome.
     pub fn final_execution_outcome(
         &self,
-    ) -> Option<near_primitives::views::FinalExecutionOutcomeView> {
+    ) -> Option<near_kit::FinalExecutionOutcome> {
         self.json
             .get("final_execution_outcome")
             .and_then(|v| if v.is_null() { None } else { Some(v) })
             .and_then(|v| {
-                serde_json::from_value::<
-                    near_primitives::views::FinalExecutionOutcomeViewEnum,
-                >(v.clone())
-                .ok()
+                serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok()
             })
-            .map(|e| e.into_outcome())
     }
 }
 
@@ -89,14 +85,13 @@ impl std::fmt::Display for TransactionStatusResponse {
 #[tracing::instrument(name = "Getting information about transaction", skip_all)]
 pub fn get_transaction_info(
     network_config: &crate::config::NetworkConfig,
-    tx_hash: near_primitives::hash::CryptoHash,
+    tx_hash: near_kit::CryptoHash,
 ) -> color_eyre::eyre::Result<TransactionStatusResponse> {
     tracing::Span::current().pb_set_message(&format!("{tx_hash} ..."));
     tracing::info!(target: "near_teach_me", "Getting information about transaction {tx_hash} ...");
 
-    let nk_hash = near_kit::CryptoHash::from_bytes(tx_hash.0);
     let params = serde_json::json!({
-        "tx_hash": nk_hash.to_string(),
+        "tx_hash": tx_hash.to_string(),
         "sender_account_id": "near",
         "wait_until": near_kit::TxExecutionStatus::Final.as_str(),
     });

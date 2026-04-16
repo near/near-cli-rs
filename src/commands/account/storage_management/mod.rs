@@ -39,7 +39,7 @@ impl ContractContext {
 pub type GetContractAccountId = std::sync::Arc<
     dyn Fn(
         &crate::config::NetworkConfig,
-    ) -> color_eyre::eyre::Result<near_primitives::types::AccountId>,
+    ) -> color_eyre::eyre::Result<near_kit::AccountId>,
 >;
 
 impl Contract {

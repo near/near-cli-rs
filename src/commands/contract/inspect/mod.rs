@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use std::fmt::Write;
 
 use color_eyre::{
@@ -7,7 +8,7 @@ use color_eyre::{
 use thiserror::Error;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use near_primitives::types::BlockReference;
+use near_kit::BlockReference;
 
 use super::FetchAbiError;
 use crate::common::{CallResultExt, sleep_after_error};
@@ -44,7 +45,7 @@ impl ContractContext {
         scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
                 tokio::runtime::Runtime::new()
@@ -72,9 +73,9 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
 
 #[tracing::instrument(name = "Obtaining the contract code ...", skip_all)]
 fn get_contract_code(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
     tracing::info!(target: "near_teach_me", "Obtaining the contract code ...");
     crate::common::blocking_view_code(
@@ -92,9 +93,9 @@ fn get_contract_code(
 
 #[tracing::instrument(name = "Contract inspection ...", skip_all)]
 async fn display_inspect_contract(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Contract inspection ...");
     let view_code_json = get_contract_code(account_id, network_config, block_reference)?;
@@ -102,7 +103,7 @@ async fn display_inspect_contract(
         .get("code_base64")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let code_bytes = near_primitives::serialize::from_base64(code_base64)
+    let code_bytes = base64::engine::general_purpose::STANDARD.decode(code_base64)
         .unwrap_or_default();
     let block_height = view_code_json
         .get("block_height")
@@ -212,7 +213,7 @@ async fn display_inspect_contract(
             .filter(|access_key| {
                 matches!(
                     access_key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                    near_kit::AccessKeyPermissionView::FullAccess
                 )
             })
             .count();
@@ -414,34 +415,20 @@ async fn get_account_view(
     network_name: &str,
     network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
+    account_id: &near_kit::AccountId,
+) -> color_eyre::eyre::Result<near_kit::AccountView> {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
     tracing::info!(target: "near_teach_me", "Getting information about {account_id} ...");
     for _ in 0..5 {
         let result = network_config
             .client()
             .rpc()
-            .view_account(account_id, crate::common::to_nk_block_reference(block_reference))
+            .view_account(account_id, block_reference.clone())
             .await;
 
         match result {
-            Ok(nk_account_view) => {
-                return Ok(near_primitives::views::AccountView {
-                    amount: nk_account_view.amount,
-                    locked: nk_account_view.locked,
-                    code_hash: near_primitives::hash::CryptoHash(
-                        *nk_account_view.code_hash.as_bytes(),
-                    ),
-                    storage_usage: nk_account_view.storage_usage,
-                    storage_paid_at: nk_account_view.storage_paid_at,
-                    global_contract_hash: nk_account_view.global_contract_hash.map(|h| {
-                        near_primitives::hash::CryptoHash(*h.as_bytes())
-                    }),
-                    global_contract_account_id: nk_account_view
-                        .global_contract_account_id
-                        .map(|a| a.to_string().parse().expect("AccountId round-trip")),
-                });
+            Ok(account_view) => {
+                return Ok(account_view);
             }
             Err(ref err) if err.is_retryable() => {
                 eprintln!(
@@ -466,30 +453,20 @@ async fn get_access_keys(
     network_name: &str,
     network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
+    account_id: &near_kit::AccountId,
+) -> color_eyre::eyre::Result<Vec<near_kit::AccessKeyInfoView>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
     for _ in 0..5 {
         let result = network_config
             .client()
             .rpc()
-            .view_access_key_list(account_id, crate::common::to_nk_block_reference(block_reference))
+            .view_access_key_list(account_id, block_reference.clone())
             .await;
 
         match result {
-            Ok(nk_access_key_list) => {
-                return Ok(nk_access_key_list
-                    .keys
-                    .iter()
-                    .map(|nk_key| near_primitives::views::AccessKeyInfoView {
-                        public_key: nk_key.public_key.to_string().parse().expect("PublicKey round-trip"),
-                        access_key: near_primitives::views::AccessKeyView {
-                            nonce: nk_key.access_key.nonce,
-                            permission: crate::common::from_nk_access_key_permission(&nk_key.access_key.permission),
-                        },
-                    })
-                    .collect());
+            Ok(access_key_list) => {
+                return Ok(access_key_list.keys);
             }
             Err(ref err) if err.is_retryable() => {
                 eprintln!(
@@ -529,7 +506,7 @@ pub enum FetchContractSourceMetadataError {
 pub async fn get_contract_source_metadata(
     network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> Result<
     near_verify_rs::types::contract_source_metadata::ContractSourceMetadata,
     FetchContractSourceMetadataError,
@@ -543,8 +520,6 @@ pub async fn get_contract_source_metadata(
             account_id
     );
 
-    let nk_block_ref = crate::common::to_nk_block_reference(block_reference);
-
     let mut retries_left = (0..5).rev();
     loop {
         let result = network_config
@@ -554,7 +529,7 @@ pub async fn get_contract_source_metadata(
                 account_id,
                 "contract_source_metadata",
                 &[],
-                nk_block_ref.clone(),
+                block_reference.clone(),
             )
             .await;
 
@@ -587,7 +562,6 @@ pub async fn get_contract_source_metadata(
                 return Err(FetchContractSourceMetadataError::RpcError(err.to_string()));
             }
             Ok(view_function_result) => {
-                let call_result = crate::common::to_call_result(&view_function_result);
                 tracing::info!(
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
@@ -596,8 +570,8 @@ pub async fn get_contract_source_metadata(
                         "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
                         view_function_result.block_hash,
                         view_function_result.block_height,
-                        call_result.logs,
-                        call_result.result
+                        view_function_result.logs,
+                        view_function_result.result
                     ))
                 );
                 tracing::info!(
@@ -605,11 +579,11 @@ pub async fn get_contract_source_metadata(
                     parent: &tracing::Span::none(),
                     "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
                     crate::common::indent_payload(&format!("{}\n ",
-                        &String::from_utf8(call_result.result.clone())
+                        &String::from_utf8(view_function_result.result.clone())
                             .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
                     ))
                 );
-                return call_result
+                return view_function_result
                     .parse_result_from_json::<near_verify_rs::types::contract_source_metadata::ContractSourceMetadata>()
                     .wrap_err("Failed to parse contract source metadata")
                     .map_err(

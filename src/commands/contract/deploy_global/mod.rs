@@ -122,7 +122,7 @@ pub struct DeployGlobalResultContext {
     pub global_context: crate::GlobalContext,
     pub code: Vec<u8>,
     pub mode: near_kit::GlobalContractDeployMode,
-    pub account_id: near_primitives::types::AccountId,
+    pub account_id: near_kit::AccountId,
 }
 
 impl DeployGlobalResultContext {

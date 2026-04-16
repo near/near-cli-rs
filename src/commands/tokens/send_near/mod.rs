@@ -15,8 +15,8 @@ pub struct SendNearCommand {
 #[derive(Debug, Clone)]
 pub struct SendNearCommandContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
+    receiver_account_id: near_kit::AccountId,
     amount_in_near: crate::types::near_token::NearToken,
 }
 

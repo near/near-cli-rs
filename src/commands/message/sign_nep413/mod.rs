@@ -77,5 +77,5 @@ impl SignNep413Context {
 pub struct FinalSignNep413Context {
     pub global_context: crate::GlobalContext,
     pub payload: NEP413Payload,
-    pub signer_id: near_primitives::types::AccountId,
+    pub signer_id: near_kit::AccountId,
 }

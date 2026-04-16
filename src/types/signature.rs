@@ -19,10 +19,10 @@ impl std::str::FromStr for Signature {
     }
 }
 
-impl From<Signature> for near_crypto::Signature {
+impl From<Signature> for near_kit::Signature {
     fn from(item: Signature) -> Self {
         // Both use identical "keytype:base58" format
-        near_crypto::Signature::from_str(&item.0.to_string())
+        near_kit::Signature::from_str(&item.0.to_string())
             .expect("near-kit and near-crypto use compatible signature formats")
     }
 }

@@ -20,13 +20,28 @@ pub enum OutputFormat {
     AsText(self::as_text::AsText),
 }
 
+/// Local ViewStateResult type to deserialize the RPC response.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ViewStateResult {
+    pub values: Vec<StateItem>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub proof: Vec<String>,
+}
+
+/// A key-value pair in contract state.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct StateItem {
+    pub key: String,
+    pub value: String,
+}
+
 #[tracing::instrument(name = "Obtaining the state of the contract ...", skip_all)]
 pub fn get_contract_state(
-    contract_account_id: &near_primitives::types::AccountId,
-    prefix: near_primitives::types::StoreKey,
+    contract_account_id: &near_kit::AccountId,
+    prefix: Vec<u8>,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_primitives::views::ViewStateResult> {
+    block_reference: near_kit::BlockReference,
+) -> color_eyre::eyre::Result<ViewStateResult> {
     tracing::info!(target: "near_teach_me", "Obtaining the state of the contract ...");
     let json_value = crate::common::blocking_view_state(
         network_config,

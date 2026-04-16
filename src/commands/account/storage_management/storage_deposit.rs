@@ -19,7 +19,7 @@ pub struct DepositArgs {
 pub struct DepositArgsContext {
     global_context: crate::GlobalContext,
     get_contract_account_id: super::GetContractAccountId,
-    receiver_account_id: near_primitives::types::AccountId,
+    receiver_account_id: near_kit::AccountId,
     deposit: crate::types::near_token::NearToken,
 }
 
@@ -112,7 +112,7 @@ impl SignerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let signer_account_id: near_primitives::types::AccountId =
+                let signer_account_id: near_kit::AccountId =
                     scope.signer_account_id.clone().into();
                 let receiver_account_id = previous_context.receiver_account_id.clone();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
@@ -137,7 +137,7 @@ impl SignerAccountIdContext {
             });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
-            let signer_account_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
+            let signer_account_id: near_kit::AccountId = scope.signer_account_id.clone().into();
             let receiver_account_id = previous_context.receiver_account_id.clone();
             let verbosity = previous_context.global_context.verbosity;
 

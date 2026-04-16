@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use std::io::Write;
 
 use color_eyre::eyre::Context;
@@ -7,12 +8,12 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone)]
 pub enum ContractType {
-    Regular(near_primitives::types::AccountId),
+    Regular(near_kit::AccountId),
     GlobalContractByAccountId {
-        account_id: near_primitives::types::AccountId,
-        code_hash: Option<near_primitives::hash::CryptoHash>,
+        account_id: near_kit::AccountId,
+        code_hash: Option<near_kit::CryptoHash>,
     },
-    GlobalContractByCodeHash(near_primitives::hash::CryptoHash),
+    GlobalContractByCodeHash(near_kit::CryptoHash),
 }
 
 impl std::fmt::Display for ContractType {
@@ -55,7 +56,7 @@ pub enum ContractKind {
 pub struct ArgsForDownloadContract {
     pub config: crate::config::Config,
     pub contract_type: ContractType,
-    pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
+    pub interacting_with_account_ids: Vec<near_kit::AccountId>,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -160,7 +161,7 @@ impl DownloadRegularContractContext {
 
 impl From<DownloadRegularContractContext> for ArgsForDownloadContract {
     fn from(context: DownloadRegularContractContext) -> Self {
-        let account_id: near_primitives::types::AccountId = context.account_id.clone().into();
+        let account_id: near_kit::AccountId = context.account_id.clone().into();
 
         Self {
             config: context.global_context.config,
@@ -242,13 +243,13 @@ impl DownloadGlobalContractByAccountIdContext {
 
 impl From<DownloadGlobalContractByAccountIdContext> for ArgsForDownloadContract {
     fn from(context: DownloadGlobalContractByAccountIdContext) -> Self {
-        let account_id: near_primitives::types::AccountId = context.account_id.clone().into();
+        let account_id: near_kit::AccountId = context.account_id.clone().into();
 
         Self {
             config: context.global_context.config,
             contract_type: ContractType::GlobalContractByAccountId {
                 account_id: account_id.clone(),
-                code_hash: context.code_hash.map(|code_hash| code_hash.into()),
+                code_hash: context.code_hash.map(|ch| ch.0),
             },
             interacting_with_account_ids: vec![account_id],
         }
@@ -285,7 +286,7 @@ impl DownloadGlobalContractByCodeHashContext {
 
 impl From<DownloadGlobalContractByCodeHashContext> for ArgsForDownloadContract {
     fn from(context: DownloadGlobalContractByCodeHashContext) -> Self {
-        let code_hash: near_primitives::hash::CryptoHash = context.code_hash.into();
+        let code_hash: near_kit::CryptoHash = context.code_hash.0;
 
         Self {
             config: context.global_context.config,
@@ -307,7 +308,7 @@ fn download_contract_code(
     contract_type: &ContractType,
     file_path: &std::path::PathBuf,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> crate::CliResult {
     let code = get_code(contract_type, network_config, block_reference)?;
     std::fs::File::create(file_path)
@@ -326,7 +327,7 @@ fn download_contract_code(
 pub fn get_code(
     contract_type: &ContractType,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     tracing::info!(target: "near_teach_me", "Trying to download contract code ...");
     // Build the base query params depending on the contract type.
@@ -395,12 +396,12 @@ pub fn get_code(
             .get("code_base64")
             .and_then(|v| v.as_str())
             .unwrap_or_default();
-        let Ok(code_bytes) = near_primitives::serialize::from_base64(code_base64) else {
+        let Ok(code_bytes) = base64::engine::general_purpose::STANDARD.decode(code_base64) else {
             continue;
         };
 
         if let Some(hash_to_match) = hash_to_match {
-            let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code_bytes);
+            let code_hash = near_kit::CryptoHash::hash(&code_bytes);
             if code_hash != hash_to_match {
                 tracing::warn!(
                     parent: &tracing::Span::none(),

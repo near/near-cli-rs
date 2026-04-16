@@ -43,7 +43,7 @@ impl PublicKeyFromLegacyKeychainContext {
                             let nk_list = blocking_view_access_key_list(
                                 network_config,
                                 &account_id.clone().into(),
-                                near_primitives::types::Finality::Final.into(),
+                                near_kit::Finality::Final.into(),
                             )
                             .wrap_err_with(|| {
                                 format!("Failed to fetch access KeyList for {account_id}")

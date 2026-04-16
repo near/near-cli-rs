@@ -14,9 +14,9 @@ pub struct AddAccessWithSeedPhraseAction {
 #[derive(Debug, Clone)]
 pub struct AddAccessWithSeedPhraseActionContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     permission: near_kit::AccessKeyPermission,
-    public_key: near_crypto::PublicKey,
+    public_key: near_kit::PublicKey,
 }
 
 impl AddAccessWithSeedPhraseActionContext {

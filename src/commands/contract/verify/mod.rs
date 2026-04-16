@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use color_eyre::{
     eyre::{Context, ContextCompat},
     owo_colors::OwoColorize,
@@ -109,7 +110,7 @@ impl ContractAccountIdContext {
         scope: &<ContractAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
                 let contract_code_from_contract_account_id = get_contract_code_from_contract_account_id(&account_id, network_config, block_reference)?;
@@ -175,9 +176,9 @@ fn verify_contract(
     skip_all
 )]
 fn get_contract_properties_from_repository(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
@@ -282,9 +283,9 @@ fn checkout_remote_repo(
 
 #[tracing::instrument(name = "Getting the contract code from", skip_all)]
 fn get_contract_code_from_contract_account_id(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
     tracing::info!(target: "near_teach_me", "Getting the contract code from {account_id} ...");
@@ -310,6 +311,6 @@ fn get_contract_code_from_contract_account_id(
         .get("code_base64")
         .and_then(|v| v.as_str())
         .ok_or_else(|| color_eyre::Report::msg("Error: missing code_base64 in view_code response"))?;
-    near_primitives::serialize::from_base64(code_base64)
+    base64::engine::general_purpose::STANDARD.decode(code_base64)
         .map_err(|e| color_eyre::Report::msg(format!("Error decoding code_base64: {e}")))
 }

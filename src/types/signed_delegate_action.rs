@@ -1,3 +1,4 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use borsh::BorshDeserialize;
 
 #[derive(Debug, Clone)]
@@ -16,7 +17,7 @@ impl serde::Serialize for SignedDelegateActionAsBase64 {
             ))
         })?;
         let signed_delegate_action_as_base64 =
-            near_primitives::serialize::to_base64(&signed_delegate_action_borsh);
+            STANDARD.encode(&signed_delegate_action_borsh);
         serializer.serialize_str(&signed_delegate_action_as_base64)
     }
 }
@@ -28,7 +29,7 @@ impl<'de> serde::Deserialize<'de> for SignedDelegateActionAsBase64 {
     {
         let signed_delegate_action_as_base64 =
             <String as serde::Deserialize>::deserialize(deserializer)?;
-        let signed_delegate_action_borsh = near_primitives::serialize::from_base64(
+        let signed_delegate_action_borsh = STANDARD.decode(
             &signed_delegate_action_as_base64,
         )
         .map_err(|err| {
@@ -53,7 +54,7 @@ impl<'de> serde::Deserialize<'de> for SignedDelegateActionAsBase64 {
 impl std::str::FromStr for SignedDelegateActionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bytes = near_primitives::serialize::from_base64(s)
+        let bytes = STANDARD.decode(s)
             .map_err(|err| format!("parsing of signed delegate action failed due to base64 sequence being invalid: {err}"))?;
         let inner = near_kit::SignedDelegateAction::deserialize(&mut &bytes[..])
             .map_err(|err| format!("delegate action could not be deserialized from borsh: {err}"))?;
@@ -63,7 +64,7 @@ impl std::str::FromStr for SignedDelegateActionAsBase64 {
 
 impl std::fmt::Display for SignedDelegateActionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let base64_signed_delegate_action = near_primitives::serialize::to_base64(
+        let base64_signed_delegate_action = STANDARD.encode(
             &borsh::to_vec(&self.inner)
                 .expect("Signed Delegate Action serialization to borsh is not expected to fail"),
         );
