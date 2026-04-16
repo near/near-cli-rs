@@ -1,5 +1,4 @@
 use std::collections::{HashSet, VecDeque};
-use std::convert::{TryFrom, TryInto};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::str::FromStr;
@@ -7,13 +6,12 @@ use std::str::FromStr;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
-use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
-use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
+use near_primitives::types::BlockReference;
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
@@ -743,8 +741,6 @@ pub fn print_full_unsigned_transaction(
 pub fn print_unsigned_transaction(
     transaction: &crate::commands::PrepopulatedTransaction,
 ) -> String {
-    // TODO(phase 5): rewrite to use near_kit::Action directly
-    let np_actions = transaction.to_np_actions();
     let mut info_str = String::new();
     info_str.push_str(&format!("\n{:<13} {}", "signer_id:", transaction.signer_id));
     info_str.push_str(&format!(
@@ -752,35 +748,36 @@ pub fn print_unsigned_transaction(
         "receiver_id:", transaction.receiver_id
     ));
 
-    if np_actions
+    if transaction
+        .actions
         .iter()
-        .any(|action| matches!(action, near_primitives::transaction::Action::Delegate(_)))
+        .any(|action| matches!(action, near_kit::Action::Delegate(_)))
     {
         info_str.push_str("\nsigned delegate action:");
     } else {
         info_str.push_str("\nactions:");
     };
 
-    for action in &np_actions {
+    for action in &transaction.actions {
         match action {
-            near_primitives::transaction::Action::CreateAccount(_) => {
+            near_kit::Action::CreateAccount(_) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--", "create account:", &transaction.receiver_id
                 ));
             }
-            near_primitives::transaction::Action::DeployContract(code) => {
-                let code_hash = CryptoHash::hash_bytes(&code.code);
+            near_kit::Action::DeployContract(deploy) => {
+                let code_hash = near_kit::CryptoHash::hash(&deploy.code);
                 info_str.push_str(&format!(
                     "\n{:>5} {:<70}",
                     "--",
                     format!(
-                        "deploy code <{:?}> to a account <{}>",
+                        "deploy code <{}> to a account <{}>",
                         code_hash, transaction.receiver_id
                     )
                 ))
             }
-            near_primitives::transaction::Action::FunctionCall(function_call_action) => {
+            near_kit::Action::FunctionCall(function_call_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "function call:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -819,7 +816,7 @@ pub fn print_unsigned_transaction(
                     function_call_action.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::Transfer(transfer_action) => {
+            near_kit::Action::Transfer(transfer_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--",
@@ -827,7 +824,7 @@ pub fn print_unsigned_transaction(
                     transfer_action.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::Stake(stake_action) => {
+            near_kit::Action::Stake(stake_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "stake:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -840,7 +837,7 @@ pub fn print_unsigned_transaction(
                     stake_action.stake.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::AddKey(add_key_action) => {
+            near_kit::Action::AddKey(add_key_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -855,14 +852,14 @@ pub fn print_unsigned_transaction(
                     "", "permission:", &add_key_action.access_key.permission
                 ));
             }
-            near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
+            near_kit::Action::DeleteKey(delete_key_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "delete access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", &delete_key_action.public_key
                 ));
             }
-            near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
+            near_kit::Action::DeleteAccount(delete_account_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--", "delete account:", &transaction.receiver_id
@@ -872,48 +869,50 @@ pub fn print_unsigned_transaction(
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 ));
             }
-            near_primitives::transaction::Action::Delegate(signed_delegate_action) => {
+            near_kit::Action::Delegate(signed_delegate_action) => {
                 let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                     signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
                     receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
                     actions: signed_delegate_action
                         .delegate_action
-                        .get_actions()
-                        .into_iter()
-                        .map(crate::commands::np_action_to_nk)
+                        .actions
+                        .iter()
+                        .map(|nda| {
+                            // NonDelegateAction wraps Action with identical borsh encoding
+                            let bytes = borsh::to_vec(nda).expect("NonDelegateAction borsh serialization should not fail");
+                            borsh::from_slice::<near_kit::Action>(&bytes).expect("Action borsh deserialization should not fail")
+                        })
                         .collect(),
                 };
                 info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
             }
-            near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
-                let code_hash = CryptoHash::hash_bytes(&deploy.code);
+            near_kit::Action::DeployGlobalContract(deploy) => {
+                let code_hash = near_kit::CryptoHash::hash(&deploy.code);
                 let identifier = match deploy.deploy_mode {
-                    GlobalContractDeployMode::CodeHash => {
-                        format!("deploy code <{code_hash:?}> as a global hash")
+                    near_kit::GlobalContractDeployMode::CodeHash => {
+                        format!("deploy code <{code_hash}> as a global hash")
                     }
-                    GlobalContractDeployMode::AccountId => {
+                    near_kit::GlobalContractDeployMode::AccountId => {
                         format!(
-                            "deploy code <{:?}> to a global account <{}>",
+                            "deploy code <{}> to a global account <{}>",
                             code_hash, transaction.receiver_id
                         )
                     }
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
-            near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
-                let identifier = match contract_identifier.contract_identifier {
-                    GlobalContractIdentifier::CodeHash(hash) => {
+            near_kit::Action::UseGlobalContract(use_global) => {
+                let identifier = match &use_global.contract_identifier {
+                    near_kit::GlobalContractIdentifier::CodeHash(hash) => {
                         format!("use global <{hash}> code to deploy from")
                     }
-                    GlobalContractIdentifier::AccountId(ref account_id) => {
+                    near_kit::GlobalContractIdentifier::AccountId(account_id) => {
                         format!("use global <{account_id}> code to deploy from")
                     }
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
-            near_primitives::transaction::Action::DeterministicStateInit(
-                deterministic_init_action,
-            ) => {
+            near_kit::Action::DeterministicStateInit(deterministic_init_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20}",
                     "--", "initizalize deterministic account id:"
@@ -923,25 +922,24 @@ pub fn print_unsigned_transaction(
                     "", "deposit:", deterministic_init_action.deposit
                 ));
                 let state_init = match &deterministic_init_action.state_init {
-                    near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
+                    near_kit::DeterministicAccountStateInit::V1(v1) => {
                         let mut ret = "V1".to_string();
-                        ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", deterministic_account_state_init_v1.data));
-                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match deterministic_account_state_init_v1.code {
-                            GlobalContractIdentifier::CodeHash(hash) => {
+                        ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", v1.data));
+                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match &v1.code {
+                            near_kit::GlobalContractIdentifier::CodeHash(hash) => {
                                 format!("use global <{hash}> code to deploy from")
                             }
-                            GlobalContractIdentifier::AccountId(ref account_id) => {
+                            near_kit::GlobalContractIdentifier::AccountId(account_id) => {
                                 format!("use global <{account_id}> code to deploy from")
                             }
                         }));
-
                         ret
                     },
                 };
 
                 info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
             }
-            near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
+            near_kit::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -954,7 +952,7 @@ pub fn print_unsigned_transaction(
                     transfer_to_gas_key.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::WithdrawFromGasKey(withdraw_from_gas_key) => {
+            near_kit::Action::WithdrawFromGasKey(withdraw_from_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "withdraw from gas key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -1846,14 +1844,12 @@ async fn get_staking_pool_info(
 }
 
 pub fn display_account_info(
-    viewed_at_block_hash: &CryptoHash,
-    viewed_at_block_height: &near_primitives::types::BlockHeight,
     account_id: &near_primitives::types::AccountId,
     delegated_stake: color_eyre::Result<
         std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
     >,
-    account_view: &near_primitives::views::AccountView,
-    access_key_list: Option<&near_primitives::views::AccessKeyList>,
+    account_view: &near_kit::AccountView,
+    access_key_list: Option<&near_kit::AccessKeyListView>,
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
     eprintln!();
@@ -1861,8 +1857,8 @@ pub fn display_account_info(
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
     profile_table(
-        viewed_at_block_hash,
-        viewed_at_block_height,
+        &account_view.block_hash,
+        &account_view.block_height,
         account_id,
         optional_account_profile,
         &mut table,
@@ -1910,22 +1906,22 @@ pub fn display_account_info(
         ),
         (_, None, Some(global_contract_hash)) => (
             "Global Contract (by Hash: SHA-256 checksum hex)",
-            hex::encode(global_contract_hash.as_ref()),
+            hex::encode(global_contract_hash.as_bytes()),
         ),
-        (hash, None, None) if *hash == CryptoHash::default() => {
+        (hash, None, None) if hash.is_zero() => {
             ("Contract", "No contract code".to_string())
         }
         (code_hash, None, None) => (
             "Local Contract (SHA-256 checksum hex)",
-            hex::encode(code_hash.as_ref()),
+            hex::encode(code_hash.as_bytes()),
         ),
         (code_hash, global_account_id, global_hash) => (
             "Contract",
             format!(
                 "Invalid account contract state. Please contact the developers. code_hash: <{}>, global_account_id: <{:?}>, global_hash: <{:?}>",
-                hex::encode(code_hash.as_ref()),
+                hex::encode(code_hash.as_bytes()),
                 global_account_id,
-                global_hash.as_ref()
+                global_hash.as_ref().map(|h| hex::encode(h.as_bytes()))
             )
             .red().to_string()
         ),
@@ -1946,7 +1942,7 @@ pub fn display_account_info(
                 .filter(|access_key| {
                     matches!(
                         access_key.access_key.permission,
-                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                        near_kit::AccessKeyPermissionView::FullAccess
                     )
                 })
                 .count();
@@ -1970,8 +1966,8 @@ pub fn display_account_info(
 }
 
 pub fn display_account_profile(
-    viewed_at_block_hash: &CryptoHash,
-    viewed_at_block_height: &near_primitives::types::BlockHeight,
+    viewed_at_block_hash: &near_kit::CryptoHash,
+    viewed_at_block_height: &u64,
     account_id: &near_primitives::types::AccountId,
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
 ) {
@@ -1988,8 +1984,8 @@ pub fn display_account_profile(
 }
 
 fn profile_table(
-    viewed_at_block_hash: &CryptoHash,
-    viewed_at_block_height: &near_primitives::types::BlockHeight,
+    viewed_at_block_hash: &near_kit::CryptoHash,
+    viewed_at_block_height: &u64,
     account_id: &near_primitives::types::AccountId,
     optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
     table: &mut Table,
@@ -2088,14 +2084,14 @@ fn profile_table(
     }
 }
 
-pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyInfoView]) {
+pub fn display_access_key_list(access_keys: &[near_kit::AccessKeyInfoView]) {
     let mut table = Table::new();
     table.set_titles(prettytable::row![Fg=>"#", "Public Key", "Nonce", "Permissions"]);
 
     for (index, access_key) in access_keys.iter().enumerate() {
         let permissions_message = match &access_key.access_key.permission {
-            AccessKeyPermissionView::FullAccess => "full access".to_owned(),
-            AccessKeyPermissionView::FunctionCall {
+            near_kit::AccessKeyPermissionView::FullAccess => "full access".to_owned(),
+            near_kit::AccessKeyPermissionView::FunctionCall {
                 allowance,
                 receiver_id,
                 method_names,
@@ -2114,7 +2110,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                     )
                 }
             }
-            AccessKeyPermissionView::GasKeyFunctionCall {
+            near_kit::AccessKeyPermissionView::GasKeyFunctionCall {
                 balance,
                 num_nonces,
                 allowance: _,
@@ -2131,7 +2127,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                     balance.exact_amount_display()
                 )
             }
-            AccessKeyPermissionView::GasKeyFullAccess {
+            near_kit::AccessKeyPermissionView::GasKeyFullAccess {
                 balance,
                 num_nonces,
             } => {
@@ -2501,32 +2497,6 @@ pub fn from_nk_access_key_permission(
     }
 }
 
-/// Convert near-kit `AccessKeyInfoView` to `near_primitives::views::AccessKeyInfoView`.
-pub fn from_nk_access_key_info(
-    nk: &near_kit::AccessKeyInfoView,
-) -> near_primitives::views::AccessKeyInfoView {
-    near_primitives::views::AccessKeyInfoView {
-        public_key: nk
-            .public_key
-            .to_string()
-            .parse()
-            .expect("near_kit::PublicKey should always produce a valid near_crypto::PublicKey string"),
-        access_key: near_primitives::views::AccessKeyView {
-            nonce: nk.access_key.nonce,
-            permission: from_nk_access_key_permission(&nk.access_key.permission),
-        },
-    }
-}
-
-/// Convert near-kit `AccessKeyListView` to `near_primitives::views::AccessKeyList`.
-pub fn from_nk_access_key_list(
-    nk: &near_kit::AccessKeyListView,
-) -> near_primitives::views::AccessKeyList {
-    near_primitives::views::AccessKeyList {
-        keys: nk.keys.iter().map(from_nk_access_key_info).collect(),
-    }
-}
-
 /// Convert near-kit `AccessKeyView` to `near_primitives::views::AccessKeyView`.
 pub fn from_nk_access_key_view(
     nk: &near_kit::AccessKeyView,
@@ -2534,25 +2504,6 @@ pub fn from_nk_access_key_view(
     near_primitives::views::AccessKeyView {
         nonce: nk.nonce,
         permission: from_nk_access_key_permission(&nk.permission),
-    }
-}
-
-/// Convert near-kit `AccountView` to `near_primitives::views::AccountView`.
-pub fn from_nk_account_view(
-    nk: &near_kit::AccountView,
-) -> near_primitives::views::AccountView {
-    near_primitives::views::AccountView {
-        amount: nk.amount,
-        locked: nk.locked,
-        code_hash: from_nk_crypto_hash(&nk.code_hash),
-        storage_usage: nk.storage_usage,
-        storage_paid_at: nk.storage_paid_at,
-        global_contract_hash: nk.global_contract_hash.as_ref().map(from_nk_crypto_hash),
-        global_contract_account_id: nk.global_contract_account_id.as_ref().map(|a| {
-            a.to_string()
-                .parse()
-                .expect("near_kit AccountId should always produce a valid near_primitives AccountId")
-        }),
     }
 }
 

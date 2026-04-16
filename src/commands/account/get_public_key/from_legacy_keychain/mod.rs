@@ -1,6 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
+use crate::common::blocking_view_access_key_list;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -48,13 +48,13 @@ impl PublicKeyFromLegacyKeychainContext {
                             .wrap_err_with(|| {
                                 format!("Failed to fetch access KeyList for {account_id}")
                             })?;
-                            let full_access_key_filenames = from_nk_access_key_list(&nk_list)
+                            let full_access_key_filenames = nk_list
                                 .keys
                                 .iter()
                                 .filter(|access_key_info| {
                                     matches!(
                                         access_key_info.access_key.permission,
-                                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                                        near_kit::AccessKeyPermissionView::FullAccess
                                     )
                                 })
                                 .map(|access_key_info| {

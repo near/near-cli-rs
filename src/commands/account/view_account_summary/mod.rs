@@ -77,8 +77,6 @@ pub fn get_account_inquiry(
             account_id, network_config.network_name
         )
     })?;
-    let account_view = crate::common::from_nk_account_view(&nk_account_view);
-
     let access_key_list = crate::common::blocking_view_access_key_list(
         network_config,
         account_id,
@@ -92,8 +90,7 @@ pub fn get_account_inquiry(
             err
         );
     })
-    .ok()
-    .map(|nk_list| crate::common::from_nk_access_key_list(&nk_list));
+    .ok();
 
     let historically_delegated_validators =
         network_config
@@ -190,11 +187,9 @@ pub fn get_account_inquiry(
         .flatten();
 
     crate::common::display_account_info(
-        &crate::common::from_nk_crypto_hash(&nk_account_view.block_hash),
-        &nk_account_view.block_height,
         account_id,
         delegated_stake,
-        &account_view,
+        &nk_account_view,
         access_key_list.as_ref(),
         optional_account_profile.as_ref(),
     );

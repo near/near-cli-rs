@@ -2,7 +2,7 @@ use color_eyre::owo_colors::OwoColorize;
 use inquire::ui::{Color, RenderConfig, Styled};
 use inquire::{CustomType, MultiSelect, formatter::MultiOptionFormatter};
 
-use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
+use crate::common::blocking_view_access_key_list;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DeleteKeysCommandContext)]
@@ -108,10 +108,9 @@ impl PublicKeyList {
                 near_primitives::types::Finality::Final.into(),
             ) {
                 Ok(nk_list) => {
-                    let access_key_list_for_network = from_nk_access_key_list(&nk_list);
-                    access_key_list.extend(access_key_list_for_network.keys.iter().map(
+                    access_key_list.extend(nk_list.keys.iter().map(
                         |access_key_info_view| AccessKeyInfo {
-                            public_key: access_key_info_view.public_key.clone(),
+                            public_key: access_key_info_view.public_key.to_string().parse().expect("valid public key"),
                             permission: access_key_info_view.access_key.permission.clone(),
                             network_name: network_config.network_name.clone(),
                         },
@@ -175,14 +174,14 @@ impl PublicKeyList {
 #[derive(Debug, Clone)]
 struct AccessKeyInfo {
     public_key: near_crypto::PublicKey,
-    permission: near_primitives::views::AccessKeyPermissionView,
+    permission: near_kit::AccessKeyPermissionView,
     network_name: String,
 }
 
 impl std::fmt::Display for AccessKeyInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.permission {
-            near_primitives::views::AccessKeyPermissionView::FullAccess => {
+            near_kit::AccessKeyPermissionView::FullAccess => {
                 write!(
                     f,
                     "{} {}\t{}",
@@ -191,7 +190,7 @@ impl std::fmt::Display for AccessKeyInfo {
                     "full access".yellow()
                 )
             }
-            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+            near_kit::AccessKeyPermissionView::FunctionCall {
                 allowance,
                 receiver_id,
                 method_names,
@@ -224,7 +223,7 @@ impl std::fmt::Display for AccessKeyInfo {
                     )
                 }
             }
-            near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall {
+            near_kit::AccessKeyPermissionView::GasKeyFunctionCall {
                 balance,
                 receiver_id,
                 method_names,
@@ -245,7 +244,7 @@ impl std::fmt::Display for AccessKeyInfo {
                     format!("balance: {}", balance.exact_amount_display()).cyan()
                 )
             }
-            near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess {
+            near_kit::AccessKeyPermissionView::GasKeyFullAccess {
                 balance,
                 num_nonces,
             } => {

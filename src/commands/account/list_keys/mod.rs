@@ -1,6 +1,6 @@
 use color_eyre::eyre::Context;
 
-use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
+use crate::common::blocking_view_access_key_list;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -37,9 +37,7 @@ impl ViewListKeysContext {
                         &account_id
                     )
                 })?;
-                let access_key_list = from_nk_access_key_list(&nk_list);
-
-                crate::common::display_access_key_list(&access_key_list.keys);
+                crate::common::display_access_key_list(&nk_list.keys);
                 Ok(())
             }
         });

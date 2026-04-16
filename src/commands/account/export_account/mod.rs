@@ -1,7 +1,7 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{blocking_view_access_key_list, from_nk_access_key_list};
+use crate::common::blocking_view_access_key_list;
 
 mod using_private_key;
 mod using_seed_phrase;
@@ -99,18 +99,16 @@ pub fn get_password_from_keychain(
             near_primitives::types::Finality::Final.into(),
         )
         .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?;
-        let access_key_list = from_nk_access_key_list(&nk_list);
-
-        access_key_list
+        nk_list
             .keys
-            .into_iter()
+            .iter()
             .filter(|key| {
                 matches!(
                     key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                    near_kit::AccessKeyPermissionView::FullAccess
                 )
             })
-            .map(|key| key.public_key)
+            .map(|key| &key.public_key)
             .find_map(|public_key| {
                 let keyring =
                     keyring::Entry::new(&service_name, &format!("{account_id}:{public_key}"))
@@ -189,18 +187,17 @@ pub fn get_account_properties_data_path(
         near_primitives::types::Finality::Final.into(),
     )
     .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?;
-    let access_key_list = from_nk_access_key_list(&nk_list);
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push(dir_name);
     path.push(account_id.to_string());
     let mut data_path = std::path::PathBuf::new();
-    for access_key in access_key_list.keys {
+    for access_key in &nk_list.keys {
         let account_public_key = access_key.public_key.to_string().replace(':', "_");
         match &access_key.access_key.permission {
-            near_primitives::views::AccessKeyPermissionView::FullAccess => {}
-            near_primitives::views::AccessKeyPermissionView::FunctionCall { .. }
-            | near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
-            | near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. } => {
+            near_kit::AccessKeyPermissionView::FullAccess => {}
+            near_kit::AccessKeyPermissionView::FunctionCall { .. }
+            | near_kit::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+            | near_kit::AccessKeyPermissionView::GasKeyFullAccess { .. } => {
                 continue;
             }
         }
