@@ -196,6 +196,130 @@ impl From<near_kit::SignedDelegateAction>
     }
 }
 
+/// Shared signing logic for all simple (secret-key-based) signers.
+///
+/// Given a secret key, the `TransactionContext` (which carries the prepopulated transaction,
+/// callbacks, and delegate-action flag), nonce/block_hash/block_height, and
+/// meta_transaction_valid_for, this function builds the unsigned transaction, fires the
+/// before-signing callback, and either signs as a delegate action or a regular transaction.
+///
+/// Returns a `SubmitContext` ready for the Submit subcommand.
+pub fn sign_transaction_with_secret_key(
+    nk_public_key: near_kit::PublicKey,
+    nk_secret_key: near_kit::SecretKey,
+    previous_context: crate::commands::TransactionContext,
+    nonce: u64,
+    block_hash: near_kit::CryptoHash,
+    block_height: u64,
+    meta_transaction_valid_for: Option<u64>,
+) -> color_eyre::eyre::Result<SubmitContext> {
+    let network_config = previous_context.network_config.clone();
+
+    let mut unsigned_transaction = near_kit::Transaction {
+        public_key: nk_public_key.clone(),
+        block_hash,
+        nonce,
+        signer_id: previous_context.prepopulated_transaction.signer_id,
+        receiver_id: previous_context.prepopulated_transaction.receiver_id,
+        actions: previous_context.prepopulated_transaction.actions,
+    };
+
+    (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
+
+    if previous_context.sign_as_delegate_action {
+        let max_block_height = block_height
+            + meta_transaction_valid_for.unwrap_or(META_TRANSACTION_VALID_FOR_DEFAULT);
+
+        let signed_delegate_action = get_signed_delegate_action(
+            unsigned_transaction,
+            &nk_public_key,
+            nk_secret_key,
+            max_block_height,
+        );
+
+        return Ok(SubmitContext {
+            network_config: previous_context.network_config,
+            global_context: previous_context.global_context,
+            signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
+        });
+    }
+
+    let mut signed_transaction = unsigned_transaction.sign(&nk_secret_key);
+
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "Your transaction was signed successfully.{}",
+        crate::common::indent_payload(&format!(
+            "\nPublic key: {}\nSignature:  {}\n ",
+            nk_public_key,
+            signed_transaction.signature
+        ))
+    );
+
+    (previous_context.on_after_signing_callback)(
+        &mut signed_transaction,
+        &previous_context.network_config,
+    )?;
+
+    Ok(SubmitContext {
+        network_config: previous_context.network_config,
+        global_context: previous_context.global_context,
+        signed_transaction_or_signed_delegate_action: signed_transaction.into(),
+        on_before_sending_transaction_callback: previous_context
+            .on_before_sending_transaction_callback,
+        on_after_sending_transaction_callback: previous_context
+            .on_after_sending_transaction_callback,
+    })
+}
+
+/// Shared helper to fetch nonce, block_hash, and block_height from the network,
+/// or use the provided offline values.
+pub fn resolve_nonce_and_block(
+    network_config: &crate::config::NetworkConfig,
+    signer_id: &near_kit::AccountId,
+    public_key: &near_kit::PublicKey,
+    offline: bool,
+    nonce: Option<u64>,
+    block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    block_height: Option<u64>,
+) -> color_eyre::eyre::Result<(u64, near_kit::CryptoHash, u64)> {
+    use color_eyre::eyre::{ContextCompat, WrapErr};
+    use crate::common::{RpcResultExt, block_on};
+
+    if offline {
+        Ok((
+            nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
+            block_hash
+                .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                .0,
+            block_height
+                .wrap_err("Block Height is required to sign a transaction in offline mode")?,
+        ))
+    } else {
+        let access_key_view = block_on(
+                network_config.client().rpc().view_access_key(
+                    signer_id,
+                    public_key,
+                    near_kit::BlockReference::optimistic(),
+                ),
+            )
+            .into_eyre()
+            .wrap_err_with(||
+                format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
+            )?;
+
+        Ok((
+            access_key_view.nonce + 1,
+            access_key_view.block_hash,
+            access_key_view.block_height,
+        ))
+    }
+}
+
 pub fn get_signed_delegate_action(
     unsigned_transaction: near_kit::Transaction,
     public_key: &near_kit::PublicKey,
