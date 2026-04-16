@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0](https://github.com/near/near-cli-rs/compare/v0.25.1...v0.26.0) - 2026-04-16
+
+### Added
+
+- state-init command ([#560](https://github.com/near/near-cli-rs/pull/560))
+
+### Other
+
+- Allow custom on_sending_delegate_action_callback handler for transactions and on_after_signing_callback for sign-message ([#583](https://github.com/near/near-cli-rs/pull/583))
+
 ## [0.25.1](https://github.com/near/near-cli-rs/compare/v0.25.0...v0.25.1) - 2026-04-15
 
 ### Other
