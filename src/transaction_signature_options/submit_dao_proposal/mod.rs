@@ -255,13 +255,14 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let new_prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.dao_account_id,
             receiver_id: item.receiver_id,
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                Box::new(near_primitives::transaction::FunctionCallAction {
+            // TODO(phase 6): remove conversion once signing is migrated to near_kit
+            actions: vec![near_kit::Action::FunctionCall(
+                near_kit::FunctionCallAction {
                     method_name: "add_proposal".to_string(),
                     args: item.proposal_args.clone(),
-                    gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
+                    gas: near_kit::Gas::from_gas(item.gas.as_gas()),
                     deposit: item.deposit.into(),
-                }),
+                },
             )],
         };
 

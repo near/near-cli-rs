@@ -197,13 +197,13 @@ fn get_prepopulated_transaction(
     })?
     .into_bytes();
 
-    prepopulated_transaction.actions = vec![near_primitives::transaction::Action::FunctionCall(
-        Box::new(near_primitives::transaction::FunctionCallAction {
+    prepopulated_transaction.actions = vec![near_kit::Action::FunctionCall(
+        near_kit::FunctionCallAction {
             method_name: "set".to_string(),
             args,
-            gas: near_primitives::gas::Gas::from_teragas(300),
+            gas: near_kit::Gas::from_tgas(300),
             deposit,
-        }),
+        },
     )];
 
     Ok(prepopulated_transaction)

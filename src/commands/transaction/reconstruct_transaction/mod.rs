@@ -47,7 +47,10 @@ impl TransactionInfoContext {
                             .into_iter()
                             .map(near_primitives::transaction::Action::try_from)
                             .collect::<Result<Vec<near_primitives::transaction::Action>, _>>()
-                            .expect("Internal error: can not convert the action_view to action."),
+                            .expect("Internal error: can not convert the action_view to action.")
+                            .into_iter()
+                            .map(crate::commands::np_action_to_nk)
+                            .collect(),
                     };
 
                     tracing::info!(
@@ -60,14 +63,27 @@ impl TransactionInfoContext {
                     );
 
                     if prepopulated_transaction.actions.len() == 1
-                        && let near_primitives::transaction::Action::Delegate(
+                        && let near_kit::Action::Delegate(
                             signed_delegate_action,
                         ) = &prepopulated_transaction.actions[0]
                     {
                         prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                             signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
                             receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
-                            actions: signed_delegate_action.delegate_action.get_actions(),
+                            // TODO(phase 4c): replace with direct near_kit conversion
+                            actions: {
+                                let np_signed = crate::commands::nk_action_to_np(
+                                    &near_kit::Action::Delegate(signed_delegate_action.clone()),
+                                );
+                                if let near_primitives::transaction::Action::Delegate(np_delegate) = np_signed {
+                                    np_delegate.delegate_action.get_actions()
+                                        .into_iter()
+                                        .map(crate::commands::np_action_to_nk)
+                                        .collect()
+                                } else {
+                                    unreachable!()
+                                }
+                            },
                         };
                     }
 
@@ -88,10 +104,12 @@ impl TransactionInfoContext {
                     let mut cmd_cli_args = cmd.to_cli_args();
 
                     for transaction_action in prepopulated_transaction.actions {
+                        // TODO(phase 4c): remove conversion once action_transformation uses near_kit
+                        let np_action = crate::commands::nk_action_to_np(&transaction_action);
                         let next_actions = add_action_1::CliNextAction::AddAction(
                             add_action_1::add_action::CliAddAction {
                                 action: action_transformation(
-                                    transaction_action,
+                                    np_action,
                                     prepopulated_transaction.receiver_id.clone(),
                                     network_config,
                                     near_primitives::types::BlockReference::BlockId(

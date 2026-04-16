@@ -17,7 +17,7 @@ pub struct AddKeyWithMpcDerivedKey {
 pub struct AddKeyWithMpcDerivedKeyContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    key_permission: near_primitives::account::AccessKeyPermission,
+    key_permission: near_kit::AccessKeyPermission,
     admin_account_id: near_primitives::types::AccountId,
 }
 
@@ -70,7 +70,7 @@ pub enum MpcKeyType {
 pub struct MpcKeyTypeContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    key_permission: near_primitives::account::AccessKeyPermission,
+    key_permission: near_kit::AccessKeyPermission,
     admin_account_id: near_primitives::types::AccountId,
     key_type: near_crypto::KeyType,
 }
@@ -159,7 +159,7 @@ pub struct MpcDeriveKeyToAddContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     admin_account_id: near_primitives::types::AccountId,
-    key_permission: near_primitives::account::AccessKeyPermission,
+    key_permission: near_kit::AccessKeyPermission,
     key_type: near_crypto::KeyType,
     derivation_path: String,
 }
@@ -211,15 +211,15 @@ impl From<MpcDeriveKeyToAddContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: signer_account_id.clone(),
                     receiver_id: signer_account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
-                        near_primitives::transaction::AddKeyAction {
-                            public_key: derived_public_key,
-                            access_key: near_primitives::account::AccessKey {
+                    actions: vec![near_kit::Action::AddKey(
+                        near_kit::AddKeyAction {
+                            public_key: crate::types::public_key::PublicKey::from(derived_public_key).0,
+                            access_key: near_kit::AccessKey {
                                 nonce: 0,
                                 permission: item.key_permission.clone(),
                             },
                         },
-                    ))],
+                    )],
                 })
             }
         });

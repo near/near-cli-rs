@@ -378,11 +378,12 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
+        // TODO(phase 6): remove conversion once signing is migrated to near_kit
+        let np_actions = previous_context.tx_context.prepopulated_transaction.to_np_actions();
         let controllable_account = previous_context
             .tx_context
             .prepopulated_transaction
             .signer_id;
-
         let mut payload = TransactionV0 {
             signer_id: controllable_account.clone(),
             receiver_id: previous_context
@@ -392,7 +393,7 @@ impl DepositContext {
             public_key: previous_context.derived_public_key.clone(),
             nonce: previous_context.nonce,
             block_hash: previous_context.block_hash,
-            actions: previous_context.tx_context.prepopulated_transaction.actions,
+            actions: np_actions,
         };
 
         (previous_context.tx_context.on_before_signing_callback)(
@@ -474,13 +475,14 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let mpc_sign_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.admin_account_id.clone(),
             receiver_id: item.mpc_contract_address.clone(),
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                Box::new(near_primitives::transaction::FunctionCallAction {
+            // TODO(phase 6): remove conversion once signing is migrated to near_kit
+            actions: vec![near_kit::Action::FunctionCall(
+                near_kit::FunctionCallAction {
                     method_name: "sign".to_string(),
                     args: item.mpc_sign_request_serialized,
-                    gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
+                    gas: near_kit::Gas::from_gas(item.gas.as_gas()),
                     deposit: item.deposit.into(),
-                }),
+                },
             )],
         };
 

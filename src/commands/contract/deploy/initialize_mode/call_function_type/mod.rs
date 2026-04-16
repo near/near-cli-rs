@@ -23,7 +23,7 @@ pub struct CallFunctionActionContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
-    deploy_action: near_primitives::transaction::Action,
+    deploy_action: near_kit::Action,
     function_name: String,
     function_args: Vec<u8>,
 }
@@ -76,7 +76,7 @@ pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
     receiver_account_id: near_primitives::types::AccountId,
     signer_account_id: near_primitives::types::AccountId,
-    deploy_action: near_primitives::transaction::Action,
+    deploy_action: near_kit::Action,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -156,14 +156,14 @@ impl DepositContext {
                         receiver_id: receiver_account_id.clone(),
                         actions: vec![
                             previous_context.deploy_action.clone(),
-                            near_primitives::transaction::Action::FunctionCall(Box::new(
-                                near_primitives::transaction::FunctionCallAction {
+                            near_kit::Action::FunctionCall(
+                                near_kit::FunctionCallAction {
                                     method_name: previous_context.function_name.clone(),
                                     args: previous_context.function_args.clone(),
-                                    gas: near_primitives::gas::Gas::from_gas(previous_context.gas.as_gas()),
+                                    gas: near_kit::Gas::from_gas(previous_context.gas.as_gas()),
                                     deposit: deposit.into(),
                                 },
-                            )),
+                            ),
                         ],
                     })
                 }

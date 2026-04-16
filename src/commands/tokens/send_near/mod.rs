@@ -45,8 +45,8 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::Transfer(
-                            near_primitives::transaction::TransferAction {
+                        actions: vec![near_kit::Action::Transfer(
+                            near_kit::TransferAction {
                                 deposit: item.amount_in_near.into(),
                             },
                         )],

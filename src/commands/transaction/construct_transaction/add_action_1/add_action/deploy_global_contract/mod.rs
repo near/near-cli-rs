@@ -59,15 +59,15 @@ impl DeployGlobalModeContext {
         previous_context: DeployGlobalContractActionContext,
         scope: &<DeployGlobalMode as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::DeployGlobalContract(
-            near_primitives::action::DeployGlobalContractAction {
+        let action = near_kit::Action::DeployGlobalContract(
+            near_kit::DeployGlobalContractAction {
                 code: previous_context.code.into(),
                 deploy_mode: match scope {
                     DeployGlobalModeDiscriminants::AsGlobalHash => {
-                        near_primitives::action::GlobalContractDeployMode::CodeHash
+                        near_kit::GlobalContractDeployMode::CodeHash
                     }
                     DeployGlobalModeDiscriminants::AsGlobalAccountId => {
-                        near_primitives::action::GlobalContractDeployMode::AccountId
+                        near_kit::GlobalContractDeployMode::AccountId
                     }
                 },
             },

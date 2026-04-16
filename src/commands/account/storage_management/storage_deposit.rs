@@ -122,15 +122,15 @@ impl SignerAccountIdContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: get_contract_account_id(network_config)?,
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![near_kit::Action::FunctionCall(
+                            near_kit::FunctionCallAction {
                                 method_name: "storage_deposit".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "account_id": &receiver_account_id
                                 }))?,
-                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                gas: near_kit::Gas::from_tgas(50),
                                 deposit: deposit.into(),
-                            }),
+                            },
                         )],
                     })
                 }

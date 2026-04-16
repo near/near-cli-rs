@@ -61,23 +61,23 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     }
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (vec![
-                                near_primitives::transaction::Action::CreateAccount(
-                                    near_primitives::transaction::CreateAccountAction {},
+                                near_kit::Action::CreateAccount(
+                                    near_kit::CreateAccountAction,
                                 ),
-                                near_primitives::transaction::Action::Transfer(
-                                    near_primitives::transaction::TransferAction {
+                                near_kit::Action::Transfer(
+                                    near_kit::TransferAction {
                                         deposit: item.account_properties.initial_balance.into(),
                                     },
                                 ),
-                                near_primitives::transaction::Action::AddKey(
-                                    Box::new(near_primitives::transaction::AddKeyAction {
-                                        public_key: item.account_properties.public_key.clone(),
-                                        access_key: near_primitives::account::AccessKey {
+                                near_kit::Action::AddKey(
+                                    near_kit::AddKeyAction {
+                                        public_key: crate::types::public_key::PublicKey::from(item.account_properties.public_key.clone()).0,
+                                        access_key: near_kit::AccessKey {
                                             nonce: 0,
                                             permission:
-                                                near_primitives::account::AccessKeyPermission::FullAccess,
+                                                near_kit::AccessKeyPermission::FullAccess,
                                         },
-                                    }),
+                                    },
                                 ),
                             ],
                         new_account_id.clone())
@@ -92,17 +92,15 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                 || new_account_id.is_top_level()
                             {
                                 (
-                                    vec![near_primitives::transaction::Action::FunctionCall(
-                                        Box::new(
-                                            near_primitives::transaction::FunctionCallAction {
-                                                method_name: "create_account".to_string(),
-                                                args,
-                                                gas: near_primitives::gas::Gas::from_teragas(30),
-                                                deposit: item
-                                                    .account_properties
-                                                    .initial_balance.into(),
-                                            },
-                                        ),
+                                    vec![near_kit::Action::FunctionCall(
+                                        near_kit::FunctionCallAction {
+                                            method_name: "create_account".to_string(),
+                                            args,
+                                            gas: near_kit::Gas::from_tgas(30),
+                                            deposit: item
+                                                .account_properties
+                                                .initial_balance.into(),
+                                        },
                                     )],
                                     linkdrop_account_id.clone(),
                                 )

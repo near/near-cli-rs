@@ -24,7 +24,7 @@ pub struct FunctionCallActionContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    actions: Vec<near_primitives::transaction::Action>,
+    actions: Vec<near_kit::Action>,
     function_name: String,
     function_args: Vec<u8>,
     sign_as_delegate_action: bool,
@@ -89,7 +89,7 @@ pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     receiver_account_id: near_primitives::types::AccountId,
-    actions: Vec<near_primitives::transaction::Action>,
+    actions: Vec<near_kit::Action>,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -157,14 +157,14 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::FunctionCall(Box::new(
-            near_primitives::transaction::FunctionCallAction {
+        let action = near_kit::Action::FunctionCall(
+            near_kit::FunctionCallAction {
                 method_name: previous_context.function_name,
                 args: previous_context.function_args,
-                gas: near_primitives::gas::Gas::from_gas(previous_context.gas.as_gas()),
+                gas: near_kit::Gas::from_gas(previous_context.gas.as_gas()),
                 deposit: scope.deposit.into(),
             },
-        ));
+        );
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {

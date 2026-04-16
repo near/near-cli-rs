@@ -17,7 +17,7 @@ pub struct GenerateKeypair {
 pub struct GenerateKeypairContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    permission: near_kit::AccessKeyPermission,
     key_pair_properties: crate::common::KeyPairProperties,
     public_key: near_crypto::PublicKey,
 }

@@ -175,13 +175,15 @@ impl SignKeychainContext {
             )
         };
 
+        // TODO(phase 6): remove conversion once signing is migrated to near_kit
+        let np_actions = previous_context.prepopulated_transaction.to_np_actions();
         let mut unsigned_transaction = TransactionV0 {
             public_key: account_json.public_key.clone(),
             block_hash,
             nonce,
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
+            actions: np_actions,
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;

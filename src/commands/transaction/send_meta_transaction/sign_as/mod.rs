@@ -28,7 +28,8 @@ impl RelayerAccountIdContext {
                 let signed_delegate_action = previous_context.signed_delegate_action.clone();
 
                 move |_network_config| {
-                    let actions = vec![signed_delegate_action.clone().into()];
+                    let np_action: near_primitives::transaction::Action = signed_delegate_action.clone().into();
+                    let actions = vec![crate::commands::np_action_to_nk(np_action)];
 
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),

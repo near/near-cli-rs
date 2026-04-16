@@ -51,9 +51,11 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
                             .clone()
                             .into_iter()
                             .map(|public_key| {
-                                near_primitives::transaction::Action::DeleteKey(Box::new(
-                                    near_primitives::transaction::DeleteKeyAction { public_key },
-                                ))
+                                near_kit::Action::DeleteKey(
+                                    near_kit::DeleteKeyAction {
+                                        public_key: crate::types::public_key::PublicKey::from(public_key).0,
+                                    },
+                                )
                             })
                             .collect(),
                     })

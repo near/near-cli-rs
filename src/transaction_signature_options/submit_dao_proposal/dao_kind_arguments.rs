@@ -1,5 +1,5 @@
 use color_eyre::eyre::{Context, eyre};
-use near_primitives::action::Action;
+use near_kit::Action;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
 

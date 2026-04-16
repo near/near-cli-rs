@@ -15,7 +15,7 @@ pub struct AddAccessWithSeedPhraseAction {
 pub struct AddAccessWithSeedPhraseActionContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    permission: near_kit::AccessKeyPermission,
     public_key: near_crypto::PublicKey,
 }
 
@@ -48,15 +48,15 @@ impl From<AddAccessWithSeedPhraseActionContext> for crate::commands::ActionConte
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
-                            near_primitives::transaction::AddKeyAction {
-                                public_key: item.public_key.clone(),
-                                access_key: near_primitives::account::AccessKey {
+                        actions: vec![near_kit::Action::AddKey(
+                            near_kit::AddKeyAction {
+                                public_key: crate::types::public_key::PublicKey::from(item.public_key.clone()).0,
+                                access_key: near_kit::AccessKey {
                                     nonce: 0,
                                     permission: item.permission.clone(),
                                 },
                             },
-                        ))],
+                        )],
                     })
                 }
             });

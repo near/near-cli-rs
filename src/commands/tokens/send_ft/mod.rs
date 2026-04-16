@@ -199,14 +199,12 @@ pub fn get_prepopulated_transaction(
         },
     })?;
 
-    let action_ft_transfer = near_primitives::transaction::Action::FunctionCall(Box::new(
-        near_primitives::transaction::FunctionCallAction {
-            method_name: "ft_transfer".to_string(),
-            args: args_ft_transfer,
-            gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
-            deposit: deposit.into(),
-        },
-    ));
+    let action_ft_transfer = near_kit::Action::FunctionCall(near_kit::FunctionCallAction {
+        method_name: "ft_transfer".to_string(),
+        args: args_ft_transfer,
+        gas: near_kit::Gas::from_gas(gas.as_gas()),
+        deposit: deposit.into(),
+    });
 
     let args = serde_json::to_vec(&json!({"account_id": receiver_account_id}))?;
 
@@ -225,14 +223,12 @@ pub fn get_prepopulated_transaction(
         })?);
 
     if call_result.parse_result_from_json::<Value>()?.is_null() {
-        let action_storage_deposit = near_primitives::transaction::Action::FunctionCall(Box::new(
-            near_primitives::transaction::FunctionCallAction {
-                method_name: "storage_deposit".to_string(),
-                args,
-                gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
-                deposit: near_token::NearToken::from_millinear(100),
-            },
-        ));
+        let action_storage_deposit = near_kit::Action::FunctionCall(near_kit::FunctionCallAction {
+            method_name: "storage_deposit".to_string(),
+            args,
+            gas: near_kit::Gas::from_gas(gas.as_gas()),
+            deposit: near_token::NearToken::from_millinear(100),
+        });
         return Ok(crate::commands::PrepopulatedTransaction {
             signer_id: signer_id.clone(),
             receiver_id: ft_contract_account_id.clone(),

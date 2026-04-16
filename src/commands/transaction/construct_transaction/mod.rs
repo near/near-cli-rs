@@ -23,7 +23,7 @@ pub struct ConstructTransactionContext {
     pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,
     pub receiver_account_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
+    pub actions: Vec<near_kit::Action>,
     pub sign_as_delegate_action: bool,
 }
 

@@ -6,7 +6,7 @@ use inquire::{CustomType, Select, Text};
 pub struct AccessTypeContext {
     pub global_context: crate::GlobalContext,
     pub signer_account_id: near_primitives::types::AccountId,
-    pub permission: near_primitives::account::AccessKeyPermission,
+    pub permission: near_kit::AccessKeyPermission,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -21,7 +21,7 @@ pub struct FullAccessType {
 pub struct FullAccessTypeContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    permission: near_kit::AccessKeyPermission,
 }
 
 impl FullAccessTypeContext {
@@ -32,7 +32,7 @@ impl FullAccessTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
-            permission: near_primitives::account::AccessKeyPermission::FullAccess,
+            permission: near_kit::AccessKeyPermission::FullAccess,
         })
     }
 }
@@ -93,10 +93,10 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
         Self {
             global_context: item.global_context,
             signer_account_id: item.signer_account_id,
-            permission: near_primitives::account::AccessKeyPermission::FunctionCall(
-                near_primitives::account::FunctionCallPermission {
+            permission: near_kit::AccessKeyPermission::FunctionCall(
+                near_kit::FunctionCallPermission {
                     allowance: item.allowance.map(Into::into),
-                    receiver_id: item.contract_account_id.to_string(),
+                    receiver_id: item.contract_account_id.into(),
                     method_names: item.function_names.into(),
                 },
             ),

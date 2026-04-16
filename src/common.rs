@@ -743,6 +743,8 @@ pub fn print_full_unsigned_transaction(
 pub fn print_unsigned_transaction(
     transaction: &crate::commands::PrepopulatedTransaction,
 ) -> String {
+    // TODO(phase 5): rewrite to use near_kit::Action directly
+    let np_actions = transaction.to_np_actions();
     let mut info_str = String::new();
     info_str.push_str(&format!("\n{:<13} {}", "signer_id:", transaction.signer_id));
     info_str.push_str(&format!(
@@ -750,8 +752,7 @@ pub fn print_unsigned_transaction(
         "receiver_id:", transaction.receiver_id
     ));
 
-    if transaction
-        .actions
+    if np_actions
         .iter()
         .any(|action| matches!(action, near_primitives::transaction::Action::Delegate(_)))
     {
@@ -760,7 +761,7 @@ pub fn print_unsigned_transaction(
         info_str.push_str("\nactions:");
     };
 
-    for action in &transaction.actions {
+    for action in &np_actions {
         match action {
             near_primitives::transaction::Action::CreateAccount(_) => {
                 info_str.push_str(&format!(
@@ -875,7 +876,12 @@ pub fn print_unsigned_transaction(
                 let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                     signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
                     receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
-                    actions: signed_delegate_action.delegate_action.get_actions(),
+                    actions: signed_delegate_action
+                        .delegate_action
+                        .get_actions()
+                        .into_iter()
+                        .map(crate::commands::np_action_to_nk)
+                        .collect(),
                 };
                 info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
             }

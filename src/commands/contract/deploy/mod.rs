@@ -76,7 +76,7 @@ pub struct GenericDeployContext {
     pub global_context: crate::GlobalContext,
     pub receiver_account_id: near_primitives::types::AccountId,
     pub signer_account_id: near_primitives::types::AccountId,
-    pub deploy_action: near_primitives::transaction::Action,
+    pub deploy_action: near_kit::Action,
 }
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
@@ -103,8 +103,8 @@ impl ContractFileContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_primitives::transaction::Action::DeployContract(
-                near_primitives::action::DeployContractAction { code },
+            deploy_action: near_kit::Action::DeployContract(
+                near_kit::DeployContractAction { code },
             ),
         }))
     }
@@ -137,14 +137,14 @@ impl ContractHashContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_primitives::transaction::Action::UseGlobalContract(Box::new(
-                near_primitives::action::UseGlobalContractAction {
+            deploy_action: near_kit::Action::UseGlobalContract(
+                near_kit::UseGlobalContractAction {
                     contract_identifier:
-                        near_primitives::action::GlobalContractIdentifier::CodeHash(
-                            scope.hash.into(),
+                        near_kit::GlobalContractIdentifier::CodeHash(
+                            scope.hash.0,
                         ),
                 },
-            )),
+            ),
         }))
     }
 }
@@ -188,14 +188,14 @@ impl ContractAccountIdContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_primitives::transaction::Action::UseGlobalContract(Box::new(
-                near_primitives::action::UseGlobalContractAction {
+            deploy_action: near_kit::Action::UseGlobalContract(
+                near_kit::UseGlobalContractAction {
                     contract_identifier:
-                        near_primitives::action::GlobalContractIdentifier::AccountId(
+                        near_kit::GlobalContractIdentifier::AccountId(
                             scope.global_contract_account_id.clone().into(),
                         ),
                 },
-            )),
+            ),
         })
     }
 }

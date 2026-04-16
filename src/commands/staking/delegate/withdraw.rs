@@ -31,15 +31,15 @@ impl WithdrawContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
                         receiver_id: validator_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![near_kit::Action::FunctionCall(
+                            near_kit::FunctionCallAction {
                                 method_name: "withdraw".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "amount": amount,
                                 }))?,
-                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                gas: near_kit::Gas::from_tgas(50),
                                 deposit: near_token::NearToken::ZERO,
-                            }),
+                            },
                         )],
                     })
                 }

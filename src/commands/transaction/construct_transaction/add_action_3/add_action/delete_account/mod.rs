@@ -22,8 +22,8 @@ impl DeleteAccountActionContext {
         scope: &<DeleteAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let beneficiary_id: near_primitives::types::AccountId = scope.beneficiary_id.clone().into();
-        let action = near_primitives::transaction::Action::DeleteAccount(
-            near_primitives::transaction::DeleteAccountAction { beneficiary_id },
+        let action = near_kit::Action::DeleteAccount(
+            near_kit::DeleteAccountAction { beneficiary_id },
         );
         let mut actions = previous_context.actions;
         actions.push(action);
