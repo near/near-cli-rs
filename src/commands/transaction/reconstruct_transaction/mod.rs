@@ -456,54 +456,122 @@ fn download_code(
     Ok(())
 }
 
-/// Convert a near_kit `ActionView` (RPC response type) to a near_kit `Action` (borsh type).
+/// Convert a near_kit `ActionView` (JSON-RPC response type) to a near_kit `Action`.
 fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action, String> {
     use base64::Engine as _;
+    use near_kit::*;
+
     let b64 = base64::engine::general_purpose::STANDARD;
+    let decode_b64 = |s: &str| b64.decode(s).map_err(|e| format!("base64 decode error: {e}"));
+
     match view {
-        near_kit::ActionView::CreateAccount => Ok(near_kit::Action::CreateAccount(near_kit::CreateAccountAction)),
-        near_kit::ActionView::DeployContract { code } => {
-            let code_bytes = b64.decode(&code).map_err(|e| format!("base64 decode error: {e}"))?;
-            Ok(near_kit::Action::DeployContract(near_kit::DeployContractAction { code: code_bytes }))
-        }
-        near_kit::ActionView::FunctionCall { method_name, args, gas, deposit } => {
-            let args_bytes = b64.decode(&args).map_err(|e| format!("base64 decode error: {e}"))?;
-            Ok(near_kit::Action::FunctionCall(near_kit::FunctionCallAction {
+        ActionView::CreateAccount => Ok(Action::CreateAccount(CreateAccountAction)),
+        ActionView::DeployContract { code } => Ok(Action::DeployContract(
+            DeployContractAction { code: decode_b64(&code)? },
+        )),
+        ActionView::FunctionCall { method_name, args, gas, deposit } => {
+            Ok(Action::FunctionCall(FunctionCallAction {
                 method_name,
-                args: args_bytes,
+                args: decode_b64(&args)?,
                 gas,
-                deposit: near_token::NearToken::from_yoctonear(deposit.as_yoctonear()),
+                deposit,
             }))
         }
-        near_kit::ActionView::Transfer { deposit } => {
-            Ok(near_kit::Action::Transfer(near_kit::TransferAction { deposit: near_token::NearToken::from_yoctonear(deposit.as_yoctonear()) }))
+        ActionView::Transfer { deposit } => {
+            Ok(Action::Transfer(TransferAction { deposit }))
         }
-        near_kit::ActionView::Stake { stake, public_key } => {
-            Ok(near_kit::Action::Stake(near_kit::StakeAction { stake: near_token::NearToken::from_yoctonear(stake.as_yoctonear()), public_key }))
+        ActionView::Stake { stake, public_key } => {
+            Ok(Action::Stake(StakeAction { stake, public_key }))
         }
-        near_kit::ActionView::AddKey { public_key, access_key } => {
+        ActionView::AddKey { public_key, access_key } => {
             let permission = match access_key.permission {
-                near_kit::AccessKeyPermissionView::FullAccess => near_kit::AccessKeyPermission::FullAccess,
-                near_kit::AccessKeyPermissionView::FunctionCall { allowance, receiver_id, method_names } => {
-                    near_kit::AccessKeyPermission::FunctionCall(near_kit::FunctionCallPermission {
-                        allowance: allowance.clone(),
-                        receiver_id: receiver_id.clone(),
+                AccessKeyPermissionView::FullAccess => AccessKeyPermission::FullAccess,
+                AccessKeyPermissionView::FunctionCall { allowance, receiver_id, method_names } => {
+                    AccessKeyPermission::FunctionCall(FunctionCallPermission {
+                        allowance,
+                        receiver_id,
                         method_names,
                     })
                 }
                 _ => return Err("Unsupported access key permission type".to_string()),
             };
-            Ok(near_kit::Action::AddKey(near_kit::AddKeyAction {
+            Ok(Action::AddKey(AddKeyAction {
                 public_key,
-                access_key: near_kit::AccessKey { nonce: access_key.nonce, permission },
+                access_key: AccessKey { nonce: access_key.nonce, permission },
             }))
         }
-        near_kit::ActionView::DeleteKey { public_key } => {
-            Ok(near_kit::Action::DeleteKey(near_kit::DeleteKeyAction { public_key }))
+        ActionView::DeleteKey { public_key } => {
+            Ok(Action::DeleteKey(DeleteKeyAction { public_key }))
         }
-        near_kit::ActionView::DeleteAccount { beneficiary_id } => {
-            Ok(near_kit::Action::DeleteAccount(near_kit::DeleteAccountAction { beneficiary_id }))
+        ActionView::DeleteAccount { beneficiary_id } => {
+            Ok(Action::DeleteAccount(DeleteAccountAction { beneficiary_id }))
         }
-        _ => Err(format!("Unsupported action view type for reconstruction")),
+        ActionView::Delegate { delegate_action, signature } => {
+            let actions = delegate_action
+                .actions
+                .into_iter()
+                .map(|a| {
+                    let action = action_view_to_action(a)?;
+                    NonDelegateAction::try_from(action)
+                        .map_err(|_| "Delegate actions cannot be nested".to_string())
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(Action::Delegate(Box::new(SignedDelegateAction {
+                delegate_action: DelegateAction {
+                    sender_id: delegate_action.sender_id,
+                    receiver_id: delegate_action.receiver_id,
+                    actions,
+                    nonce: delegate_action.nonce,
+                    max_block_height: delegate_action.max_block_height,
+                    public_key: delegate_action.public_key,
+                },
+                signature,
+            })))
+        }
+        ActionView::DeployGlobalContract { code } => {
+            Ok(Action::DeployGlobalContract(DeployGlobalContractAction {
+                code: decode_b64(&code)?,
+                deploy_mode: GlobalContractDeployMode::CodeHash,
+            }))
+        }
+        ActionView::DeployGlobalContractByAccountId { code } => {
+            Ok(Action::DeployGlobalContract(DeployGlobalContractAction {
+                code: decode_b64(&code)?,
+                deploy_mode: GlobalContractDeployMode::AccountId,
+            }))
+        }
+        ActionView::UseGlobalContract { code_hash } => {
+            Ok(Action::UseGlobalContract(UseGlobalContractAction {
+                contract_identifier: GlobalContractIdentifier::CodeHash(code_hash),
+            }))
+        }
+        ActionView::UseGlobalContractByAccountId { account_id } => {
+            Ok(Action::UseGlobalContract(UseGlobalContractAction {
+                contract_identifier: GlobalContractIdentifier::AccountId(account_id),
+            }))
+        }
+        ActionView::DeterministicStateInit { code, data, deposit } => {
+            let contract_id = match code {
+                GlobalContractIdentifierView::CodeHash(hash) => GlobalContractIdentifier::CodeHash(hash),
+                GlobalContractIdentifierView::AccountId(id) => GlobalContractIdentifier::AccountId(id),
+            };
+            let data_map = data
+                .into_iter()
+                .map(|(k, v)| Ok((decode_b64(&k)?, decode_b64(&v)?)))
+                .collect::<Result<_, String>>()?;
+            Ok(Action::DeterministicStateInit(DeterministicStateInitAction {
+                state_init: DeterministicAccountStateInit::V1(DeterministicAccountStateInitV1 {
+                    code: contract_id,
+                    data: data_map,
+                }),
+                deposit,
+            }))
+        }
+        ActionView::TransferToGasKey { public_key, deposit } => {
+            Ok(Action::TransferToGasKey(TransferToGasKeyAction { public_key, deposit }))
+        }
+        ActionView::WithdrawFromGasKey { public_key, amount } => {
+            Ok(Action::WithdrawFromGasKey(WithdrawFromGasKeyAction { public_key, amount }))
+        }
     }
 }
