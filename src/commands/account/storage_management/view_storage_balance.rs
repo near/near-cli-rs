@@ -1,7 +1,7 @@
 use color_eyre::eyre::WrapErr;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::{CallResultExt, JsonRpcClientExt};
+use crate::common::{CallResultExt, RpcResultExt, block_on};
 
 const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 
@@ -79,28 +79,30 @@ impl Account {
 #[tracing::instrument(name = "Getting storage balance for", skip_all)]
 fn get_storage_balance(
     network_config: &crate::config::NetworkConfig,
-    contract_account_id: &near_primitives::types::AccountId,
+    contract_account_id: &near_kit::AccountId,
     account_id: &crate::types::account_id::AccountId,
-    block_reference: &near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_socialdb_client::StorageBalance> {
+    block_reference: &near_kit::BlockReference,
+) -> color_eyre::eyre::Result<crate::types::socialdb::StorageBalance> {
     tracing::Span::current().pb_set_message(account_id.as_ref());
     tracing::info!(target: "near_teach_me", "Getting storage balance for {account_id}");
-    network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let result = block_on(
+        network_config.client().rpc().view_function(
             contract_account_id,
             "storage_balance_of",
-            serde_json::to_vec(&serde_json::json!({
+            &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id.to_string(),
             }))?,
             block_reference.clone(),
+        ),
+    )
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
+            contract_account_id,
+            network_config.network_name
         )
-        .wrap_err_with(|| {
-            format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
-                contract_account_id,
-                network_config.network_name
-            )
-        })?
-        .parse_result_from_json::<near_socialdb_client::StorageBalance>()
+    })?;
+    result
+        .parse_result_from_json::<crate::types::socialdb::StorageBalance>()
         .wrap_err("Failed to parse return value of view function call for StorageBalance.")
 }

@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use std::io::Write;
 
 use color_eyre::eyre::Context;
@@ -22,9 +23,13 @@ impl SaveToFileContext {
     ) -> color_eyre::eyre::Result<Self> {
         let file_path: std::path::PathBuf = scope.file_path.clone().into();
 
+        let (hash, _size) = previous_context.unsigned_transaction.get_hash_and_size();
+        let tx_bytes = borsh::to_vec(&previous_context.unsigned_transaction)
+            .expect("Transaction serialization should not fail");
+        let tx_base64 = base64::engine::general_purpose::STANDARD.encode(&tx_bytes);
         let data_unsigned_transaction = serde_json::json!({
-            "Transaction hash to sign": hex::encode(previous_context.unsigned_transaction.get_hash_and_size().0).to_string(),
-            "Unsigned transaction (serialized as base64)": crate::types::transaction::TransactionAsBase64::from(previous_context.unsigned_transaction).to_string(),
+            "Transaction hash to sign": hex::encode(hash.as_bytes()).to_string(),
+            "Unsigned transaction (serialized as base64)": tx_base64,
         });
 
         std::fs::File::create(&file_path)

@@ -15,7 +15,7 @@ pub struct DeleteKeysCommand {
 #[derive(Debug, Clone)]
 pub struct DeleteKeysCommandContext {
     global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
+    owner_account_id: near_kit::AccountId,
 }
 
 impl DeleteKeysCommandContext {

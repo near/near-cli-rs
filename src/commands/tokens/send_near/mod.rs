@@ -15,8 +15,8 @@ pub struct SendNearCommand {
 #[derive(Debug, Clone)]
 pub struct SendNearCommandContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    receiver_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
+    receiver_account_id: near_kit::AccountId,
     amount_in_near: crate::types::near_token::NearToken,
 }
 
@@ -45,8 +45,8 @@ impl From<SendNearCommandContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::Transfer(
-                            near_primitives::transaction::TransferAction {
+                        actions: vec![near_kit::Action::Transfer(
+                            near_kit::TransferAction {
                                 deposit: item.amount_in_near.into(),
                             },
                         )],

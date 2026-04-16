@@ -23,7 +23,7 @@ impl DepositAndStakeContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let signer_id = previous_context.account_id.clone();
-                let validator_account_id: near_primitives::types::AccountId =
+                let validator_account_id: near_kit::AccountId =
                     scope.validator_account_id.clone().into();
                 let amount = scope.amount;
 
@@ -31,13 +31,13 @@ impl DepositAndStakeContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
                         receiver_id: validator_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![near_kit::Action::FunctionCall(
+                            near_kit::FunctionCallAction {
                                 method_name: "deposit_and_stake".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({}))?,
-                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                gas: near_kit::Gas::from_tgas(50),
                                 deposit: amount.into(),
-                            }),
+                            },
                         )],
                     })
                 }
@@ -50,7 +50,7 @@ impl DepositAndStakeContext {
             let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, _network_config| {
-                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status
+                if outcome_view.is_success()
                     && let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         tracing_indicatif::suspend_tracing_indicatif(|| {
                             eprintln!("<{signer_id}> has successfully delegated {amount} to stake with <{validator_id}>.");

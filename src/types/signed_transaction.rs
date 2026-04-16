@@ -1,11 +1,35 @@
-use near_primitives::{borsh, borsh::BorshDeserialize};
+use base64::Engine as _;
+use borsh::BorshDeserialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
 pub struct SignedTransactionAsBase64 {
-    pub inner: near_primitives::transaction::SignedTransaction,
+    #[serde(
+        serialize_with = "serialize_as_base64",
+        deserialize_with = "deserialize_from_base64"
+    )]
+    pub inner: near_kit::SignedTransaction,
 }
 
-impl From<SignedTransactionAsBase64> for near_primitives::transaction::SignedTransaction {
+fn serialize_as_base64<S>(
+    tx: &near_kit::SignedTransaction,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&tx.to_base64())
+}
+
+fn deserialize_from_base64<'de, D>(deserializer: D) -> Result<near_kit::SignedTransaction, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = serde::Deserialize::deserialize(deserializer)?;
+    near_kit::SignedTransaction::from_base64(&s).map_err(serde::de::Error::custom)
+}
+
+impl From<SignedTransactionAsBase64> for near_kit::SignedTransaction {
     fn from(transaction: SignedTransactionAsBase64) -> Self {
         transaction.inner
     }
@@ -14,23 +38,18 @@ impl From<SignedTransactionAsBase64> for near_primitives::transaction::SignedTra
 impl std::str::FromStr for SignedTransactionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            inner: near_primitives::transaction::SignedTransaction::try_from_slice(
-                &near_primitives::serialize::from_base64(s)
-                    .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?,
-            )
-            .map_err(|err| format!("transaction could not be parsed: {err}"))?,
-        })
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(s)
+            .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?;
+        let inner = near_kit::SignedTransaction::deserialize(&mut &bytes[..])
+            .map_err(|err| format!("transaction could not be parsed: {err}"))?;
+        Ok(Self { inner })
     }
 }
 
 impl std::fmt::Display for SignedTransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let base64_signed_transaction = near_primitives::serialize::to_base64(
-            &borsh::to_vec(&self.inner)
-                .expect("Transaction is not expected to fail on serialization"),
-        );
-        write!(f, "{base64_signed_transaction}")
+        write!(f, "{}", self.inner.to_base64())
     }
 }
 
@@ -38,8 +57,8 @@ impl interactive_clap::ToCli for SignedTransactionAsBase64 {
     type CliVariant = SignedTransactionAsBase64;
 }
 
-impl From<near_primitives::transaction::SignedTransaction> for SignedTransactionAsBase64 {
-    fn from(value: near_primitives::transaction::SignedTransaction) -> Self {
+impl From<near_kit::SignedTransaction> for SignedTransactionAsBase64 {
+    fn from(value: near_kit::SignedTransaction) -> Self {
         Self { inner: value }
     }
 }

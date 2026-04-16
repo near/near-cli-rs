@@ -14,7 +14,7 @@ pub struct GenerateKeypair {
 pub struct GenerateKeypairContext {
     config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
-    public_key: near_crypto::PublicKey,
+    public_key: near_kit::PublicKey,
     key_pair_properties: crate::common::KeyPairProperties,
     on_before_creating_account_callback: super::super::network::OnBeforeCreatingAccountCallback,
 }
@@ -26,7 +26,7 @@ impl GenerateKeypairContext {
     ) -> color_eyre::eyre::Result<Self> {
         let key_pair_properties: crate::common::KeyPairProperties =
             crate::common::generate_keypair()?;
-        let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+        let public_key = near_kit::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
         Ok(Self {
             config: previous_context.config,

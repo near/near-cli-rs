@@ -5,7 +5,7 @@ use color_eyre::eyre::Context;
 use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use near_primitives::account::id::AccountType;
+use near_kit::AccountType;
 
 mod using_private_key;
 mod using_seed_phrase;
@@ -47,15 +47,23 @@ pub fn login(
     public_key_str: &str,
     error_message: &str,
 ) -> crate::CliResult {
-    let public_key: near_crypto::PublicKey = near_crypto::PublicKey::from_str(public_key_str)?;
+    let public_key: near_kit::PublicKey = near_kit::PublicKey::from_str(public_key_str)?;
 
     let account_id = loop {
         let account_id_from_cli = input_account_id()?;
 
         // If the implicit account does not exist on the network, it will still be imported.
         if let AccountType::NearImplicitAccount = account_id_from_cli.get_account_type() {
-            let pk_implicit_account =
-                near_crypto::PublicKey::from_near_implicit_account(&account_id_from_cli)?;
+            let pk_implicit_account: near_kit::PublicKey = {
+                let hex_str = account_id_from_cli.as_str();
+                format!(
+                    "ed25519:{}",
+                    bs58::encode(hex::decode(hex_str.as_bytes()).expect("implicit account is hex"))
+                        .into_string()
+                )
+                .parse()
+                .expect("public key from implicit account should be valid")
+            };
             if public_key_str == pk_implicit_account.to_string() {
                 break account_id_from_cli;
             }
@@ -106,12 +114,12 @@ pub fn login(
     Ok(())
 }
 
-fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
+fn input_account_id() -> color_eyre::eyre::Result<near_kit::AccountId> {
     Ok(CustomType::new("Enter account ID:").prompt()?)
 }
 
 fn save_access_key(
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
     key_pair_properties_buf: &str,
     public_key_str: &str,
     network_config: crate::config::NetworkConfig,

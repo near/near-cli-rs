@@ -75,7 +75,7 @@ impl From<ExportAccountFromSeedPhraseContext> for crate::network::NetworkContext
 
 fn get_seed_phrase_data_path(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
     let check_if_seed_phrase_exists = true;

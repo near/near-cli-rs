@@ -15,7 +15,7 @@ pub struct Network {
 #[derive(Debug, Clone)]
 pub struct NetworkContext {
     global_context: crate::GlobalContext,
-    signed_transaction: near_primitives::transaction::SignedTransaction,
+    signed_transaction: near_kit::SignedTransaction,
     network_config: crate::config::NetworkConfig,
 }
 
@@ -46,7 +46,7 @@ impl Network {
     ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(
             &context.global_context.config,
-            &[context.signed_transaction.transaction.receiver_id().clone()],
+            std::slice::from_ref(&context.signed_transaction.transaction.receiver_id),
         )
     }
 }
@@ -76,7 +76,7 @@ impl SubmitContext {
             crate::transaction_signature_options::send::sending_signed_transaction(
                 &previous_context.network_config,
                 &previous_context.signed_transaction,
-                near_primitives::views::TxExecutionStatus::Final,
+                near_kit::TxExecutionStatus::Final,
             )?;
 
         if let Some(transaction_info) = transaction_info {

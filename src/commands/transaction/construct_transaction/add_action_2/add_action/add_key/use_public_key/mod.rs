@@ -16,16 +16,14 @@ impl AddAccessKeyActionContext {
         previous_context: super::access_key_type::AccessKeyPermissionContext,
         scope: &<AddAccessKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let access_key = near_primitives::account::AccessKey {
+        let access_key = near_kit::AccessKey {
             nonce: 0,
             permission: previous_context.access_key_permission,
         };
-        let action = near_primitives::transaction::Action::AddKey(Box::new(
-            near_primitives::transaction::AddKeyAction {
-                public_key: scope.public_key.clone().into(),
-                access_key,
-            },
-        ));
+        let action = near_kit::Action::AddKey(near_kit::AddKeyAction {
+            public_key: scope.public_key.clone().0,
+            access_key,
+        });
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(

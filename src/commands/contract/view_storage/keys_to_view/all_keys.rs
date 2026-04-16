@@ -17,7 +17,7 @@ impl AllKeysContext {
         Ok(Self(super::KeysContext {
             global_context: previous_context.global_context,
             contract_account_id: previous_context.contract_account_id,
-            prefix: near_primitives::types::StoreKey::from(Vec::new()),
+            prefix: Vec::new(),
         }))
     }
 }

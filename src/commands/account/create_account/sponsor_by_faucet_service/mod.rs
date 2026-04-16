@@ -7,7 +7,7 @@ pub mod network;
 pub struct SponsorServiceContext {
     pub config: crate::config::Config,
     pub new_account_id: crate::types::account_id::AccountId,
-    pub public_key: near_crypto::PublicKey,
+    pub public_key: near_kit::PublicKey,
     pub on_after_getting_network_callback: self::network::OnAfterGettingNetworkCallback,
     pub on_before_creating_account_callback: self::network::OnBeforeCreatingAccountCallback,
 }
@@ -70,7 +70,7 @@ impl NewAccount {
 pub fn before_creating_account(
     network_config: &crate::config::NetworkConfig,
     new_account_id: &crate::types::account_id::AccountId,
-    public_key: &near_crypto::PublicKey,
+    public_key: &near_kit::PublicKey,
     credentials_home_dir: &std::path::Path,
     storage_message: String,
     verbosity: crate::Verbosity,
@@ -151,17 +151,20 @@ fn print_account_creation_status(
                 )));
             }
 
-            let account_creation_transaction = response
-                .json::<near_jsonrpc_client::methods::tx::RpcTransactionResponse>()?
-                .final_execution_outcome
-                .map(|outcome| outcome.into_outcome())
-                .ok_or_else(|| {
-                    color_eyre::Report::msg(
-                        "The faucet (helper service) server did not return a transaction response.",
-                    )
-                })?;
+            let faucet_response: serde_json::Value = response.json()?;
+            let account_creation_transaction: near_kit::FinalExecutionOutcome = {
+                let outcome_json = faucet_response
+                    .get("final_execution_outcome")
+                    .and_then(|v| if v.is_null() { None } else { Some(v) })
+                    .ok_or_else(|| {
+                        color_eyre::Report::msg(
+                            "The faucet (helper service) server did not return a transaction response.",
+                        )
+                    })?;
+                serde_json::from_value(outcome_json.clone())?
+            };
             match account_creation_transaction.status {
-                near_primitives::views::FinalExecutionStatus::SuccessValue(ref value) => {
+                near_kit::FinalExecutionStatus::SuccessValue(ref value) => {
                     tracing::info!(
                         parent: &tracing::Span::none(),
                         "Transaction Execution Info:\n{}",
@@ -171,7 +174,8 @@ fn print_account_creation_status(
                             path=network_config.explorer_transaction_url
                         ))
                     );
-                    if value == b"false" {
+                    // "ZmFsc2U=" is base64 for "false"
+                    if value == "ZmFsc2U=" {
                         tracing::warn!(
                             parent: &tracing::Span::none(),
                             "{}",
@@ -194,9 +198,9 @@ fn print_account_creation_status(
                         }
                     }
                 }
-                near_primitives::views::FinalExecutionStatus::NotStarted
-                | near_primitives::views::FinalExecutionStatus::Started => unreachable!(),
-                near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+                near_kit::FinalExecutionStatus::NotStarted
+                | near_kit::FinalExecutionStatus::Started => unreachable!(),
+                near_kit::FinalExecutionStatus::Failure(tx_execution_error) => {
                     tracing::warn!(
                         parent: &tracing::Span::none(),
                         "{}",
@@ -204,20 +208,7 @@ fn print_account_creation_status(
                             "\nThe new account <{new_account_id}> could not be created successfully.\n{storage_message}\n "
                         ))
                     );
-                    match tx_execution_error {
-                        near_primitives::errors::TxExecutionError::ActionError(action_error) => {
-                            return crate::common::convert_action_error_to_cli_result(
-                                &action_error,
-                            );
-                        }
-                        near_primitives::errors::TxExecutionError::InvalidTxError(
-                            invalid_tx_error,
-                        ) => {
-                            return crate::common::convert_invalid_tx_error_to_cli_result(
-                                &invalid_tx_error,
-                            );
-                        }
-                    }
+                    return Err(color_eyre::eyre::eyre!("{}", tx_execution_error));
                 }
             }
             Ok(())

@@ -1,6 +1,5 @@
-use crate::common::RpcQueryResponseExt;
 use color_eyre::eyre::{Context, Report};
-use near_primitives::types::BlockReference;
+use near_kit::BlockReference;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 use thiserror::Error;
 
@@ -74,56 +73,44 @@ pub enum ContractActions {
 }
 #[tracing::instrument(name = "Obtaining the ABI for the contract ...", skip_all)]
 pub async fn get_contract_abi(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> Result<near_abi::AbiRoot, FetchAbiError> {
     tracing::info!(target: "near_teach_me", "Obtaining the ABI for the contract ...");
+    let nk_block_ref = block_reference;
     let mut retries_left = (0..5).rev();
     loop {
-        let contract_abi_response = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::CallFunction {
-                    account_id: account_id.clone(),
-                    method_name: "__contract_abi".to_owned(),
-                    args: near_primitives::types::FunctionArgs::from(vec![]),
-                },
-            })
+        let result = network_config
+            .client()
+            .rpc()
+            .view_function(account_id, "__contract_abi", &[], nk_block_ref.clone())
             .await;
 
-        match contract_abi_response {
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_))
-                if retries_left.next().is_some() =>
-            {
+        match result {
+            Err(ref err) if err.is_retryable() && retries_left.next().is_some() => {
                 eprintln!(
                     "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
                 );
             }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::ContractExecutionError {
-                        vm_error,
-                        ..
-                    },
-                ),
-            )) if vm_error.contains("MethodNotFound") => {
+            Err(near_kit::RpcError::ContractExecution { message, .. })
+                if message.contains("MethodNotFound") =>
+            {
+                return Err(FetchAbiError::AbiNotSupported);
+            }
+            Err(near_kit::RpcError::FunctionCall { panic, .. })
+                if panic.as_deref().unwrap_or("").contains("MethodNotFound") =>
+            {
                 return Err(FetchAbiError::AbiNotSupported);
             }
             Err(err) => {
-                return Err(FetchAbiError::RpcError(err));
+                return Err(FetchAbiError::RpcError(err.to_string()));
             }
-            Ok(contract_abi_response) => {
+            Ok(view_function_result) => {
                 return serde_json::from_slice::<near_abi::AbiRoot>(
-                    &zstd::decode_all(
-                        contract_abi_response
-                            .call_result()
-                            .map_err(FetchAbiError::AbiUnknownFormat)?
-                            .result
-                            .as_slice(),
-                    )
-                    .wrap_err("Failed to 'zstd::decode_all' NEAR ABI")
-                    .map_err(FetchAbiError::AbiUnknownFormat)?,
+                    &zstd::decode_all(view_function_result.result.as_slice())
+                        .wrap_err("Failed to 'zstd::decode_all' NEAR ABI")
+                        .map_err(FetchAbiError::AbiUnknownFormat)?,
                 )
                 .wrap_err("Failed to parse NEAR ABI schema")
                 .map_err(FetchAbiError::AbiUnknownFormat);
@@ -145,9 +132,5 @@ pub enum FetchAbiError {
     #[error(
         "'__contract_abi' function call failed due to RPC error, so there is no way to get details about the function argument and return values. See more details about the error:\n\n{0}"
     )]
-    RpcError(
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
-        >,
-    ),
+    RpcError(String),
 }

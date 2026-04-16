@@ -1,26 +1,22 @@
 use std::collections::{HashSet, VecDeque};
-use std::convert::{TryFrom, TryInto};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::str::FromStr;
 
+use base64::Engine as _;
+
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
-use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
 use serde_with::{base64::Base64, serde_as};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
-use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
+use near_kit::BlockReference;
 
 pub type CliResult = color_eyre::eyre::Result<()>;
-
-/// A type alias was introduced to simplify the usage of `Result` with a boxed error type that was
-/// necessary to fix `clippy::result_large_err` warning
-pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
 
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
@@ -41,7 +37,7 @@ pub fn get_near_exec_path() -> String {
     strum_macros::IntoStaticStr,
     strum_macros::EnumString,
     strum_macros::EnumVariantNames,
-    smart_default::SmartDefault,
+    Default,
 )]
 #[strum(serialize_all = "snake_case")]
 pub enum OutputFormat {
@@ -56,31 +52,6 @@ impl std::fmt::Display for OutputFormat {
             OutputFormat::Plaintext => write!(f, "plaintext"),
             OutputFormat::Json => write!(f, "json"),
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct BlockHashAsBase58 {
-    pub inner: near_primitives::hash::CryptoHash,
-}
-
-impl std::str::FromStr for BlockHashAsBase58 {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            inner: bs58::decode(s)
-                .into_vec()
-                .map_err(|err| format!("base58 block hash sequence is invalid: {err}"))?
-                .as_slice()
-                .try_into()
-                .map_err(|err| format!("block hash could not be collected: {err}"))?,
-        })
-    }
-}
-
-impl std::fmt::Display for BlockHashAsBase58 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "BlockHash {}", self.inner)
     }
 }
 
@@ -132,7 +103,7 @@ impl From<TransferAmount> for near_token::NearToken {
 
 #[derive(Debug)]
 pub struct AccountTransferAllowance {
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
     account_liquid_balance: near_token::NearToken,
     account_locked_balance: near_token::NearToken,
     storage_stake: near_token::NearToken,
@@ -166,24 +137,23 @@ impl AccountTransferAllowance {
 }
 
 #[derive(Debug)]
-pub enum AccountStateError<E> {
-    JsonRpcError(near_jsonrpc_client::errors::JsonRpcError<E>),
+pub enum AccountStateError {
+    RpcError(String),
     Cancel,
     Skip,
 }
 
-impl<E> std::fmt::Display for AccountStateError<E>
-where
-    E: std::fmt::Debug,
-{
+impl std::fmt::Display for AccountStateError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::JsonRpcError(err) => write!(f, "{err:?}"),
+            Self::RpcError(err) => write!(f, "{err}"),
             Self::Cancel => write!(f, "Operation was canceled by the user"),
             Self::Skip => write!(f, "Operation was skipped by the user"),
         }
     }
 }
+
+impl std::error::Error for AccountStateError {}
 
 #[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
 pub async fn sleep_after_error(additional_message_for_name: String) {
@@ -195,7 +165,7 @@ pub async fn sleep_after_error(additional_message_for_name: String) {
 #[tracing::instrument(name = "Getting the transfer allowance for the account ...", skip_all)]
 pub async fn get_account_transfer_allowance(
     network_config: &crate::config::NetworkConfig,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
     tracing::info!(target: "near_teach_me", "Getting the transfer allowance for the account ...");
@@ -203,11 +173,9 @@ pub async fn get_account_transfer_allowance(
         get_account_state(network_config, &account_id, block_reference.clone()).await;
     let account_view = match account_state {
         Ok(account_view) => account_view,
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-            ),
-        )) if account_id.get_account_type().is_implicit() => {
+        Err(ViewAccountError::UnknownAccount { .. })
+            if account_id.get_account_type().is_implicit() =>
+        {
             return Ok(AccountTransferAllowance {
                 account_id,
                 account_liquid_balance: near_token::NearToken::ZERO,
@@ -216,24 +184,23 @@ pub async fn get_account_transfer_allowance(
                 pessimistic_transaction_fee: near_token::NearToken::ZERO,
             });
         }
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+        Err(ViewAccountError::TransportError(err)) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
                 network_config.network_name
             ));
         }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+        Err(err @ (ViewAccountError::UnknownAccount { .. } | ViewAccountError::ServerError(_))) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
                 network_config.network_name
             ));
         }
     };
-    let storage_amount_per_byte =
-        get_partial_protocol_config(&network_config.json_rpc_client(), &block_reference)
-            .await?
-            .runtime_config
-            .storage_amount_per_byte;
+    let storage_amount_per_byte = get_partial_protocol_config(network_config, &block_reference)
+        .await?
+        .runtime_config
+        .storage_amount_per_byte;
 
     Ok(AccountTransferAllowance {
         account_id,
@@ -250,55 +217,44 @@ pub async fn get_account_transfer_allowance(
 #[allow(clippy::result_large_err)]
 #[tracing::instrument(name = "Account access key verification ...", skip_all)]
 pub fn verify_account_access_key(
-    account_id: near_primitives::types::AccountId,
-    public_key: near_crypto::PublicKey,
+    account_id: near_kit::AccountId,
+    public_key: near_kit::PublicKey,
     network_config: crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<
-    near_primitives::views::AccessKeyView,
-    AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
+) -> color_eyre::eyre::Result<near_kit::AccessKeyView, AccountStateError> {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
-        match network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &account_id,
-                &public_key,
-                near_primitives::types::BlockReference::latest(),
-            )
-            .map_err(|err| *err)
-        {
-            Ok(rpc_query_response) => {
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(result) =
-                    rpc_query_response.kind
+        match block_on(network_config.client().rpc().view_access_key(
+            &account_id,
+            &public_key,
+            near_kit::BlockReference::optimistic(),
+        )) {
+            Ok(access_key_view) => {
+                return Ok(access_key_view);
+            }
+            Err(err) => {
+                let err_str = format!("{err}");
+                // Check for "access key not found" / "unknown access key" style errors
+                if err_str.contains("UnknownAccessKey")
+                    || err_str.contains("access key") && err_str.contains("does not exist")
                 {
-                    return Ok(result);
+                    return Err(AccountStateError::RpcError(err_str));
+                }
+                // Distinguish transport vs server errors by checking for common transport error patterns
+                let is_transport = err_str.contains("transport")
+                    || err_str.contains("connection")
+                    || err_str.contains("timeout")
+                    || err_str.contains("DNS");
+                let category = if is_transport {
+                    "connectivity issue"
                 } else {
-                    return Err(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
-                        near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
-                        ),
-                    ))));
-                }
-            }
-            Err(
-                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccessKey {
-                            ..
-                        },
-                    ),
-                ),
-            ) => {
-                return Err(AccountStateError::JsonRpcError(err));
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+                    "server error"
+                };
                 let need_check_account = suspend_tracing_indicatif::<
                     _,
                     color_eyre::eyre::Result<bool>,
                 >(|| {
                     need_check_account(format!(
-                        "Account information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.",
+                        "Account information ({account_id}) cannot be fetched on <{}> network due to {category}.",
                         network_config.network_name
                     ))
                 });
@@ -306,28 +262,7 @@ pub fn verify_account_access_key(
                     return Err(AccountStateError::Cancel);
                 }
                 if let Ok(false) = need_check_account {
-                    return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
-                    ));
-                }
-            }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
-                let need_check_account = suspend_tracing_indicatif::<
-                    _,
-                    color_eyre::eyre::Result<bool>,
-                >(|| {
-                    need_check_account(format!(
-                        "Account information ({account_id}) cannot be fetched on <{}> network due to server error.",
-                        network_config.network_name
-                    ))
-                });
-                if need_check_account.is_err() {
-                    return Err(AccountStateError::Cancel);
-                }
-                if let Ok(false) = need_check_account {
-                    return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::ServerError(err),
-                    ));
+                    return Err(AccountStateError::RpcError(err_str));
                 }
             }
         }
@@ -337,7 +272,7 @@ pub fn verify_account_access_key(
 #[tracing::instrument(name = "Checking the existence of the account ...", skip_all)]
 pub fn is_account_exist(
     context: &crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
     tracing::info!(target: "near_teach_me", "Checking the existence of the account ...");
     loop {
@@ -368,7 +303,7 @@ pub fn is_account_exist(
 #[tracing::instrument(name = "Searching for a network where an account exists for", skip_all)]
 pub fn find_network_where_account_exist(
     context: &crate::GlobalContext,
-    new_account_id: near_primitives::types::AccountId,
+    new_account_id: near_kit::AccountId,
 ) -> color_eyre::eyre::Result<Option<crate::config::NetworkConfig>> {
     tracing::Span::current().pb_set_message(new_account_id.as_str());
     tracing::info!(target: "near_teach_me", "Searching for a network where an account exists for {new_account_id} ...");
@@ -392,21 +327,15 @@ pub fn find_network_where_account_exist(
             checked_networks.insert(network_config.network_name.clone());
         }
 
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(get_account_state(
-                network_config,
-                &new_account_id,
-                near_primitives::types::BlockReference::latest(),
-            ));
+        let result = block_on(get_account_state(
+            network_config,
+            &new_account_id,
+            near_kit::BlockReference::optimistic(),
+        ));
 
         match result {
             Ok(_) => return Ok(Some(network_config.clone())),
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-                ),
-            )) => {
+            Err(ViewAccountError::UnknownAccount { .. }) => {
                 unknown_account_result.insert(network_config.network_name.clone());
             }
             Err(_err) => {
@@ -460,96 +389,61 @@ pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
+/// Error type for `get_account_state` that categorizes errors from the RPC call.
+///
+/// Callers can match on variants to distinguish between "account not found",
+/// "transport/connectivity" issues, and other server errors.
+#[derive(Debug)]
+pub enum ViewAccountError {
+    /// The account does not exist on-chain.
+    UnknownAccount { account_id: near_kit::AccountId },
+    /// A transport / connectivity error occurred.
+    TransportError(String),
+    /// Any other server-side error.
+    ServerError(String),
+}
+
+impl std::fmt::Display for ViewAccountError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownAccount { account_id } => {
+                write!(f, "Account not found: {account_id}")
+            }
+            Self::TransportError(msg) => write!(f, "Transport error: {msg}"),
+            Self::ServerError(msg) => write!(f, "Server error: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for ViewAccountError {}
+
+/// Classify a near-kit `RpcError` into a `ViewAccountError`.
+fn classify_view_account_error(
+    err: near_kit::RpcError,
+    account_id: &near_kit::AccountId,
+) -> ViewAccountError {
+    match &err {
+        near_kit::RpcError::AccountNotFound(_) => ViewAccountError::UnknownAccount {
+            account_id: account_id.clone(),
+        },
+        near_kit::RpcError::Http(_)
+        | near_kit::RpcError::Network { .. }
+        | near_kit::RpcError::Timeout(_) => ViewAccountError::TransportError(err.to_string()),
+        _ => ViewAccountError::ServerError(err.to_string()),
+    }
+}
+
 #[tracing::instrument(name = "Getting account status information for", skip_all)]
 pub async fn get_account_state(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     block_reference: BlockReference,
-) -> color_eyre::eyre::Result<
-    near_primitives::views::AccountView,
-    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
+) -> Result<near_kit::AccountView, ViewAccountError> {
     tracing::Span::current().pb_set_message(&format!(
         "<{account_id}> on network <{}> ...",
         network_config.network_name
     ));
     tracing::info!(target: "near_teach_me", "Getting account status information for <{account_id}> on network <{}> ...", network_config.network_name);
-
-    let mut retries_left = (0..5).rev();
-    loop {
-        let query_view_method_response = view_account(
-            format!("{}", network_config.rpc_url),
-            &network_config.json_rpc_client(),
-            account_id,
-            block_reference.clone(),
-        )
-        .await;
-
-        match query_view_method_response {
-            Ok(rpc_query_response) => {
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-                    account_view,
-                ) = rpc_query_response.kind
-                {
-                    return Ok(account_view);
-                } else {
-                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
-                        near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
-                        ),
-                    )));
-                }
-            }
-            Err(
-                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                            ..
-                        },
-                    ),
-                ),
-            ) => {
-                return Err(err);
-            }
-            Err(
-                err @ (near_jsonrpc_client::errors::JsonRpcError::TransportError(_)
-                | near_jsonrpc_client::errors::JsonRpcError::ServerError(_)),
-            ) => {
-                if let Some(retries_left) = retries_left.next() {
-                    sleep_after_error(format!(
-                        "(Previous attempt failed with error: `{}`. Will retry {} more times)",
-                        err.to_string().red(),
-                        retries_left
-                    ))
-                    .await;
-                } else {
-                    return Err(err);
-                }
-            }
-        }
-    }
-}
-
-#[tracing::instrument(name = "Receiving request via RPC", skip_all)]
-async fn view_account(
-    instrument_message: String,
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    account_id: &near_primitives::types::AccountId,
-    block_reference: BlockReference,
-) -> Result<
-    near_jsonrpc_primitives::types::query::RpcQueryResponse,
-    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
-    tracing::Span::current().pb_set_message(&instrument_message);
-    tracing::info!(target: "near_teach_me", "Receiving request via RPC {instrument_message}");
-
-    let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-        block_reference,
-        request: near_primitives::views::QueryRequest::ViewAccount {
-            account_id: account_id.clone(),
-        },
-    };
-
     tracing::info!(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
@@ -557,53 +451,42 @@ async fn view_account(
         account_id
     );
 
-    if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&query_view_method_request) {
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            json_rpc_client.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Request Body:\n{}",
-            indent_payload(&format!("{request_payload:#}"))
-        );
-    }
+    let nk_block_ref = block_reference.clone();
 
-    json_rpc_client
-        .call(query_view_method_request)
-        .await
-        .inspect_err(|err| match err {
-            near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Request failed due to connectivity issue:\n{}",
-                    indent_payload(&format!("{transport_error:#?}"))
-                );
+    let mut retries_left = (0..5).rev();
+    loop {
+        let result = network_config
+            .client()
+            .rpc()
+            .view_account(account_id, nk_block_ref.clone())
+            .await;
+
+        match result {
+            Ok(account_view) => {
+                return Ok(account_view);
             }
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
-            ) => {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Request returned a handling error:\n{}",
-                    indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
-                );
+            Err(err) => {
+                let classified = classify_view_account_error(err, account_id);
+                match &classified {
+                    ViewAccountError::UnknownAccount { .. } => {
+                        return Err(classified);
+                    }
+                    ViewAccountError::TransportError(_) | ViewAccountError::ServerError(_) => {
+                        if let Some(retries_left) = retries_left.next() {
+                            sleep_after_error(format!(
+                                "(Previous attempt failed with error: `{}`. Will retry {} more times)",
+                                classified.to_string().red(),
+                                retries_left
+                            ))
+                            .await;
+                        } else {
+                            return Err(classified);
+                        }
+                    }
+                }
             }
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Request returned a generic server error:\n{}",
-                    indent_payload(&format!("{server_error:#?}"))
-                );
-            }
-        })
-        .inspect(teach_me_call_response)
+        }
+    }
 }
 
 fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
@@ -627,7 +510,7 @@ fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
     pub master_seed_phrase: String,
-    pub implicit_account_id: near_primitives::types::AccountId,
+    pub implicit_account_id: near_kit::AccountId,
     #[serde(rename = "public_key")]
     pub public_key_str: String,
     #[serde(rename = "private_key")]
@@ -651,7 +534,7 @@ pub fn get_key_pair_properties_from_seed_phrase(
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
     let public_key = signing_key.verifying_key();
-    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public_key))?;
+    let implicit_account_id = near_kit::AccountId::try_from(hex::encode(public_key))?;
     let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
@@ -670,7 +553,7 @@ pub fn get_key_pair_properties_from_seed_phrase(
 pub fn get_public_key_from_seed_phrase(
     seed_phrase_hd_path: near_slip10::BIP32Path,
     master_seed_phrase: &str,
-) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
+) -> color_eyre::eyre::Result<near_kit::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
     let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
@@ -685,7 +568,7 @@ pub fn get_public_key_from_seed_phrase(
         "ed25519:{}",
         bs58::encode(&signing_key.verifying_key()).into_string()
     );
-    Ok(near_crypto::PublicKey::from_str(&public_key_str)?)
+    Ok(near_kit::PublicKey::from_str(&public_key_str)?)
 }
 
 pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
@@ -716,7 +599,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&derived_private_key.key);
 
     let public = signing_key.verifying_key();
-    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public))?;
+    let implicit_account_id = near_kit::AccountId::try_from(hex::encode(public))?;
     let public_key_str = format!("ed25519:{}", bs58::encode(&public).into_string());
     let secret_keypair_str = format!(
         "ed25519:{}",
@@ -732,19 +615,34 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
-pub fn print_full_signed_transaction(
-    transaction: near_primitives::transaction::SignedTransaction,
-) -> String {
+pub fn print_full_signed_transaction(transaction: &near_kit::SignedTransaction) -> String {
     let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
-    info_str.push_str(&crate::common::print_full_unsigned_transaction(
-        transaction.transaction,
+    info_str.push_str(&format!(
+        "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
+        transaction.transaction.get_hash()
     ));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "public_key:", &transaction.transaction.public_key
+    ));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "nonce:", transaction.transaction.nonce
+    ));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "block_hash:", &transaction.transaction.block_hash
+    ));
+    let prepopulated = crate::commands::PrepopulatedTransaction {
+        signer_id: transaction.transaction.signer_id.clone(),
+        receiver_id: transaction.transaction.receiver_id.clone(),
+        actions: transaction.transaction.actions.clone(),
+    };
+    info_str.push_str(&print_unsigned_transaction(&prepopulated));
     info_str
 }
 
-pub fn print_full_unsigned_transaction(
-    transaction: near_primitives::transaction::Transaction,
-) -> String {
+pub fn print_full_unsigned_transaction(transaction: &near_kit::Transaction) -> String {
     let mut info_str = format!(
         "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
         transaction.get_hash_and_size().0
@@ -752,21 +650,19 @@ pub fn print_full_unsigned_transaction(
 
     info_str.push_str(&format!(
         "\n{:<13} {}",
-        "public_key:",
-        &transaction.public_key()
+        "public_key:", &transaction.public_key
     ));
+    info_str.push_str(&format!("\n{:<13} {}", "nonce:", transaction.nonce));
     info_str.push_str(&format!(
         "\n{:<13} {}",
-        "nonce:",
-        transaction.nonce().nonce()
-    ));
-    info_str.push_str(&format!(
-        "\n{:<13} {}",
-        "block_hash:",
-        &transaction.block_hash()
+        "block_hash:", &transaction.block_hash
     ));
 
-    let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
+    let prepopulated = crate::commands::PrepopulatedTransaction {
+        signer_id: transaction.signer_id.clone(),
+        receiver_id: transaction.receiver_id.clone(),
+        actions: transaction.actions.clone(),
+    };
 
     info_str.push_str(&print_unsigned_transaction(&prepopulated));
 
@@ -786,7 +682,7 @@ pub fn print_unsigned_transaction(
     if transaction
         .actions
         .iter()
-        .any(|action| matches!(action, near_primitives::transaction::Action::Delegate(_)))
+        .any(|action| matches!(action, near_kit::Action::Delegate(_)))
     {
         info_str.push_str("\nsigned delegate action:");
     } else {
@@ -795,24 +691,24 @@ pub fn print_unsigned_transaction(
 
     for action in &transaction.actions {
         match action {
-            near_primitives::transaction::Action::CreateAccount(_) => {
+            near_kit::Action::CreateAccount(_) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--", "create account:", &transaction.receiver_id
                 ));
             }
-            near_primitives::transaction::Action::DeployContract(code) => {
-                let code_hash = CryptoHash::hash_bytes(&code.code);
+            near_kit::Action::DeployContract(deploy) => {
+                let code_hash = near_kit::CryptoHash::hash(&deploy.code);
                 info_str.push_str(&format!(
                     "\n{:>5} {:<70}",
                     "--",
                     format!(
-                        "deploy code <{:?}> to a account <{}>",
+                        "deploy code <{}> to a account <{}>",
                         code_hash, transaction.receiver_id
                     )
                 ))
             }
-            near_primitives::transaction::Action::FunctionCall(function_call_action) => {
+            near_kit::Action::FunctionCall(function_call_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "function call:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -851,7 +747,7 @@ pub fn print_unsigned_transaction(
                     function_call_action.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::Transfer(transfer_action) => {
+            near_kit::Action::Transfer(transfer_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--",
@@ -859,7 +755,7 @@ pub fn print_unsigned_transaction(
                     transfer_action.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::Stake(stake_action) => {
+            near_kit::Action::Stake(stake_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "stake:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -872,7 +768,7 @@ pub fn print_unsigned_transaction(
                     stake_action.stake.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::AddKey(add_key_action) => {
+            near_kit::Action::AddKey(add_key_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -887,14 +783,14 @@ pub fn print_unsigned_transaction(
                     "", "permission:", &add_key_action.access_key.permission
                 ));
             }
-            near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
+            near_kit::Action::DeleteKey(delete_key_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "delete access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", &delete_key_action.public_key
                 ));
             }
-            near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
+            near_kit::Action::DeleteAccount(delete_account_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
                     "--", "delete account:", &transaction.receiver_id
@@ -904,47 +800,54 @@ pub fn print_unsigned_transaction(
                     "", "beneficiary id:", &delete_account_action.beneficiary_id
                 ));
             }
-            near_primitives::transaction::Action::Delegate(signed_delegate_action) => {
+            near_kit::Action::Delegate(signed_delegate_action) => {
                 let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                     signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
                     receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
-                    actions: signed_delegate_action.delegate_action.get_actions(),
+                    actions: signed_delegate_action
+                        .delegate_action
+                        .actions
+                        .iter()
+                        .map(|nda| {
+                            // NonDelegateAction wraps Action with identical borsh encoding
+                            let bytes = borsh::to_vec(nda)
+                                .expect("NonDelegateAction borsh serialization should not fail");
+                            borsh::from_slice::<near_kit::Action>(&bytes)
+                                .expect("Action borsh deserialization should not fail")
+                        })
+                        .collect(),
                 };
                 info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
             }
-            near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
-                let code_hash = CryptoHash::hash_bytes(&deploy.code);
+            near_kit::Action::DeployGlobalContract(deploy) => {
+                let code_hash = near_kit::CryptoHash::hash(&deploy.code);
                 let identifier = match deploy.deploy_mode {
-                    GlobalContractDeployMode::CodeHash => {
-                        format!("deploy code <{code_hash:?}> as a global hash")
+                    near_kit::GlobalContractDeployMode::CodeHash => {
+                        format!("deploy code <{code_hash}> as a global hash")
                     }
-                    GlobalContractDeployMode::AccountId => {
+                    near_kit::GlobalContractDeployMode::AccountId => {
                         format!(
-                            "deploy code <{:?}> to a global account <{}>",
+                            "deploy code <{}> to a global account <{}>",
                             code_hash, transaction.receiver_id
                         )
                     }
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
-            near_primitives::transaction::Action::UseGlobalContract(contract_identifier) => {
-                let identifier = match contract_identifier.contract_identifier {
-                    GlobalContractIdentifier::CodeHash(hash) => {
+            near_kit::Action::UseGlobalContract(use_global) => {
+                let identifier = match &use_global.contract_identifier {
+                    near_kit::GlobalContractIdentifier::CodeHash(hash) => {
                         format!("use global <{hash}> code to deploy from")
                     }
-                    GlobalContractIdentifier::AccountId(ref account_id) => {
+                    near_kit::GlobalContractIdentifier::AccountId(account_id) => {
                         format!("use global <{account_id}> code to deploy from")
                     }
                 };
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
-            near_primitives::transaction::Action::DeterministicStateInit(
-                deterministic_init_action,
-            ) => {
+            near_kit::Action::DeterministicStateInit(deterministic_init_action) => {
                 let deterministic_account_id =
-                    near_primitives::utils::derive_near_deterministic_account_id(
-                        &deterministic_init_action.state_init,
-                    );
+                    deterministic_init_action.state_init.derive_account_id();
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20}",
                     "--",
@@ -954,19 +857,30 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<12}: {}",
                     "", "deposit", deterministic_init_action.deposit
                 ));
-                let state_init_json =
-                    serde_json::to_string_pretty(&DeterministicAccountStateInitView::from(
-                        deterministic_init_action.state_init.clone(),
-                    ))
-                    .expect("DeterministicAccountStateInitView is always serializable");
-                let state_init_indented = state_init_json.replace('\n', &format!("\n{:33}", ""));
+                let state_init = match &deterministic_init_action.state_init {
+                    near_kit::DeterministicAccountStateInit::V1(v1) => {
+                        let mut ret = "V1".to_string();
+                        ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", v1.data));
+                        ret.push_str(&format!(
+                            "\n{:>31} {:<13} {}",
+                            "",
+                            "code",
+                            match &v1.code {
+                                near_kit::GlobalContractIdentifier::CodeHash(hash) => {
+                                    format!("use global <{hash}> code to deploy from")
+                                }
+                                near_kit::GlobalContractIdentifier::AccountId(account_id) => {
+                                    format!("use global <{account_id}> code to deploy from")
+                                }
+                            }
+                        ));
+                        ret
+                    }
+                };
 
-                info_str.push_str(&format!(
-                    "\n{:>18} {:<12}: {}",
-                    "", "state-init", state_init_indented
-                ));
+                info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
             }
-            near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
+            near_kit::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -979,7 +893,7 @@ pub fn print_unsigned_transaction(
                     transfer_to_gas_key.deposit.exact_amount_display()
                 ));
             }
-            near_primitives::transaction::Action::WithdrawFromGasKey(withdraw_from_gas_key) => {
+            near_kit::Action::WithdrawFromGasKey(withdraw_from_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "withdraw from gas key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -998,22 +912,20 @@ pub fn print_unsigned_transaction(
     info_str
 }
 
-fn print_value_successful_transaction(
-    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
-) -> String {
+fn print_value_successful_transaction(transaction_info: near_kit::FinalExecutionOutcome) -> String {
     let mut info_str: String = String::from('\n');
     for action in transaction_info.transaction.actions {
         match action {
-            near_primitives::views::ActionView::CreateAccount => {
+            near_kit::ActionView::CreateAccount => {
                 info_str.push_str(&format!(
                     "\nNew account <{}> has been successfully created.",
                     transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::DeployContract { code: _ } => {
+            near_kit::ActionView::DeployContract { code: _ } => {
                 info_str.push_str("Contract code has been successfully deployed.");
             }
-            near_primitives::views::ActionView::FunctionCall {
+            near_kit::ActionView::FunctionCall {
                 method_name,
                 args: _,
                 gas: _,
@@ -1026,7 +938,7 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.signer_id,
                 ));
             }
-            near_primitives::views::ActionView::Transfer { deposit } => {
+            near_kit::ActionView::Transfer { deposit } => {
                 info_str.push_str(&format!(
                     "\n<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
@@ -1034,7 +946,7 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::Stake {
+            near_kit::ActionView::Stake {
                 stake,
                 public_key: _,
             } => {
@@ -1051,7 +963,7 @@ fn print_value_successful_transaction(
                     ));
                 }
             }
-            near_primitives::views::ActionView::AddKey {
+            near_kit::ActionView::AddKey {
                 public_key,
                 access_key: _,
             } => {
@@ -1060,19 +972,19 @@ fn print_value_successful_transaction(
                     public_key, transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::DeleteKey { public_key } => {
+            near_kit::ActionView::DeleteKey { public_key } => {
                 info_str.push_str(&format!(
                     "\nAccess key <{}> for account <{}> has been successfully deleted.",
                     public_key, transaction_info.transaction.signer_id,
                 ));
             }
-            near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
+            near_kit::ActionView::DeleteAccount { beneficiary_id: _ } => {
                 info_str.push_str(&format!(
                     "\nAccount <{}> has been successfully deleted.",
                     transaction_info.transaction.signer_id,
                 ));
             }
-            near_primitives::views::ActionView::Delegate {
+            near_kit::ActionView::Delegate {
                 delegate_action,
                 signature: _,
             } => {
@@ -1081,17 +993,17 @@ fn print_value_successful_transaction(
                     delegate_action.sender_id,
                 ));
             }
-            near_primitives::views::ActionView::DeployGlobalContract { code: _ }
-            | near_primitives::views::ActionView::DeployGlobalContractByAccountId { code: _ } => {
+            near_kit::ActionView::DeployGlobalContract { code: _ }
+            | near_kit::ActionView::DeployGlobalContractByAccountId { code: _ } => {
                 info_str.push_str("Global contract has been successfully deployed.");
             }
-            near_primitives::views::ActionView::UseGlobalContractByAccountId { account_id } => {
+            near_kit::ActionView::UseGlobalContractByAccountId { account_id } => {
                 info_str.push_str(&format!("Contract has been successfully deployed with the code from the global account <{account_id}>."));
             }
-            near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
+            near_kit::ActionView::UseGlobalContract { code_hash } => {
                 info_str.push_str(&format!("Contract has been successfully deployed with the code from the global hash <{code_hash}>."));
             }
-            near_primitives::views::ActionView::DeterministicStateInit {
+            near_kit::ActionView::DeterministicStateInit {
                 code: _,
                 data: _,
                 deposit: _,
@@ -1101,7 +1013,7 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::TransferToGasKey {
+            near_kit::ActionView::TransferToGasKey {
                 public_key,
                 deposit,
             } => {
@@ -1112,7 +1024,7 @@ fn print_value_successful_transaction(
                     public_key,
                 ));
             }
-            near_primitives::views::ActionView::WithdrawFromGasKey { public_key, amount } => {
+            near_kit::ActionView::WithdrawFromGasKey { public_key, amount } => {
                 info_str.push_str(&format!(
                     "\n<{}> has withdrawn {} from gas key <{}> successfully.",
                     transaction_info.transaction.signer_id,
@@ -1124,444 +1036,6 @@ fn print_value_successful_transaction(
     }
     info_str.push('\n');
     info_str
-}
-
-pub fn rpc_transaction_error(
-    err: &near_jsonrpc_client::errors::JsonRpcError<
-        near_jsonrpc_client::methods::send_tx::RpcTransactionError,
-    >,
-) -> color_eyre::Result<String> {
-    match &err {
-        near_jsonrpc_client::errors::JsonRpcError::TransportError(_rpc_transport_error) => {
-            Ok("Transport error transaction".to_string())
-        }
-        near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError => {
-                    Ok("Timeout error transaction".to_string())
-                }
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::InvalidTransaction { context } => {
-                    match convert_invalid_tx_error_to_cli_result(context) {
-                        Ok(_) => Ok("".to_string()),
-                        Err(err) => Err(err)
-                    }
-                }
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::DoesNotTrackShard => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", err))
-                }
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::RequestRouted{transaction_hash} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", transaction_hash, err))
-                }
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::UnknownTransaction{requested_transaction_hash} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error for transaction with hash {}\n{}", requested_transaction_hash, err))
-                }
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::InternalError{debug_info} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("RPC Server Error: {}", debug_info))
-                }
-            }
-            near_jsonrpc_client::errors::JsonRpcServerError::RequestValidationError(rpc_request_validation_error) => {
-                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Incompatible request with the server: {:#?}",  rpc_request_validation_error))
-            }
-            near_jsonrpc_client::errors::JsonRpcServerError::InternalError{ info } => {
-                Ok(format!("Internal server error: {}", info.clone().unwrap_or_default()))
-            }
-            near_jsonrpc_client::errors::JsonRpcServerError::NonContextualError(rpc_error) => {
-                color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Unexpected response: {}", rpc_error))
-            }
-            near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(json_rpc_server_response_status_error) => match json_rpc_server_response_status_error {
-                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unauthorized => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server requires authentication. Please, authenticate near CLI with the JSON RPC server you use."))
-                }
-                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests => {
-                    Ok("JSON RPC server is currently busy".to_string())
-                }
-                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::Unexpected{status} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with an unexpected status code: {}", status))
-                }
-                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::BadRequest => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("JSON RPC server responded with a bad request. Please, check your request parameters."))
-                }
-                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TimeoutError => {
-                    Ok("Timeout error while sending a request to the JSON RPC server".to_string())
-                }
-                near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::ServiceUnavailable => {
-                    Ok("JSON RPC server is currently unavailable".to_string())
-                }
-            }
-        }
-    }
-}
-
-pub fn convert_action_error_to_cli_result(
-    action_error: &near_primitives::errors::ActionError,
-) -> crate::CliResult {
-    match &action_error.kind {
-        near_primitives::errors::ActionErrorKind::AccountAlreadyExists { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Create Account action tries to create an account with account ID <{}> which already exists in the storage.",
-                account_id
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::AccountDoesNotExist { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: TX receiver ID <{}> doesn't exist (but action is not \"Create Account\").",
-                account_id
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::CreateAccountOnlyByRegistrar {
-            account_id: _,
-            registrar_account_id: _,
-            predecessor_id: _,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: A top-level account ID can only be created by registrar."
-        )),
-        near_primitives::errors::ActionErrorKind::CreateAccountNotAllowed {
-            account_id,
-            predecessor_id,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: A newly created account <{}> must be under a namespace of the creator account <{}>.",
-            account_id,
-            predecessor_id
-        )),
-        near_primitives::errors::ActionErrorKind::ActorNoPermission {
-            account_id: _,
-            actor_id: _,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Administrative actions can be proceed only if sender=receiver or the first TX action is a \"Create Account\" action."
-        )),
-        near_primitives::errors::ActionErrorKind::DeleteKeyDoesNotExist {
-            account_id,
-            public_key,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Account <{}>  tries to remove an access key <{}> that doesn't exist.",
-            account_id,
-            public_key
-        )),
-        near_primitives::errors::ActionErrorKind::AddKeyAlreadyExists {
-            account_id,
-            public_key,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Public key <{}> is already used for an existing account ID <{}>.",
-            public_key,
-            account_id
-        )),
-        near_primitives::errors::ActionErrorKind::DeleteAccountStaking { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}> is staking and can not be deleted",
-                account_id
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::LackBalanceForState { account_id, amount } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Receipt action can't be completed, because the remaining balance will not be enough to cover storage.\nAn account which needs balance: <{}>\nBalance required to complete the action: <{}>",
-                account_id,
-                amount.exact_amount_display()
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::TriesToUnstake { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}> is not yet staked, but tries to unstake.",
-                account_id
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::TriesToStake {
-            account_id,
-            stake,
-            locked: _,
-            balance,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Account <{}> doesn't have enough balance ({}) to increase the stake ({}).",
-            account_id,
-            balance.exact_amount_display(),
-            stake.exact_amount_display()
-        )),
-        near_primitives::errors::ActionErrorKind::InsufficientStake {
-            account_id: _,
-            stake,
-            minimum_stake,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Insufficient stake {}.\nThe minimum rate must be {}.",
-            stake.exact_amount_display(),
-            minimum_stake.exact_amount_display()
-        )),
-        near_primitives::errors::ActionErrorKind::FunctionCallError(function_call_error_ser) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: An error occurred during a `FunctionCall` action.\n{:?}",
-                function_call_error_ser
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
-            receipt_validation_error,
-        ) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}",
-            receipt_validation_error
-        )),
-        near_primitives::errors::ActionErrorKind::OnlyImplicitAccountCreationAllowed {
-            account_id: _,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: `CreateAccount` action is called on hex-characters account of length 64.\nSee implicit account creation NEP: https://github.com/nearprotocol/NEPs/pull/71"
-        )),
-        near_primitives::errors::ActionErrorKind::DeleteAccountWithLargeState { account_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Delete account <{}> whose state is large is temporarily banned.",
-                account_id
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::DelegateActionInvalidSignature => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Invalid Signature on DelegateAction"
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::DelegateActionSenderDoesNotMatchTxReceiver {
-            sender_id,
-            receiver_id,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Delegate Action sender {sender_id} does not match transaction receiver {receiver_id}"
-        )),
-        near_primitives::errors::ActionErrorKind::DelegateActionExpired => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DelegateAction Expired"))
-        }
-        near_primitives::errors::ActionErrorKind::DelegateActionAccessKeyError(_) => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: The given public key doesn't exist for the sender"
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonce {
-            delegate_nonce,
-            ak_nonce,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} ak_nonce: {ak_nonce}"
-        )),
-        near_primitives::errors::ActionErrorKind::DelegateActionNonceTooLarge {
-            delegate_nonce,
-            upper_bound,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: DelegateAction Invalid Delegate Nonce: {delegate_nonce} upper bound: {upper_bound}"
-        )),
-        near_primitives::errors::ActionErrorKind::GlobalContractDoesNotExist { identifier } => {
-            let identifier = match identifier {
-                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => {
-                    format!("hash<{hash}>")
-                }
-                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => {
-                    format!("account id<{account_id}>")
-                }
-            };
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Global contract with identifier {} does not exist.",
-                identifier
-            ))
-        }
-        near_primitives::errors::ActionErrorKind::GasKeyDoesNotExist {
-            account_id,
-            public_key,
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Gas key <{}> does not exist for account <{}>.",
-            public_key,
-            account_id
-        )),
-        near_primitives::errors::ActionErrorKind::InsufficientGasKeyBalance {
-            account_id,
-            public_key,
-            balance,
-            ..
-        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Error: Gas key <{}> for account <{}> has insufficient balance ({}).",
-            public_key,
-            account_id,
-            balance.exact_amount_display()
-        )),
-        near_primitives::errors::ActionErrorKind::GasKeyBalanceTooHigh {
-            account_id,
-            public_key,
-            balance,
-        } => {
-            let key_info = match public_key {
-                Some(pk) => format!("gas key <{pk}>"),
-                None => "gas keys".to_string(),
-            };
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Balance ({}) of {} for account <{}> is too high to perform this action.",
-                balance.exact_amount_display(),
-                key_info,
-                account_id
-            ))
-        }
-    }
-}
-
-pub fn convert_invalid_tx_error_to_cli_result(
-    invalid_tx_error: &near_primitives::errors::InvalidTxError,
-) -> crate::CliResult {
-    match invalid_tx_error {
-        near_primitives::errors::InvalidTxError::InvalidAccessKeyError(invalid_access_key_error) => {
-            match invalid_access_key_error {
-                near_primitives::errors::InvalidAccessKeyError::AccessKeyNotFound{account_id, public_key} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Public key {} doesn't exist for the account <{}>.", public_key, account_id))
-                },
-                near_primitives::errors::InvalidAccessKeyError::ReceiverMismatch{tx_receiver, ak_receiver} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction for <{}> doesn't match the access key for <{}>.", tx_receiver, ak_receiver))
-                },
-                near_primitives::errors::InvalidAccessKeyError::MethodNameMismatch{method_name} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction method name <{}> isn't allowed by the access key.", method_name))
-                },
-                near_primitives::errors::InvalidAccessKeyError::RequiresFullAccess => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction requires a full permission access key."))
-                },
-                near_primitives::errors::InvalidAccessKeyError::NotEnoughAllowance{account_id, public_key, allowance, cost} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Access Key <{}> for account <{}> does not have enough allowance ({}) to cover transaction cost ({}).",
-                        public_key,
-                        account_id,
-                        allowance.exact_amount_display(),
-                        cost.exact_amount_display(),
-                    ))
-                },
-                near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Having a deposit with a function call action is not allowed with a function call access key."))
-                }
-            }
-        },
-        near_primitives::errors::InvalidTxError::InvalidSignerId { signer_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signer ID <{}> is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::utils::is_valid_account_id\".", signer_id))
-        },
-        near_primitives::errors::InvalidTxError::SignerDoesNotExist { signer_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signer ID <{}> is not found in the storage.", signer_id))
-        },
-        near_primitives::errors::InvalidTxError::InvalidNonce { tx_nonce, ak_nonce } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction nonce ({}) must be account[access_key].nonce ({}) + 1.", tx_nonce, ak_nonce))
-        },
-        near_primitives::errors::InvalidTxError::NonceTooLarge { tx_nonce, upper_bound } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction nonce ({}) is larger than the upper bound ({}) given by the block height.", tx_nonce, upper_bound))
-        },
-        near_primitives::errors::InvalidTxError::InvalidReceiverId { receiver_id } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX receiver ID ({}) is not in a valid format or does not satisfy requirements\nSee \"near_runtime_utils::is_valid_account_id\".", receiver_id))
-        },
-        near_primitives::errors::InvalidTxError::InvalidSignature => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: TX signature is not valid"))
-        },
-        near_primitives::errors::InvalidTxError::NotEnoughBalance {signer_id, balance, cost} => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Account <{}> does not have enough balance ({}) to cover TX cost ({}).",
-                signer_id,
-                balance.exact_amount_display(),
-                cost.exact_amount_display()
-            ))
-        },
-        near_primitives::errors::InvalidTxError::LackBalanceForState {signer_id, amount} => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Signer account <{}> doesn't have enough balance ({}) after transaction.",
-                signer_id,
-                amount.exact_amount_display()
-            ))
-        },
-        near_primitives::errors::InvalidTxError::CostOverflow => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An integer overflow occurred during transaction cost estimation."))
-        },
-        near_primitives::errors::InvalidTxError::InvalidChain => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction parent block hash doesn't belong to the current chain."))
-        },
-        near_primitives::errors::InvalidTxError::Expired => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transaction has expired."))
-        },
-        near_primitives::errors::InvalidTxError::ActionsValidation(actions_validation_error) => {
-            match actions_validation_error {
-                near_primitives::errors::ActionsValidationError::DeleteActionMustBeFinal => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The delete action must be the final action in transaction."))
-                },
-                near_primitives::errors::ActionsValidationError::TotalPrepaidGasExceeded {total_prepaid_gas, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The total prepaid gas ({}) for all given actions exceeded the limit ({}).",
-                    total_prepaid_gas,
-                    limit
-                    ))
-                },
-                near_primitives::errors::ActionsValidationError::TotalNumberOfActionsExceeded {total_number_of_actions, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The number of actions ({}) exceeded the given limit ({}).", total_number_of_actions, limit))
-                },
-                near_primitives::errors::ActionsValidationError::AddKeyMethodNamesNumberOfBytesExceeded {total_number_of_bytes, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The total number of bytes ({}) of the method names exceeded the limit ({}) in a Add Key action.", total_number_of_bytes, limit))
-                },
-                near_primitives::errors::ActionsValidationError::AddKeyMethodNameLengthExceeded {length, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of some method name exceeded the limit ({}) in a Add Key action.", length, limit))
-                },
-                near_primitives::errors::ActionsValidationError::IntegerOverflow => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Integer overflow."))
-                },
-                near_primitives::errors::ActionsValidationError::InvalidAccountId {account_id} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid account ID <{}>.", account_id))
-                },
-                near_primitives::errors::ActionsValidationError::ContractSizeExceeded {size, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of the contract code exceeded the limit ({}) in a DeployContract action.", size, limit))
-                },
-                near_primitives::errors::ActionsValidationError::FunctionCallMethodNameLengthExceeded {length, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of the method name exceeded the limit ({}) in a Function Call action.", length, limit))
-                },
-                near_primitives::errors::ActionsValidationError::FunctionCallArgumentsLengthExceeded {length, limit} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The length ({}) of the arguments exceeded the limit ({}) in a Function Call action.", length, limit))
-                },
-                near_primitives::errors::ActionsValidationError::UnsuitableStakingKey {public_key} => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: An attempt to stake with a public key <{}> that is not convertible to ristretto.", public_key))
-                },
-                near_primitives::errors::ActionsValidationError::FunctionCallZeroAttachedGas => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The attached amount of gas in a FunctionCall action has to be a positive number."))
-                }
-                near_primitives::errors::ActionsValidationError::DelegateActionMustBeOnlyOne => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The transaction contains more than one delegation action"))
-                }
-                near_primitives::errors::ActionsValidationError::UnsupportedProtocolFeature { protocol_feature, version } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is unsupported in version {}", protocol_feature, version))
-                }
-                near_primitives::errors::ActionsValidationError::InvalidDeterministicStateInitReceiver { receiver_id, derived_id } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid reciever account id <{}> for deterministic account id <{}>.", receiver_id, derived_id))
-                },
-                near_primitives::errors::ActionsValidationError::DeterministicStateInitKeyLengthExceeded { length, limit } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DeterministicStateInit key length is {} but the limit is {}.", length, limit))
-                },
-                near_primitives::errors::ActionsValidationError::DeterministicStateInitValueLengthExceeded { length, limit } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DeterministicStateInit contains value of length {} but at most {} is allowed.", length, limit))
-                },
-                near_primitives::errors::ActionsValidationError::GasKeyInvalidNumNonces { requested_nonces, limit } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas key requested invalid number of nonces: {} (must be between 1 and {}).", requested_nonces, limit))
-                },
-                near_primitives::errors::ActionsValidationError::AddGasKeyWithNonZeroBalance { balance } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Adding a gas key with non-zero balance is not allowed: balance = {}.", balance.exact_amount_display()))
-                },
-                near_primitives::errors::ActionsValidationError::GasKeyFunctionCallAllowanceNotAllowed => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas keys with FunctionCall permission cannot have an allowance set."))
-                },
-            }
-        },
-        near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The size ({}) of serialized transaction exceeded the limit ({}).", size, limit))
-        }
-        near_primitives::errors::InvalidTxError::InvalidTransactionVersion => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid transaction version"))
-        },
-        near_primitives::errors::InvalidTxError::StorageError(error) => match error {
-            near_primitives::errors::StorageError::StorageInternalError => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Internal storage error")),
-            near_primitives::errors::StorageError::MissingTrieValue(missing_trie_value) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Requested trie value by its hash ({}) which is missing in the storage", missing_trie_value.hash)),
-            near_primitives::errors::StorageError::UnexpectedTrieValue => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Unexpected trie value")),
-            near_primitives::errors::StorageError::StorageInconsistentState(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The storage is in the inconsistent state: {}", message)),
-            near_primitives::errors::StorageError::FlatStorageBlockNotSupported(message) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The block is not supported by flat storage: {}", message)),
-            near_primitives::errors::StorageError::MemTrieLoadingError(message) =>  color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The trie is not loaded in memory: {}", message)),
-        },
-        near_primitives::errors::InvalidTxError::ShardCongested { shard_id, congestion_level } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction")),
-        near_primitives::errors::InvalidTxError::ShardStuck { shard_id, missed_chunks } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is {missed_chunks} blocks behind and can't accept new transaction until it will be in the sync")),
-        near_primitives::errors::InvalidTxError::InvalidNonceIndex { tx_nonce_index, num_nonces } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid nonce_index {:?} for key with {} nonces.", tx_nonce_index, num_nonces))
-        }
-        near_primitives::errors::InvalidTxError::NotEnoughGasKeyBalance { signer_id, balance, cost } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas key for <{}> does not have enough balance ({}) for gas cost ({}).",
-                signer_id,
-                balance.exact_amount_display(),
-                cost.exact_amount_display()
-            ))
-        }
-        near_primitives::errors::InvalidTxError::NotEnoughBalanceForDeposit { signer_id, balance, cost, .. } => {
-            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Sender <{}> does not have enough balance ({}) to cover deposit cost ({}).",
-                signer_id,
-                balance.exact_amount_display(),
-                cost.exact_amount_display()
-            ))
-        }
-    }
 }
 
 fn get_near_usd_exchange_rate(coingecko_url: &url::Url) -> color_eyre::Result<f64> {
@@ -1611,7 +1085,7 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
 }
 
 pub fn print_transaction_status(
-    transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
+    transaction_info: &near_kit::FinalExecutionOutcome,
     network_config: &crate::config::NetworkConfig,
     verbosity: crate::Verbosity,
 ) -> crate::CliResult {
@@ -1625,7 +1099,7 @@ pub fn print_transaction_status(
     let mut returned_value_bytes: Vec<u8> = Vec::new();
 
     let result = match &transaction_info.status {
-        near_primitives::views::FinalExecutionStatus::NotStarted => {
+        near_kit::FinalExecutionStatus::NotStarted => {
             if let crate::Verbosity::Quiet = verbosity {
                 return Ok(());
             }
@@ -1635,7 +1109,7 @@ pub fn print_transaction_status(
             );
             Ok(())
         }
-        near_primitives::views::FinalExecutionStatus::Started => {
+        near_kit::FinalExecutionStatus::Started => {
             if let crate::Verbosity::Quiet = verbosity {
                 return Ok(());
             }
@@ -1645,29 +1119,25 @@ pub fn print_transaction_status(
             );
             Ok(())
         }
-        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            match tx_execution_error {
-                near_primitives::errors::TxExecutionError::ActionError(action_error) => {
-                    convert_action_error_to_cli_result(action_error)
-                }
-                near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-                    convert_invalid_tx_error_to_cli_result(invalid_tx_error)
-                }
-            }
+        near_kit::FinalExecutionStatus::Failure(tx_execution_error) => {
+            Err(color_eyre::eyre::eyre!("{}", tx_execution_error))
         }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
+        near_kit::FinalExecutionStatus::SuccessValue(base64_result) => {
+            let bytes_result = base64::engine::general_purpose::STANDARD
+                .decode(base64_result)
+                .unwrap_or_default();
             if let crate::Verbosity::Quiet = verbosity {
-                std::io::stdout().write_all(bytes_result)?;
+                std::io::stdout().write_all(&bytes_result)?;
                 return Ok(());
             };
-            returned_value_bytes.append(&mut bytes_result.clone());
+            returned_value_bytes = bytes_result.clone();
             return_value = if bytes_result.is_empty() {
                 "Empty return value".to_string()
             } else if let Ok(json_result) =
-                serde_json::from_slice::<serde_json::Value>(bytes_result)
+                serde_json::from_slice::<serde_json::Value>(&bytes_result)
             {
                 serde_json::to_string_pretty(&json_result)?
-            } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
+            } else if let Ok(string_result) = String::from_utf8(bytes_result) {
                 string_result
             } else {
                 "The returned value is not printable (binary data)".to_string()
@@ -1738,7 +1208,7 @@ pub fn print_transaction_status(
     }
 
     for action in &transaction_info.transaction.actions {
-        if let near_primitives::views::ActionView::FunctionCall { .. } = action {
+        if let near_kit::ActionView::FunctionCall { .. } = action {
             tracing::info!(
                 parent: &tracing::Span::none(),
                 "Function execution logs:{}",
@@ -1948,24 +1418,18 @@ fn path_directories() -> Vec<std::path::PathBuf> {
 
 pub fn get_delegated_validator_list_from_mainnet(
     network_connection: &linked_hash_map::LinkedHashMap<String, crate::config::NetworkConfig>,
-) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+) -> color_eyre::eyre::Result<std::collections::BTreeSet<near_kit::AccountId>> {
     let network_config = network_connection
         .get("mainnet")
         .wrap_err("There is no 'mainnet' network in your configuration.")?;
 
-    let epoch_validator_info = network_config
-        .json_rpc_client()
-        .blocking_call(
-            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                epoch_reference: near_primitives::types::EpochReference::Latest,
-            },
-        )
-        .wrap_err("Failed to get epoch validators information request.")?;
+    let epoch_validator_info =
+        block_on(network_config.client().rpc().validators(None)).into_eyre()?;
 
     Ok(epoch_validator_info
         .current_proposals
         .into_iter()
-        .map(|current_proposal| current_proposal.take_account_id())
+        .map(|proposal| proposal.into_v1().account_id)
         .chain(
             epoch_validator_info
                 .current_validators
@@ -1987,14 +1451,13 @@ pub fn get_delegated_validator_list_from_mainnet(
 )]
 pub fn get_used_delegated_validator_list(
     config: &crate::config::Config,
-) -> color_eyre::eyre::Result<VecDeque<near_primitives::types::AccountId>> {
+) -> color_eyre::eyre::Result<VecDeque<near_kit::AccountId>> {
     tracing::info!(target: "near_teach_me", "Retrieving a list of delegated validators from \"mainnet\" ...");
     let used_account_list: VecDeque<UsedAccount> =
         get_used_account_list(&config.credentials_home_dir);
     let mut delegated_validator_list =
         get_delegated_validator_list_from_mainnet(&config.network_connection)?;
-    let mut used_delegated_validator_list: VecDeque<near_primitives::types::AccountId> =
-        VecDeque::new();
+    let mut used_delegated_validator_list: VecDeque<near_kit::AccountId> = VecDeque::new();
 
     for used_account in used_account_list {
         if delegated_validator_list.remove(&used_account.account_id) {
@@ -2022,7 +1485,7 @@ pub fn input_staking_pool_validator_account_id(
                 .collect())
         })
         .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
+            match near_kit::AccountId::validate(account_id_str) {
                 Ok(_) => Ok(inquire::validator::Validation::Valid),
                 Err(err) => Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
@@ -2049,10 +1512,10 @@ pub fn input_staking_pool_validator_account_id(
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StakingPoolInfo {
-    pub validator_id: near_primitives::types::AccountId,
+    pub validator_id: near_kit::AccountId,
     pub fee: Option<RewardFeeFraction>,
     pub delegators: Option<u64>,
-    pub stake: near_primitives::types::Balance,
+    pub stake: near_token::NearToken,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
@@ -2067,10 +1530,10 @@ pub fn get_validator_list(
 ) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
     tracing::info!(target: "near_teach_me", "Getting a list of validators ...");
 
-    let json_rpc_client = network_config.json_rpc_client();
+    let validators_stake = get_validators_stake(network_config)?;
 
-    let validators_stake = get_validators_stake(&json_rpc_client)?;
-
+    let client = network_config.client();
+    let rpc = client.rpc();
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
@@ -2079,12 +1542,7 @@ pub fn get_validator_list(
     let mut validator_list = runtime.block_on(
         futures::stream::iter(validators_stake.iter())
             .map(|(validator_account_id, stake)| async {
-                get_staking_pool_info(
-                    &json_rpc_client.clone(),
-                    validator_account_id.clone(),
-                    *stake,
-                )
-                .await
+                get_staking_pool_info(rpc, validator_account_id.clone(), *stake).await
             })
             .buffer_unordered(concurrency)
             .try_collect::<Vec<_>>(),
@@ -2095,7 +1553,7 @@ pub fn get_validator_list(
 
 #[derive(Debug, serde::Deserialize)]
 struct StakingPool {
-    pool_id: near_primitives::types::AccountId,
+    pool_id: near_kit::AccountId,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -2106,8 +1564,8 @@ struct StakingResponse {
 #[tracing::instrument(name = "Getting historically delegated staking pools ...", skip_all)]
 pub fn fetch_historically_delegated_staking_pools(
     fastnear_url: &url::Url,
-    account_id: &near_primitives::types::AccountId,
-) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    account_id: &near_kit::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_kit::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting historically delegated staking pools ...");
     let request =
         reqwest::blocking::get(fastnear_url.join(&format!("v1/account/{account_id}/staking"))?)?;
@@ -2122,54 +1580,62 @@ pub fn fetch_historically_delegated_staking_pools(
 
 #[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    staking_pools_factory_account_id: &near_primitives::types::AccountId,
-) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
+    network_config: &crate::config::NetworkConfig,
+    staking_pools_factory_account_id: &near_kit::AccountId,
+) -> color_eyre::Result<std::collections::BTreeSet<near_kit::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
-    let query_view_method_response = json_rpc_client
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::ViewState {
-                account_id: staking_pools_factory_account_id.clone(),
-                prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
-                include_proof: false,
-            },
-        })
-        .map_err(color_eyre::Report::msg)?;
-    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-        query_view_method_response.kind
-    {
-        Ok(result
-            .values
-            .into_iter()
-            .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
-            .collect())
-    } else {
-        Err(color_eyre::Report::msg("Error call result".to_string()))
+
+    // near-kit does not expose a view_state helper, so use the raw RPC escape hatch.
+    #[derive(serde::Deserialize)]
+    struct ViewStateItem {
+        value: String, // base64-encoded
     }
+    #[derive(serde::Deserialize)]
+    struct ViewStateResult {
+        values: Vec<ViewStateItem>,
+    }
+
+    let prefix_base64 = base64::engine::general_purpose::STANDARD.encode(b"se");
+
+    let result: ViewStateResult = block_on(network_config.client().rpc().call(
+        "query",
+        serde_json::json!({
+            "request_type": "view_state",
+            "finality": "final",
+            "account_id": staking_pools_factory_account_id.to_string(),
+            "prefix_base64": prefix_base64,
+            "include_proof": false,
+        }),
+    ))
+    .into_eyre()?;
+
+    Ok(result
+        .values
+        .into_iter()
+        .filter_map(|item| {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(&item.value)
+                .ok()?;
+            borsh::from_slice(&bytes).ok()
+        })
+        .collect())
 }
 
 #[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
 pub fn get_validators_stake(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-) -> color_eyre::eyre::Result<
-    std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
-> {
+    network_config: &crate::config::NetworkConfig,
+) -> color_eyre::eyre::Result<std::collections::HashMap<near_kit::AccountId, near_token::NearToken>>
+{
     tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
-    let epoch_validator_info = json_rpc_client
-        .blocking_call(
-            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                epoch_reference: near_primitives::types::EpochReference::Latest,
-            },
-        )
-        .wrap_err("Failed to get epoch validators information request.")?;
+    let epoch_validator_info =
+        block_on(network_config.client().rpc().validators(None)).into_eyre()?;
 
     Ok(epoch_validator_info
         .current_proposals
         .into_iter()
-        .map(|validator_stake_view| {
-            let validator_stake = validator_stake_view.into_validator_stake();
-            validator_stake.account_and_stake()
+        .map(|proposal| {
+            let v1 = proposal.into_v1();
+            (v1.account_id, v1.stake)
         })
         .chain(epoch_validator_info.current_validators.into_iter().map(
             |current_epoch_validator_info| {
@@ -2194,65 +1660,47 @@ pub fn get_validators_stake(
 }
 
 async fn get_staking_pool_info(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    validator_account_id: near_primitives::types::AccountId,
+    rpc: &near_kit::RpcClient,
+    validator_account_id: near_kit::AccountId,
     stake: near_token::NearToken,
 ) -> color_eyre::Result<StakingPoolInfo> {
-    let fee = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_reward_fee_fraction".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
+    let fee = match rpc
+        .view_function(
+            &validator_account_id,
+            "get_reward_fee_fraction",
+            &[],
+            near_kit::BlockReference::final_(),
+        )
         .await
     {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<RewardFeeFraction>()
-                .wrap_err(
-                    "Failed to parse return value of view function call for RewardFeeFraction.",
-                )?,
-        ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
+        Ok(result) => Some(result.json::<RewardFeeFraction>().wrap_err(
+            "Failed to parse return value of view function call for RewardFeeFraction.",
+        )?),
+        Err(
+            near_kit::RpcError::ContractNotDeployed(_)
+            | near_kit::RpcError::ContractExecution { .. },
+        ) => None,
         Err(err) => return Err(err.into()),
     };
 
-    let delegators = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_number_of_accounts".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
+    let delegators = match rpc
+        .view_function(
+            &validator_account_id,
+            "get_number_of_accounts",
+            &[],
+            near_kit::BlockReference::final_(),
+        )
         .await
     {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<u64>()
+        Ok(result) => Some(
+            result
+                .json::<u64>()
                 .wrap_err("Failed to parse return value of view function call for u64.")?,
         ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
+        Err(
+            near_kit::RpcError::ContractNotDeployed(_)
+            | near_kit::RpcError::ContractExecution { .. },
+        ) => None,
         Err(err) => return Err(err.into()),
     };
 
@@ -2265,23 +1713,21 @@ async fn get_staking_pool_info(
 }
 
 pub fn display_account_info(
-    viewed_at_block_hash: &CryptoHash,
-    viewed_at_block_height: &near_primitives::types::BlockHeight,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     delegated_stake: color_eyre::Result<
-        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+        std::collections::BTreeMap<near_kit::AccountId, near_token::NearToken>,
     >,
-    account_view: &near_primitives::views::AccountView,
-    access_key_list: Option<&near_primitives::views::AccessKeyList>,
-    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    account_view: &near_kit::AccountView,
+    access_key_list: Option<&near_kit::AccessKeyListView>,
+    optional_account_profile: Option<&crate::types::socialdb::AccountProfile>,
 ) {
     eprintln!();
     let mut table: Table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
 
     profile_table(
-        viewed_at_block_hash,
-        viewed_at_block_height,
+        &account_view.block_hash,
+        &account_view.block_height,
         account_id,
         optional_account_profile,
         &mut table,
@@ -2329,22 +1775,22 @@ pub fn display_account_info(
         ),
         (_, None, Some(global_contract_hash)) => (
             "Global Contract (by Hash: SHA-256 checksum hex)",
-            hex::encode(global_contract_hash.as_ref()),
+            hex::encode(global_contract_hash.as_bytes()),
         ),
-        (hash, None, None) if *hash == CryptoHash::default() => {
+        (hash, None, None) if hash.is_zero() => {
             ("Contract", "No contract code".to_string())
         }
         (code_hash, None, None) => (
             "Local Contract (SHA-256 checksum hex)",
-            hex::encode(code_hash.as_ref()),
+            hex::encode(code_hash.as_bytes()),
         ),
         (code_hash, global_account_id, global_hash) => (
             "Contract",
             format!(
                 "Invalid account contract state. Please contact the developers. code_hash: <{}>, global_account_id: <{:?}>, global_hash: <{:?}>",
-                hex::encode(code_hash.as_ref()),
+                hex::encode(code_hash.as_bytes()),
                 global_account_id,
-                global_hash.as_ref()
+                global_hash.as_ref().map(|h| hex::encode(h.as_bytes()))
             )
             .red().to_string()
         ),
@@ -2365,7 +1811,7 @@ pub fn display_account_info(
                 .filter(|access_key| {
                     matches!(
                         access_key.access_key.permission,
-                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                        near_kit::AccessKeyPermissionView::FullAccess
                     )
                 })
                 .count();
@@ -2389,10 +1835,10 @@ pub fn display_account_info(
 }
 
 pub fn display_account_profile(
-    viewed_at_block_hash: &CryptoHash,
-    viewed_at_block_height: &near_primitives::types::BlockHeight,
-    account_id: &near_primitives::types::AccountId,
-    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    viewed_at_block_hash: &near_kit::CryptoHash,
+    viewed_at_block_height: &u64,
+    account_id: &near_kit::AccountId,
+    optional_account_profile: Option<&crate::types::socialdb::AccountProfile>,
 ) {
     let mut table = Table::new();
     table.set_format(*prettytable::format::consts::FORMAT_NO_COLSEP);
@@ -2407,10 +1853,10 @@ pub fn display_account_profile(
 }
 
 fn profile_table(
-    viewed_at_block_hash: &CryptoHash,
-    viewed_at_block_height: &near_primitives::types::BlockHeight,
-    account_id: &near_primitives::types::AccountId,
-    optional_account_profile: Option<&near_socialdb_client::types::socialdb_types::AccountProfile>,
+    viewed_at_block_hash: &near_kit::CryptoHash,
+    viewed_at_block_height: &u64,
+    account_id: &near_kit::AccountId,
+    optional_account_profile: Option<&crate::types::socialdb::AccountProfile>,
     table: &mut Table,
 ) {
     if let Some(account_profile) = optional_account_profile {
@@ -2507,14 +1953,14 @@ fn profile_table(
     }
 }
 
-pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyInfoView]) {
+pub fn display_access_key_list(access_keys: &[near_kit::AccessKeyInfoView]) {
     let mut table = Table::new();
     table.set_titles(prettytable::row![Fg=>"#", "Public Key", "Nonce", "Permissions"]);
 
     for (index, access_key) in access_keys.iter().enumerate() {
         let permissions_message = match &access_key.access_key.permission {
-            AccessKeyPermissionView::FullAccess => "full access".to_owned(),
-            AccessKeyPermissionView::FunctionCall {
+            near_kit::AccessKeyPermissionView::FullAccess => "full access".to_owned(),
+            near_kit::AccessKeyPermissionView::FunctionCall {
                 allowance,
                 receiver_id,
                 method_names,
@@ -2533,7 +1979,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                     )
                 }
             }
-            AccessKeyPermissionView::GasKeyFunctionCall {
+            near_kit::AccessKeyPermissionView::GasKeyFunctionCall {
                 balance,
                 num_nonces,
                 allowance: _,
@@ -2550,7 +1996,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                     balance.exact_amount_display()
                 )
             }
-            AccessKeyPermissionView::GasKeyFullAccess {
+            near_kit::AccessKeyPermissionView::GasKeyFullAccess {
                 balance,
                 num_nonces,
             } => {
@@ -2579,7 +2025,7 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
 /// relevant at the top of the list.
 pub fn input_network_name(
     config: &crate::config::Config,
-    account_ids: &[near_primitives::types::AccountId],
+    account_ids: &[near_kit::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
     if config.network_connection.len() == 1 {
         return Ok(config.network_names().pop());
@@ -2623,414 +2069,13 @@ pub fn input_network_name(
     }
 }
 
-pub trait JsonRpcClientExt {
-    fn blocking_call<M>(&self, method: M) -> BoxedJsonRpcResult<M::Response, M::Error>
-    where
-        M: near_jsonrpc_client::methods::RpcMethod,
-        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display;
-
-    /// A helper function to make a view-funcation call using JSON encoding for the function
-    /// arguments and function return value.
-    fn blocking_call_view_function(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        method_name: &str,
-        args: Vec<u8>,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
-
-    fn blocking_call_view_access_key(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        public_key: &near_crypto::PublicKey,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    >;
-
-    fn blocking_call_view_access_key_list(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    >;
-
-    fn blocking_call_view_account(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    >;
-}
-
-impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
-    fn blocking_call<M>(&self, method: M) -> BoxedJsonRpcResult<M::Response, M::Error>
-    where
-        M: near_jsonrpc_client::methods::RpcMethod,
-        M::Error: serde::Serialize + std::fmt::Debug + std::fmt::Display,
-    {
-        if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&method)
-            && tracing::enabled!(target: "near_teach_me", tracing::Level::INFO)
-        {
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "HTTP POST {}",
-                self.server_addr()
-            );
-
-            let (request_payload, message_about_saving_payload) =
-                check_request_payload_for_send_transaction(request_payload);
-
-            tracing::info!(
-                target: "near_teach_me",
-                parent: &tracing::Span::none(),
-                "JSON Request Body:\n{}",
-                indent_payload(&format!("{request_payload:#}"))
-            );
-            match message_about_saving_payload {
-                Ok(Some(message)) => {
-                    tracing::event!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        tracing::Level::INFO,
-                        "{}", message
-                    );
-                }
-                Err(message) => {
-                    tracing::event!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        tracing::Level::WARN,
-                        "{}", message
-                    );
-                }
-                _ => {}
-            }
-        }
-
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(self.call(method))
-            .inspect_err(|err| match err {
-                near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
-                    tracing::info!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        "JSON RPC Request failed due to connectivity issue:\n{}",
-                        indent_payload(&format!("{transport_error:#?}"))
-                    );
-                }
-                near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
-                ) => {
-                    tracing::info!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        "JSON RPC Request returned a handling error:\n{}",
-                        indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
-                    );
-                }
-                near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
-                    tracing::info!(
-                        target: "near_teach_me",
-                        parent: &tracing::Span::none(),
-                        "JSON RPC Request returned a generic server error:\n{}",
-                        indent_payload(&format!("{server_error:#?}"))
-                    );
-                }
-            })
-            .map_err(Box::new)
-    }
-
-    /// A helper function to make a view-funcation call using JSON encoding for the function
-    /// arguments and function return value.
-    #[tracing::instrument(name = "Getting the result of executing", skip_all)]
-    fn blocking_call_view_function(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        function_name: &str,
-        args: Vec<u8>,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
-        tracing::Span::current().pb_set_message(&format!(
-            "a read-only function '{function_name}' of the <{account_id}> contract ..."
-        ));
-        tracing::info!(target: "near_teach_me", "Getting the result of executing a read-only function '{function_name}' of the <{account_id}> contract ...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: account_id.clone(),
-                method_name: function_name.to_owned(),
-                args: near_primitives::types::FunctionArgs::from(args),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to call a read-only function `{}` on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
-            function_name,
-            account_id
-        );
-
-        let query_view_method_response = self
-            .blocking_call(query_view_method_request)
-            .wrap_err("Read-only function execution failed")?;
-
-        query_view_method_response.call_result()
-            .inspect(|call_result| {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Response:\n{}",
-                    indent_payload(&format!(
-                        "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
-                        query_view_method_response.block_hash,
-                        query_view_method_response.block_height,
-                        call_result.logs,
-                        call_result.result
-                    ))
-                );
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
-                    indent_payload(&format!("{}\n ", 
-                        &String::from_utf8(call_result.result.clone())
-                            .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
-                    ))
-                );
-            })
-            .inspect_err(|_| {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Response:\n{}",
-                    indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
-                );
-            })
-    }
-
-    #[tracing::instrument(name = "Getting access key information:", skip_all)]
-    fn blocking_call_view_access_key(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        public_key: &near_crypto::PublicKey,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    > {
-        tracing::Span::current().pb_set_message(&format!(
-            "public key {public_key} on account <{account_id}>..."
-        ));
-        tracing::info!(target: "near_teach_me", "Getting access key information for public key {public_key} on account <{account_id}>...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKey {
-                account_id: account_id.clone(),
-                public_key: public_key.clone(),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get an access key details for public key {} on account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
-            public_key,
-            account_id
-        );
-
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
-    }
-
-    #[tracing::instrument(name = "Getting a list of", skip_all)]
-    fn blocking_call_view_access_key_list(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    > {
-        tracing::Span::current()
-            .pb_set_message(&format!("access keys on account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                account_id: account_id.clone(),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
-            account_id
-        );
-
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
-    }
-
-    #[tracing::instrument(name = "Getting information about", skip_all)]
-    fn blocking_call_view_account(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    > {
-        tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
-        tracing::info!(target: "near_teach_me", "Getting information about account <{account_id}>...");
-
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccount {
-                account_id: account_id.clone(),
-            },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to query information about account <{}>, learn more https://docs.near.org/api/rpc/contracts#view-account",
-            account_id
-        );
-
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
-    }
-}
-
-fn check_request_payload_for_send_transaction(
-    mut request_payload: serde_json::Value,
-) -> (serde_json::Value, Result<Option<String>, String>) {
-    let mut message_about_saving_payload = Ok(None);
-    let method = request_payload.get("method").cloned();
-    let params_value = request_payload.get("params").cloned();
-    if let Some(method) = method
-        && (method.to_string().contains("broadcast_tx_commit")
-            || method.to_string().contains("send_tx"))
-        && let Some(params_value) = params_value
-    {
-        message_about_saving_payload = replace_params_with_file(&mut request_payload, params_value);
-    }
-    (request_payload, message_about_saving_payload)
-}
-
-fn replace_params_with_file(
-    request_payload: &mut serde_json::Value,
-    params_value: serde_json::Value,
-) -> Result<Option<String>, String> {
-    let file_path = std::path::PathBuf::from("send_tx__params_field.json");
-
-    let total_params_length = {
-        match serde_json::to_vec_pretty(&params_value) {
-            Ok(serialized) => serialized.len(),
-            // this branch is supposed to be unreachable
-            Err(err) => {
-                return Err(format!(
-                    "Failed to save payload to `{}`. Serialization error:\n{}",
-                    &file_path.display(),
-                    indent_payload(&format!("{err:#?}"))
-                ));
-            }
-        }
-    };
-
-    if total_params_length > 1000 {
-        let file_content = {
-            let mut map = serde_json::Map::new();
-            map.insert(
-                "original `params` field of JSON Request Body".into(),
-                params_value,
-            );
-
-            serde_json::Value::Object(map)
-        };
-
-        let result = match std::fs::File::create(&file_path) {
-            Ok(mut file) => match serde_json::to_vec_pretty(&file_content) {
-                Ok(buf) => match file.write(&buf) {
-                    Ok(_) => Ok(Some(format!(
-                        "The file `{}` was created successfully. It has a signed transaction (serialized as base64).",
-                        &file_path.display()
-                    ))),
-                    Err(err) => Err(format!(
-                        "Failed to save payload to `{}`. Failed to write file:\n{}",
-                        &file_path.display(),
-                        indent_payload(&format!("{err:#?}"))
-                    )),
-                },
-                Err(err) => Err(format!(
-                    "Failed to save payload to `{}`. Serialization error:\n{}",
-                    &file_path.display(),
-                    indent_payload(&format!("{err:#?}"))
-                )),
-            },
-            Err(err) => Err(format!(
-                "Failed to save payload to `{}`. Failed to create file:\n{}",
-                &file_path.display(),
-                indent_payload(&format!("{err:#?}"))
-            )),
-        };
-
-        if result.is_ok() {
-            request_payload["params"] = serde_json::json!(format!(
-                "`params` field serialization contains {} characters. Current field will be stored in `{}`",
-                total_params_length,
-                &file_path.display()
-            ));
-        }
-        result
-    } else {
-        Ok(None)
-    }
-}
-
-pub(crate) fn teach_me_call_response(response: &impl serde::Serialize) {
-    if let Ok(response_payload) = serde_json::to_value(response) {
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON RPC Response:\n{}",
-            indent_payload(&format!("{response_payload:#}"))
-        );
-    }
-}
-
-#[cfg(feature = "inspect_contract")]
-pub(crate) fn teach_me_request_payload(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    request: &near_jsonrpc_client::methods::query::RpcQueryRequest,
-) {
-    if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(request) {
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            json_rpc_client.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Request Body:\n{}",
-            indent_payload(&format!("{request_payload:#}"))
-        );
-    }
+/// Run a future on a new single-threaded tokio runtime.
+///
+/// This is a thin helper for calling near-kit async methods from synchronous
+/// code paths.  All of the old `blocking_*` wrappers have been replaced by
+/// `block_on(…)` calls at the respective callsites.
+pub fn block_on<F: std::future::Future>(f: F) -> F::Output {
+    tokio::runtime::Runtime::new().unwrap().block_on(f)
 }
 
 pub fn indent_payload(s: &str) -> String {
@@ -3044,63 +2089,20 @@ pub fn indent_payload(s: &str) -> String {
     indented_string
 }
 
-#[easy_ext::ext(RpcQueryResponseExt)]
-pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
-    fn access_key_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyView> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
-            access_key_view,
-        ) = &self.kind
-        {
-            Ok(access_key_view.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a View Access Key query call",
-            );
-        }
-    }
+/// Extension trait to convert `Result<T, near_kit::RpcError>` into
+/// `Result<T, color_eyre::eyre::Error>` via `.into_eyre()`.
+pub trait RpcResultExt<T> {
+    fn into_eyre(self) -> color_eyre::eyre::Result<T>;
+}
 
-    fn access_key_list_view(
-        &self,
-    ) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyList> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-            access_key_list,
-        ) = &self.kind
-        {
-            Ok(access_key_list.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a View Access Key List query call",
-            );
-        }
-    }
-
-    fn account_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(account_view) =
-            &self.kind
-        {
-            Ok(account_view.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a View Account query call",
-            );
-        }
-    }
-
-    fn call_result(&self) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-            &self.kind
-        {
-            Ok(result.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a view-function query call",
-            );
-        }
+impl<T> RpcResultExt<T> for Result<T, near_kit::RpcError> {
+    fn into_eyre(self) -> color_eyre::eyre::Result<T> {
+        self.map_err(|err| color_eyre::eyre::eyre!("{}", err))
     }
 }
 
 #[easy_ext::ext(CallResultExt)]
-pub impl near_primitives::views::CallResult {
+pub impl near_kit::ViewFunctionResult {
     fn parse_result_from_json<T>(&self) -> Result<T, color_eyre::eyre::Error>
     where
         T: for<'de> serde::Deserialize<'de>,
@@ -3130,7 +2132,7 @@ pub impl near_primitives::views::CallResult {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct UsedAccount {
-    pub account_id: near_primitives::types::AccountId,
+    pub account_id: near_kit::AccountId,
     pub used_as_signer: bool,
 }
 
@@ -3141,7 +2143,7 @@ fn get_used_account_list_path(credentials_home_dir: &std::path::Path) -> std::pa
 pub fn create_used_account_list_from_legacy_keychain(
     credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<()> {
-    let mut used_account_list: std::collections::BTreeSet<near_primitives::types::AccountId> =
+    let mut used_account_list: std::collections::BTreeSet<near_kit::AccountId> =
         std::collections::BTreeSet::new();
     let read_dir =
         |dir: &std::path::Path| dir.read_dir().map(Iterator::flatten).into_iter().flatten();
@@ -3191,7 +2193,7 @@ pub fn create_used_account_list_from_legacy_keychain(
 
 pub fn update_used_account_list_as_signer(
     credentials_home_dir: &std::path::Path,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) {
     let account_is_signer = true;
     update_used_account_list(credentials_home_dir, account_id, account_is_signer);
@@ -3199,7 +2201,7 @@ pub fn update_used_account_list_as_signer(
 
 pub fn update_used_account_list_as_non_signer(
     credentials_home_dir: &std::path::Path,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) {
     let account_is_signer = false;
     update_used_account_list(credentials_home_dir, account_id, account_is_signer);
@@ -3207,7 +2209,7 @@ pub fn update_used_account_list_as_non_signer(
 
 fn update_used_account_list(
     credentials_home_dir: &std::path::Path,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     account_is_signer: bool,
 ) {
     let mut used_account_list = get_used_account_list(credentials_home_dir);
@@ -3282,7 +2284,7 @@ fn input_account_id_from_used_account_list(
                 .collect())
         })
         .with_validator(|account_id_str: &str| {
-            match near_primitives::types::AccountId::validate(account_id_str) {
+            match near_kit::AccountId::validate(account_id_str) {
                 Ok(_) => Ok(inquire::validator::Validation::Valid),
                 Err(err) => Ok(inquire::validator::Validation::Invalid(
                     inquire::validator::ErrorMessage::Custom(format!("Invalid account ID: {err}")),
@@ -3461,13 +2463,40 @@ pub fn parse_base64_kv_map(
     Ok(data.0)
 }
 
-// NOTE: workaround for not yet released version of near-primitives that accounts for proper
-// serialization of GlobalContractIdentifier
-// ref: https://github.com/near/nearcore/commit/1bcb01fb09ada9243182d061b8b2e2ad7bf544c3
+// Serializable view for GlobalContractIdentifier — near-kit's
+// GlobalContractIdentifierView only implements Deserialize, so we keep a
+// local view type that also derives Serialize for JSON round-tripping.
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
+pub(crate) enum GlobalContractIdentifierSerde {
+    CodeHash { hash: near_kit::CryptoHash },
+    AccountId { account_id: near_kit::AccountId },
+}
+
+impl From<near_kit::GlobalContractIdentifier> for GlobalContractIdentifierSerde {
+    fn from(value: near_kit::GlobalContractIdentifier) -> Self {
+        match value {
+            near_kit::GlobalContractIdentifier::CodeHash(hash) => Self::CodeHash { hash },
+            near_kit::GlobalContractIdentifier::AccountId(account_id) => {
+                Self::AccountId { account_id }
+            }
+        }
+    }
+}
+
+impl From<GlobalContractIdentifierSerde> for near_kit::GlobalContractIdentifier {
+    fn from(value: GlobalContractIdentifierSerde) -> Self {
+        match value {
+            GlobalContractIdentifierSerde::CodeHash { hash } => Self::CodeHash(hash),
+            GlobalContractIdentifierSerde::AccountId { account_id } => Self::AccountId(account_id),
+        }
+    }
+}
+
 #[serde_as]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub(crate) struct DeterministicAccountStateInitV1View {
-    code: near_primitives::views::GlobalContractIdentifierView,
+    code: GlobalContractIdentifierSerde,
     #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
     data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
 }
@@ -3477,12 +2506,9 @@ pub(crate) enum DeterministicAccountStateInitView {
     V1(DeterministicAccountStateInitV1View),
 }
 
-impl From<near_primitives::deterministic_account_id::DeterministicAccountStateInit>
-    for DeterministicAccountStateInitView
-{
-    fn from(
-        near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(v1): near_primitives::deterministic_account_id::DeterministicAccountStateInit,
-    ) -> Self {
+impl From<near_kit::DeterministicAccountStateInit> for DeterministicAccountStateInitView {
+    fn from(value: near_kit::DeterministicAccountStateInit) -> Self {
+        let near_kit::DeterministicAccountStateInit::V1(v1) = value;
         Self::V1(DeterministicAccountStateInitV1View {
             code: v1.code.into(),
             data: v1.data,
@@ -3490,26 +2516,21 @@ impl From<near_primitives::deterministic_account_id::DeterministicAccountStateIn
     }
 }
 
-impl From<DeterministicAccountStateInitView>
-    for near_primitives::deterministic_account_id::DeterministicAccountStateInit
-{
-    fn from(DeterministicAccountStateInitView::V1(v1): DeterministicAccountStateInitView) -> Self {
-        Self::V1(
-            near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
-                code: v1.code.into(),
-                data: v1.data,
-            },
-        )
+impl From<DeterministicAccountStateInitView> for near_kit::DeterministicAccountStateInit {
+    fn from(value: DeterministicAccountStateInitView) -> Self {
+        let DeterministicAccountStateInitView::V1(v1) = value;
+        Self::V1(near_kit::DeterministicAccountStateInitV1 {
+            code: v1.code.into(),
+            data: v1.data,
+        })
     }
 }
 
 /// Deserializes a `DeterministicAccountStateInit` from borsh-serialized bytes.
 pub fn parse_borsh_base64_state_init(
     bytes: &[u8],
-) -> color_eyre::eyre::Result<
-    near_primitives::deterministic_account_id::DeterministicAccountStateInit,
-> {
+) -> color_eyre::eyre::Result<near_kit::DeterministicAccountStateInit> {
     use borsh::BorshDeserialize;
-    near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(bytes)
+    near_kit::DeterministicAccountStateInit::try_from_slice(bytes)
         .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
 }

@@ -16,11 +16,9 @@ impl DeleteKeyActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<DeleteKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::DeleteKey(Box::new(
-            near_primitives::transaction::DeleteKeyAction {
-                public_key: scope.public_key.clone().into(),
-            },
-        ));
+        let action = near_kit::Action::DeleteKey(near_kit::DeleteKeyAction {
+            public_key: scope.public_key.clone().0,
+        });
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {

@@ -14,7 +14,7 @@ impl SignPrivateKeyContext {
         previous_context: super::super::FinalSignNep413Context,
         scope: &<SignPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let secret_key: near_crypto::SecretKey = scope.private_key.clone().into();
+        let secret_key: near_kit::SecretKey = scope.private_key.0.clone();
         let public_key = secret_key.public_key();
         let signature = super::super::sign_nep413_payload(&previous_context.payload, &secret_key)?;
 
