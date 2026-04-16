@@ -45,8 +45,7 @@ impl SignSeedPhraseContext {
 
         let signer_secret_key: near_kit::SecretKey =
             near_kit::SecretKey::from_str(&key_pair_properties.secret_keypair_str)?;
-        let signer_public_key =
-            near_kit::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+        let signer_public_key = near_kit::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
         let (nonce, block_hash, block_height) = super::resolve_nonce_and_block(
             &previous_context.network_config,
@@ -107,10 +106,7 @@ impl SignSeedPhrase {
     ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)

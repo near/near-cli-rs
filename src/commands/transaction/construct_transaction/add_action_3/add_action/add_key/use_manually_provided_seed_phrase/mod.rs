@@ -29,12 +29,10 @@ impl AddAccessWithSeedPhraseActionContext {
             nonce: 0,
             permission: previous_context.access_key_permission,
         };
-        let action = near_kit::Action::AddKey(
-            near_kit::AddKeyAction {
-                public_key: crate::types::public_key::PublicKey::from(public_key).0,
-                access_key,
-            },
-        );
+        let action = near_kit::Action::AddKey(near_kit::AddKeyAction {
+            public_key: crate::types::public_key::PublicKey::from(public_key).0,
+            access_key,
+        });
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(

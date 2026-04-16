@@ -87,9 +87,7 @@ impl UsbAddLedgerKeyContext {
                 ))
             },
         )?;
-        let public_key = near_kit::PublicKey::ed25519_from_bytes(
-            public_key.to_bytes(),
-        );
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes());
 
         Ok(Self {
             global_context: previous_context.global_context,
@@ -112,7 +110,7 @@ impl From<UsbAddLedgerKeyContext> for crate::commands::ActionContext {
                         receiver_id: signer_account_id.clone(),
                         actions: vec![near_kit::Action::AddKey(
                             near_kit::AddKeyAction {
-                                public_key: crate::types::public_key::PublicKey::from(item.public_key.clone()).0,
+                                public_key: item.public_key.clone().0,
                                 access_key: near_kit::AccessKey {
                                     nonce: 0,
                                     permission: item.permission.clone(),
@@ -169,9 +167,7 @@ impl BleAddLedgerKeyContext {
         let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
 
         let public_key = crate::transaction_signature_options::sign_with_ledger::ble_helpers::ble_connect_and_get_public_key(seed_phrase_hd_path.into())?;
-        let public_key = near_kit::PublicKey::ed25519_from_bytes(
-            public_key.to_bytes(),
-        );
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes());
 
         Ok(Self {
             global_context: previous_context.global_context,
@@ -195,7 +191,7 @@ impl From<BleAddLedgerKeyContext> for crate::commands::ActionContext {
                         receiver_id: signer_account_id.clone(),
                         actions: vec![near_kit::Action::AddKey(
                             near_kit::AddKeyAction {
-                                public_key: crate::types::public_key::PublicKey::from(item.public_key.clone()).0,
+                                public_key: item.public_key.clone().0,
                                 access_key: near_kit::AccessKey {
                                     nonce: 0,
                                     permission: item.permission.clone(),

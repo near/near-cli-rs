@@ -183,12 +183,11 @@ fn validate_new_account_id(
     account_id: &near_kit::AccountId,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Validation new account_id ...");
-    let account_state =
-        crate::common::block_on(crate::common::get_account_state(
-                network_config,
-                account_id,
-                near_kit::BlockReference::optimistic(),
-            ));
+    let account_state = crate::common::block_on(crate::common::get_account_state(
+        network_config,
+        account_id,
+        near_kit::BlockReference::optimistic(),
+    ));
     match account_state {
         Ok(_) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
             "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",

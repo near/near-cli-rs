@@ -196,11 +196,10 @@ pub async fn get_account_transfer_allowance(
             ));
         }
     };
-    let storage_amount_per_byte =
-        get_partial_protocol_config(network_config, &block_reference)
-            .await?
-            .runtime_config
-            .storage_amount_per_byte;
+    let storage_amount_per_byte = get_partial_protocol_config(network_config, &block_reference)
+        .await?
+        .runtime_config
+        .storage_amount_per_byte;
 
     Ok(AccountTransferAllowance {
         account_id,
@@ -220,18 +219,14 @@ pub fn verify_account_access_key(
     account_id: near_kit::AccountId,
     public_key: near_kit::PublicKey,
     network_config: crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<
-    near_kit::AccessKeyView,
-    AccountStateError,
-> {
+) -> color_eyre::eyre::Result<near_kit::AccessKeyView, AccountStateError> {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
-        match block_on(
-            network_config
-                .client()
-                .rpc()
-                .view_access_key(&account_id, &public_key, near_kit::BlockReference::optimistic()),
-        ) {
+        match block_on(network_config.client().rpc().view_access_key(
+            &account_id,
+            &public_key,
+            near_kit::BlockReference::optimistic(),
+        )) {
             Ok(access_key_view) => {
                 return Ok(access_key_view);
             }
@@ -239,8 +234,7 @@ pub fn verify_account_access_key(
                 let err_str = format!("{err}");
                 // Check for "access key not found" / "unknown access key" style errors
                 if err_str.contains("UnknownAccessKey")
-                    || err_str.contains("access key")
-                        && err_str.contains("does not exist")
+                    || err_str.contains("access key") && err_str.contains("does not exist")
                 {
                     return Err(AccountStateError::RpcError(err_str));
                 }
@@ -333,10 +327,10 @@ pub fn find_network_where_account_exist(
         }
 
         let result = block_on(get_account_state(
-                network_config,
-                &new_account_id,
-                near_kit::BlockReference::optimistic(),
-            ));
+            network_config,
+            &new_account_id,
+            near_kit::BlockReference::optimistic(),
+        ));
 
         match result {
             Ok(_) => return Ok(Some(network_config.clone())),
@@ -401,9 +395,7 @@ pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
 #[derive(Debug)]
 pub enum ViewAccountError {
     /// The account does not exist on-chain.
-    UnknownAccount {
-        account_id: near_kit::AccountId,
-    },
+    UnknownAccount { account_id: near_kit::AccountId },
     /// A transport / connectivity error occurred.
     TransportError(String),
     /// Any other server-side error.
@@ -622,9 +614,7 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
-pub fn print_full_signed_transaction(
-    transaction: &near_kit::SignedTransaction,
-) -> String {
+pub fn print_full_signed_transaction(transaction: &near_kit::SignedTransaction) -> String {
     let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
     info_str.push_str(&format!(
         "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
@@ -632,18 +622,15 @@ pub fn print_full_signed_transaction(
     ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
-        "public_key:",
-        &transaction.transaction.public_key
+        "public_key:", &transaction.transaction.public_key
     ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
-        "nonce:",
-        transaction.transaction.nonce
+        "nonce:", transaction.transaction.nonce
     ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
-        "block_hash:",
-        &transaction.transaction.block_hash
+        "block_hash:", &transaction.transaction.block_hash
     ));
     let prepopulated = crate::commands::PrepopulatedTransaction {
         signer_id: transaction.transaction.signer_id.clone(),
@@ -654,9 +641,7 @@ pub fn print_full_signed_transaction(
     info_str
 }
 
-pub fn print_full_unsigned_transaction(
-    transaction: &near_kit::Transaction,
-) -> String {
+pub fn print_full_unsigned_transaction(transaction: &near_kit::Transaction) -> String {
     let mut info_str = format!(
         "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
         transaction.get_hash_and_size().0
@@ -664,18 +649,12 @@ pub fn print_full_unsigned_transaction(
 
     info_str.push_str(&format!(
         "\n{:<13} {}",
-        "public_key:",
-        &transaction.public_key
+        "public_key:", &transaction.public_key
     ));
+    info_str.push_str(&format!("\n{:<13} {}", "nonce:", transaction.nonce));
     info_str.push_str(&format!(
         "\n{:<13} {}",
-        "nonce:",
-        transaction.nonce
-    ));
-    info_str.push_str(&format!(
-        "\n{:<13} {}",
-        "block_hash:",
-        &transaction.block_hash
+        "block_hash:", &transaction.block_hash
     ));
 
     let prepopulated = crate::commands::PrepopulatedTransaction {
@@ -830,8 +809,10 @@ pub fn print_unsigned_transaction(
                         .iter()
                         .map(|nda| {
                             // NonDelegateAction wraps Action with identical borsh encoding
-                            let bytes = borsh::to_vec(nda).expect("NonDelegateAction borsh serialization should not fail");
-                            borsh::from_slice::<near_kit::Action>(&bytes).expect("Action borsh deserialization should not fail")
+                            let bytes = borsh::to_vec(nda)
+                                .expect("NonDelegateAction borsh serialization should not fail");
+                            borsh::from_slice::<near_kit::Action>(&bytes)
+                                .expect("Action borsh deserialization should not fail")
                         })
                         .collect(),
                 };
@@ -876,16 +857,21 @@ pub fn print_unsigned_transaction(
                     near_kit::DeterministicAccountStateInit::V1(v1) => {
                         let mut ret = "V1".to_string();
                         ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", v1.data));
-                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match &v1.code {
-                            near_kit::GlobalContractIdentifier::CodeHash(hash) => {
-                                format!("use global <{hash}> code to deploy from")
+                        ret.push_str(&format!(
+                            "\n{:>31} {:<13} {}",
+                            "",
+                            "code",
+                            match &v1.code {
+                                near_kit::GlobalContractIdentifier::CodeHash(hash) => {
+                                    format!("use global <{hash}> code to deploy from")
+                                }
+                                near_kit::GlobalContractIdentifier::AccountId(account_id) => {
+                                    format!("use global <{account_id}> code to deploy from")
+                                }
                             }
-                            near_kit::GlobalContractIdentifier::AccountId(account_id) => {
-                                format!("use global <{account_id}> code to deploy from")
-                            }
-                        }));
+                        ));
                         ret
-                    },
+                    }
                 };
 
                 info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
@@ -922,9 +908,7 @@ pub fn print_unsigned_transaction(
     info_str
 }
 
-fn print_value_successful_transaction(
-    transaction_info: near_kit::FinalExecutionOutcome,
-) -> String {
+fn print_value_successful_transaction(transaction_info: near_kit::FinalExecutionOutcome) -> String {
     let mut info_str: String = String::from('\n');
     for action in transaction_info.transaction.actions {
         match action {
@@ -1135,7 +1119,8 @@ pub fn print_transaction_status(
             Err(color_eyre::eyre::eyre!("{}", tx_execution_error))
         }
         near_kit::FinalExecutionStatus::SuccessValue(base64_result) => {
-            let bytes_result = base64::engine::general_purpose::STANDARD.decode(base64_result)
+            let bytes_result = base64::engine::general_purpose::STANDARD
+                .decode(base64_result)
                 .unwrap_or_default();
             if let crate::Verbosity::Quiet = verbosity {
                 std::io::stdout().write_all(&bytes_result)?;
@@ -1434,8 +1419,8 @@ pub fn get_delegated_validator_list_from_mainnet(
         .get("mainnet")
         .wrap_err("There is no 'mainnet' network in your configuration.")?;
 
-    let epoch_validator_info = block_on(network_config.client().rpc().validators(None))
-        .into_eyre()?;
+    let epoch_validator_info =
+        block_on(network_config.client().rpc().validators(None)).into_eyre()?;
 
     Ok(epoch_validator_info
         .current_proposals
@@ -1468,8 +1453,7 @@ pub fn get_used_delegated_validator_list(
         get_used_account_list(&config.credentials_home_dir);
     let mut delegated_validator_list =
         get_delegated_validator_list_from_mainnet(&config.network_connection)?;
-    let mut used_delegated_validator_list: VecDeque<near_kit::AccountId> =
-        VecDeque::new();
+    let mut used_delegated_validator_list: VecDeque<near_kit::AccountId> = VecDeque::new();
 
     for used_account in used_account_list {
         if delegated_validator_list.remove(&used_account.account_id) {
@@ -1554,12 +1538,7 @@ pub fn get_validator_list(
     let mut validator_list = runtime.block_on(
         futures::stream::iter(validators_stake.iter())
             .map(|(validator_account_id, stake)| async {
-                get_staking_pool_info(
-                    rpc,
-                    validator_account_id.clone(),
-                    *stake,
-                )
-                .await
+                get_staking_pool_info(rpc, validator_account_id.clone(), *stake).await
             })
             .buffer_unordered(concurrency)
             .try_collect::<Vec<_>>(),
@@ -1612,26 +1591,27 @@ pub fn fetch_currently_active_staking_pools(
         values: Vec<ViewStateItem>,
     }
 
-    let prefix_base64 =
-        base64::engine::general_purpose::STANDARD.encode(b"se");
+    let prefix_base64 = base64::engine::general_purpose::STANDARD.encode(b"se");
 
     let result: ViewStateResult = block_on(network_config.client().rpc().call(
-            "query",
-            serde_json::json!({
-                "request_type": "view_state",
-                "finality": "final",
-                "account_id": staking_pools_factory_account_id.to_string(),
-                "prefix_base64": prefix_base64,
-                "include_proof": false,
-            }),
-        ))
-        .into_eyre()?;
+        "query",
+        serde_json::json!({
+            "request_type": "view_state",
+            "finality": "final",
+            "account_id": staking_pools_factory_account_id.to_string(),
+            "prefix_base64": prefix_base64,
+            "include_proof": false,
+        }),
+    ))
+    .into_eyre()?;
 
     Ok(result
         .values
         .into_iter()
         .filter_map(|item| {
-            let bytes = base64::engine::general_purpose::STANDARD.decode(&item.value).ok()?;
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(&item.value)
+                .ok()?;
             borsh::from_slice(&bytes).ok()
         })
         .collect())
@@ -1640,12 +1620,11 @@ pub fn fetch_currently_active_staking_pools(
 #[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
 pub fn get_validators_stake(
     network_config: &crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<
-    std::collections::HashMap<near_kit::AccountId, near_token::NearToken>,
-> {
+) -> color_eyre::eyre::Result<std::collections::HashMap<near_kit::AccountId, near_token::NearToken>>
+{
     tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
-    let epoch_validator_info = block_on(network_config.client().rpc().validators(None))
-        .into_eyre()?;
+    let epoch_validator_info =
+        block_on(network_config.client().rpc().validators(None)).into_eyre()?;
 
     Ok(epoch_validator_info
         .current_proposals
@@ -1690,13 +1669,9 @@ async fn get_staking_pool_info(
         )
         .await
     {
-        Ok(result) => Some(
-            result
-                .json::<RewardFeeFraction>()
-                .wrap_err(
-                    "Failed to parse return value of view function call for RewardFeeFraction.",
-                )?,
-        ),
+        Ok(result) => Some(result.json::<RewardFeeFraction>().wrap_err(
+            "Failed to parse return value of view function call for RewardFeeFraction.",
+        )?),
         Err(
             near_kit::RpcError::ContractNotDeployed(_)
             | near_kit::RpcError::ContractExecution { .. },
@@ -2089,7 +2064,6 @@ pub fn input_network_name(
         Err(err) => Err(err.into()),
     }
 }
-
 
 /// Run a future on a new single-threaded tokio runtime.
 ///

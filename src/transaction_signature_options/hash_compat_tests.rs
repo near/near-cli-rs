@@ -25,8 +25,7 @@ mod tests {
         let block_hash_bytes = fixed_block_hash();
 
         // --- near-primitives side ---
-        let np_pk =
-            near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey(pk_bytes));
+        let np_pk = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey(pk_bytes));
         let np_block_hash = near_primitives::hash::CryptoHash(block_hash_bytes);
 
         let np_tx = near_primitives::transaction::Transaction::V0(
@@ -64,7 +63,8 @@ mod tests {
         let nk_bytes = borsh::to_vec(&nk_tx).unwrap();
 
         assert_eq!(
-            np_bytes, nk_bytes,
+            np_bytes,
+            nk_bytes,
             "near-primitives Transaction::V0 and near-kit Transaction borsh output differ!\n\
              np hex: {}\nnk hex: {}",
             hex::encode(&np_bytes),
@@ -74,11 +74,7 @@ mod tests {
         // Hash equality (both SHA-256 of the borsh bytes).
         let (np_hash, _) = np_tx.get_hash_and_size();
         let nk_hash = nk_tx.get_hash();
-        assert_eq!(
-            np_hash.0,
-            *nk_hash.as_bytes(),
-            "Transaction hashes differ!",
-        );
+        assert_eq!(np_hash.0, *nk_hash.as_bytes(), "Transaction hashes differ!",);
     }
 
     /// Test 2: Richer action set — CreateAccount + Transfer + AddKey(FullAccess).
@@ -88,8 +84,7 @@ mod tests {
         let block_hash_bytes = fixed_block_hash();
 
         // --- near-primitives side ---
-        let np_pk =
-            near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey(pk_bytes));
+        let np_pk = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey(pk_bytes));
         let np_block_hash = near_primitives::hash::CryptoHash(block_hash_bytes);
 
         let np_tx = near_primitives::transaction::Transaction::V0(
@@ -149,7 +144,8 @@ mod tests {
         let nk_bytes = borsh::to_vec(&nk_tx).unwrap();
 
         assert_eq!(
-            np_bytes, nk_bytes,
+            np_bytes,
+            nk_bytes,
             "near-primitives Transaction::V0 and near-kit Transaction borsh output differ (rich actions)!\n\
              np hex: {}\nnk hex: {}",
             hex::encode(&np_bytes),

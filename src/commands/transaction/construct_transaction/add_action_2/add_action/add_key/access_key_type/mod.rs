@@ -70,13 +70,12 @@ impl FunctionCallTypeContext {
         previous_context: super::super::super::super::ConstructTransactionContext,
         scope: &<FunctionCallType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let access_key_permission = near_kit::AccessKeyPermission::FunctionCall(
-            near_kit::FunctionCallPermission {
+        let access_key_permission =
+            near_kit::AccessKeyPermission::FunctionCall(near_kit::FunctionCallPermission {
                 allowance: scope.allowance.optional_near_token().map(Into::into),
                 receiver_id: scope.contract_account_id.clone().into(),
                 method_names: scope.function_names.clone().into(),
-            },
-        );
+            });
         Ok(Self(AccessKeyPermissionContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,

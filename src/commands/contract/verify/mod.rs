@@ -187,11 +187,7 @@ fn get_contract_properties_from_repository(
 ) -> color_eyre::eyre::Result<ContractProperties> {
     tracing::info!(target: "near_teach_me", "Getting the contract properties from the repository ...");
     let contract_source_metadata = crate::common::block_on(
-        super::inspect::get_contract_source_metadata(
-            network_config,
-            block_reference,
-            account_id,
-        ),
+        super::inspect::get_contract_source_metadata(network_config, block_reference, account_id),
     )?;
 
     get_contract_properties_from_docker_build(
@@ -301,13 +297,16 @@ fn get_contract_code_from_contract_account_id(
         "request_type": "view_code",
         "account_id": account_id.to_string(),
     });
-    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
-        if let serde_json::Value::Object(map) = &mut params {
-            map.extend(block_params);
-        }
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params()
+        && let serde_json::Value::Object(map) = &mut params
+    {
+        map.extend(block_params);
     }
     let view_code_json = crate::common::block_on(
-        network_config.client().rpc().call::<_, serde_json::Value>("query", params),
+        network_config
+            .client()
+            .rpc()
+            .call::<_, serde_json::Value>("query", params),
     )
     .into_eyre()
     .wrap_err_with(|| {
@@ -320,7 +319,10 @@ fn get_contract_code_from_contract_account_id(
     let code_base64 = view_code_json
         .get("code_base64")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| color_eyre::Report::msg("Error: missing code_base64 in view_code response"))?;
-    base64::engine::general_purpose::STANDARD.decode(code_base64)
+        .ok_or_else(|| {
+            color_eyre::Report::msg("Error: missing code_base64 in view_code response")
+        })?;
+    base64::engine::general_purpose::STANDARD
+        .decode(code_base64)
         .map_err(|e| color_eyre::Report::msg(format!("Error decoding code_base64: {e}")))
 }

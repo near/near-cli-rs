@@ -28,7 +28,7 @@ fast_clap = { version = "4.5.57", features = ["derive", "unstable-v5"] }
 inquire = "0.9.3"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
-derive_more = "2"
+derive_more = { version = "2", features = ["as_ref", "display", "from", "from_str", "into"] }
 easy-ext = "1"
 
 reqwest = { version = "0.12", features = ["blocking", "json"] }

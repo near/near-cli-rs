@@ -151,10 +151,7 @@ impl interactive_clap::FromCli for UsbConnection {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         let signer_public_key: crate::types::public_key::PublicKey =
-            near_kit::PublicKey::ed25519_from_bytes(
-                public_key.to_bytes(),
-            )
-            .into();
+            near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes()).into();
 
         let output_context = match sign_transaction_with_usb(
             &context.transaction_context,
@@ -192,6 +189,7 @@ impl interactive_clap::FromCli for UsbConnection {
 /// `sign_tx_fn` signs a serialized transaction, `sign_delegate_fn` signs a
 /// serialized delegate action. USB passes the `near_ledger::` free functions,
 /// BLE passes methods on a `BleSession`.
+#[allow(clippy::too_many_arguments)]
 fn sign_transaction_with_ledger(
     previous_context: &crate::commands::TransactionContext,
     signer_public_key: &crate::types::public_key::PublicKey,
@@ -256,11 +254,11 @@ fn sign_transaction_with_ledger(
                 .wrap_err("Delegate action is not expected to fail on serialization")?,
             seed_phrase_hd_path_raw.clone(),
         ) {
-            Ok(signature) => {
-                near_kit::Signature::ed25519_from_bytes(
-                    signature.try_into().expect("Ledger ED25519 signature should be 64 bytes")
-                )
-            }
+            Ok(signature) => near_kit::Signature::ed25519_from_bytes(
+                signature
+                    .try_into()
+                    .expect("Ledger ED25519 signature should be 64 bytes"),
+            ),
             Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
                 return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
             }
@@ -290,11 +288,11 @@ fn sign_transaction_with_ledger(
             .wrap_err("Transaction is not expected to fail on serialization")?,
         seed_phrase_hd_path_raw.clone(),
     ) {
-        Ok(signature) => {
-            near_kit::Signature::ed25519_from_bytes(
-                signature.try_into().expect("Ledger ED25519 signature should be 64 bytes")
-            )
-        }
+        Ok(signature) => near_kit::Signature::ed25519_from_bytes(
+            signature
+                .try_into()
+                .expect("Ledger ED25519 signature should be 64 bytes"),
+        ),
         Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
             return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
         }
@@ -411,10 +409,7 @@ impl interactive_clap::FromCli for BluetoothConnection {
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             };
         let signer_public_key: crate::types::public_key::PublicKey =
-            near_kit::PublicKey::ed25519_from_bytes(
-                public_key.to_bytes(),
-            )
-            .into();
+            near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes()).into();
 
         let output_context = match sign_transaction_with_ble(
             &context.transaction_context,
@@ -453,6 +448,7 @@ impl interactive_clap::FromCli for BluetoothConnection {
     name = "Signing the transaction with Ledger device via Bluetooth. Follow the instructions on the ledger ...",
     skip_all
 )]
+#[allow(clippy::too_many_arguments)]
 fn sign_transaction_with_ble(
     previous_context: &crate::commands::TransactionContext,
     signer_public_key: &crate::types::public_key::PublicKey,
@@ -515,10 +511,7 @@ impl SignLedger {
     ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)

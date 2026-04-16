@@ -111,10 +111,10 @@ fn download_contract_abi(
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Download the ABI for the contract ...");
     let abi_root = crate::common::block_on(super::get_contract_abi(
-            network_config,
-            block_reference,
-            account_id,
-        ))?;
+        network_config,
+        block_reference,
+        account_id,
+    ))?;
     std::fs::File::create(file_path)
         .wrap_err_with(|| format!("Failed to create file: {file_path:?}"))?
         .write(&serde_json::to_vec_pretty(&abi_root)?)

@@ -41,10 +41,9 @@ impl RelayerAccountIdContext {
         let on_before_signing_callback: crate::commands::OnBeforeSigningCallback =
             std::sync::Arc::new({
                 move |prepopulated_unsigned_transaction, _network_config| {
-                    prepopulated_unsigned_transaction.actions =
-                        vec![near_kit::Action::delegate(
-                            previous_context.signed_delegate_action.clone(),
-                        )];
+                    prepopulated_unsigned_transaction.actions = vec![near_kit::Action::delegate(
+                        previous_context.signed_delegate_action.clone(),
+                    )];
                     Ok(())
                 }
             });

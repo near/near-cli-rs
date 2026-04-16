@@ -55,17 +55,11 @@ pub enum TopLevelCommand {
 }
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
-    dyn Fn(
-        &mut near_kit::Transaction,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&mut near_kit::Transaction, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 pub type OnAfterSigningCallback = std::sync::Arc<
-    dyn Fn(
-        &mut near_kit::SignedTransaction,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&mut near_kit::SignedTransaction, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 pub type GetPrepopulatedTransactionAfterGettingNetworkCallback = std::sync::Arc<

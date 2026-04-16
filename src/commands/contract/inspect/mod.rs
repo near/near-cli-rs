@@ -80,13 +80,16 @@ fn get_contract_code(
         "request_type": "view_code",
         "account_id": account_id.to_string(),
     });
-    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
-        if let serde_json::Value::Object(map) = &mut params {
-            map.extend(block_params);
-        }
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params()
+        && let serde_json::Value::Object(map) = &mut params
+    {
+        map.extend(block_params);
     }
     crate::common::block_on(
-        network_config.client().rpc().call::<_, serde_json::Value>("query", params),
+        network_config
+            .client()
+            .rpc()
+            .call::<_, serde_json::Value>("query", params),
     )
     .into_eyre()
     .wrap_err_with(|| {
@@ -109,7 +112,8 @@ async fn display_inspect_contract(
         .get("code_base64")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let code_bytes = base64::engine::general_purpose::STANDARD.decode(code_base64)
+    let code_bytes = base64::engine::general_purpose::STANDARD
+        .decode(code_base64)
         .unwrap_or_default();
     let block_height = view_code_json
         .get("block_height")
@@ -549,9 +553,7 @@ pub async fn get_contract_source_metadata(
                     ))
                     .await;
                 } else {
-                    return Err(FetchContractSourceMetadataError::RpcError(
-                        err.to_string(),
-                    ));
+                    return Err(FetchContractSourceMetadataError::RpcError(err.to_string()));
                 }
             }
             Err(near_kit::RpcError::ContractExecution { message, .. })

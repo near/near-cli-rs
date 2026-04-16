@@ -157,14 +157,12 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_kit::Action::FunctionCall(
-            near_kit::FunctionCallAction {
-                method_name: previous_context.function_name,
-                args: previous_context.function_args,
-                gas: near_kit::Gas::from_gas(previous_context.gas.as_gas()),
-                deposit: scope.deposit.into(),
-            },
-        );
+        let action = near_kit::Action::FunctionCall(near_kit::FunctionCallAction {
+            method_name: previous_context.function_name,
+            args: previous_context.function_args,
+            gas: near_kit::Gas::from_gas(previous_context.gas.as_gas()),
+            deposit: scope.deposit.into(),
+        });
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {

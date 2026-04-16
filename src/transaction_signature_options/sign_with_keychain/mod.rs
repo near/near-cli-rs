@@ -81,19 +81,17 @@ impl SignKeychainContext {
                 }
             }
         } else {
-            let access_key_list = block_on(
-                    network_config.client().rpc().view_access_key_list(
-                        &previous_context.prepopulated_transaction.signer_id,
-                        near_kit::Finality::Final.into(),
-                    ),
+            let access_key_list = block_on(network_config.client().rpc().view_access_key_list(
+                &previous_context.prepopulated_transaction.signer_id,
+                near_kit::Finality::Final.into(),
+            ))
+            .into_eyre()
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to fetch access key list for {}",
+                    previous_context.prepopulated_transaction.signer_id
                 )
-                .into_eyre()
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch access key list for {}",
-                        previous_context.prepopulated_transaction.signer_id
-                    )
-                })?;
+            })?;
 
             let res = access_key_list
                 .keys
@@ -235,10 +233,7 @@ impl SignKeychain {
     ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)

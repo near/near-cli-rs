@@ -59,9 +59,8 @@ impl TransactionInfoContext {
                     );
 
                     if prepopulated_transaction.actions.len() == 1
-                        && let near_kit::Action::Delegate(
-                            signed_delegate_action,
-                        ) = &prepopulated_transaction.actions[0]
+                        && let near_kit::Action::Delegate(signed_delegate_action) =
+                            &prepopulated_transaction.actions[0]
                     {
                         prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                             signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
@@ -373,13 +372,11 @@ fn get_access_key_permission(
                 },
             )))
         }
-        near_kit::AccessKeyPermission::FunctionCall(
-            near_kit::FunctionCallPermission {
-                allowance,
-                receiver_id,
-                method_names,
-            },
-        ) => Ok(Some(
+        near_kit::AccessKeyPermission::FunctionCall(near_kit::FunctionCallPermission {
+            allowance,
+            receiver_id,
+            method_names,
+        }) => Ok(Some(
             add_key::CliAccessKeyPermission::GrantFunctionCallAccess(
                 add_key::access_key_type::CliFunctionCallType {
                     allowance: {
@@ -462,51 +459,68 @@ fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action,
     use near_kit::*;
 
     let b64 = base64::engine::general_purpose::STANDARD;
-    let decode_b64 = |s: &str| b64.decode(s).map_err(|e| format!("base64 decode error: {e}"));
+    let decode_b64 = |s: &str| {
+        b64.decode(s)
+            .map_err(|e| format!("base64 decode error: {e}"))
+    };
 
     match view {
         ActionView::CreateAccount => Ok(Action::CreateAccount(CreateAccountAction)),
-        ActionView::DeployContract { code } => Ok(Action::DeployContract(
-            DeployContractAction { code: decode_b64(&code)? },
-        )),
-        ActionView::FunctionCall { method_name, args, gas, deposit } => {
-            Ok(Action::FunctionCall(FunctionCallAction {
-                method_name,
-                args: decode_b64(&args)?,
-                gas,
-                deposit,
-            }))
-        }
-        ActionView::Transfer { deposit } => {
-            Ok(Action::Transfer(TransferAction { deposit }))
-        }
+        ActionView::DeployContract { code } => Ok(Action::DeployContract(DeployContractAction {
+            code: decode_b64(&code)?,
+        })),
+        ActionView::FunctionCall {
+            method_name,
+            args,
+            gas,
+            deposit,
+        } => Ok(Action::FunctionCall(FunctionCallAction {
+            method_name,
+            args: decode_b64(&args)?,
+            gas,
+            deposit,
+        })),
+        ActionView::Transfer { deposit } => Ok(Action::Transfer(TransferAction { deposit })),
         ActionView::Stake { stake, public_key } => {
             Ok(Action::Stake(StakeAction { stake, public_key }))
         }
-        ActionView::AddKey { public_key, access_key } => {
+        ActionView::AddKey {
+            public_key,
+            access_key,
+        } => {
             let permission = match access_key.permission {
                 AccessKeyPermissionView::FullAccess => AccessKeyPermission::FullAccess,
-                AccessKeyPermissionView::FunctionCall { allowance, receiver_id, method_names } => {
-                    AccessKeyPermission::FunctionCall(FunctionCallPermission {
-                        allowance,
-                        receiver_id,
-                        method_names,
-                    })
-                }
+                AccessKeyPermissionView::FunctionCall {
+                    allowance,
+                    receiver_id,
+                    method_names,
+                } => AccessKeyPermission::FunctionCall(FunctionCallPermission {
+                    allowance,
+                    receiver_id,
+                    method_names,
+                }),
                 _ => return Err("Unsupported access key permission type".to_string()),
             };
             Ok(Action::AddKey(AddKeyAction {
                 public_key,
-                access_key: AccessKey { nonce: access_key.nonce, permission },
+                access_key: AccessKey {
+                    nonce: access_key.nonce,
+                    permission,
+                },
             }))
         }
         ActionView::DeleteKey { public_key } => {
             Ok(Action::DeleteKey(DeleteKeyAction { public_key }))
         }
         ActionView::DeleteAccount { beneficiary_id } => {
-            Ok(Action::DeleteAccount(DeleteAccountAction { beneficiary_id }))
+            Ok(Action::DeleteAccount(DeleteAccountAction {
+                beneficiary_id,
+            }))
         }
-        ActionView::Delegate { delegate_action, signature } => {
+        ActionView::Delegate {
+            delegate_action,
+            signature,
+        } => {
             let actions = delegate_action
                 .actions
                 .into_iter()
@@ -550,28 +564,47 @@ fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action,
                 contract_identifier: GlobalContractIdentifier::AccountId(account_id),
             }))
         }
-        ActionView::DeterministicStateInit { code, data, deposit } => {
+        ActionView::DeterministicStateInit {
+            code,
+            data,
+            deposit,
+        } => {
             let contract_id = match code {
-                GlobalContractIdentifierView::CodeHash(hash) => GlobalContractIdentifier::CodeHash(hash),
-                GlobalContractIdentifierView::AccountId(id) => GlobalContractIdentifier::AccountId(id),
+                GlobalContractIdentifierView::CodeHash(hash) => {
+                    GlobalContractIdentifier::CodeHash(hash)
+                }
+                GlobalContractIdentifierView::AccountId(id) => {
+                    GlobalContractIdentifier::AccountId(id)
+                }
             };
             let data_map = data
                 .into_iter()
                 .map(|(k, v)| Ok((decode_b64(&k)?, decode_b64(&v)?)))
                 .collect::<Result<_, String>>()?;
-            Ok(Action::DeterministicStateInit(DeterministicStateInitAction {
-                state_init: DeterministicAccountStateInit::V1(DeterministicAccountStateInitV1 {
-                    code: contract_id,
-                    data: data_map,
-                }),
-                deposit,
-            }))
+            Ok(Action::DeterministicStateInit(
+                DeterministicStateInitAction {
+                    state_init: DeterministicAccountStateInit::V1(
+                        DeterministicAccountStateInitV1 {
+                            code: contract_id,
+                            data: data_map,
+                        },
+                    ),
+                    deposit,
+                },
+            ))
         }
-        ActionView::TransferToGasKey { public_key, deposit } => {
-            Ok(Action::TransferToGasKey(TransferToGasKeyAction { public_key, deposit }))
-        }
+        ActionView::TransferToGasKey {
+            public_key,
+            deposit,
+        } => Ok(Action::TransferToGasKey(TransferToGasKeyAction {
+            public_key,
+            deposit,
+        })),
         ActionView::WithdrawFromGasKey { public_key, amount } => {
-            Ok(Action::WithdrawFromGasKey(WithdrawFromGasKeyAction { public_key, amount }))
+            Ok(Action::WithdrawFromGasKey(WithdrawFromGasKeyAction {
+                public_key,
+                amount,
+            }))
         }
     }
 }

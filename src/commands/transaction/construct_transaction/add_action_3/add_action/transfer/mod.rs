@@ -16,11 +16,9 @@ impl TransferActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<TransferAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_kit::Action::Transfer(
-            near_kit::TransferAction {
-                deposit: scope.amount_in_near.into(),
-            },
-        );
+        let action = near_kit::Action::Transfer(near_kit::TransferAction {
+            deposit: scope.amount_in_near.into(),
+        });
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {

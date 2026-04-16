@@ -13,8 +13,7 @@ impl std::str::FromStr for Signature {
     type Err = color_eyre::eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let signature = near_kit::Signature::from_str(s)
-            .map_err(color_eyre::eyre::Report::msg)?;
+        let signature = near_kit::Signature::from_str(s).map_err(color_eyre::eyre::Report::msg)?;
         Ok(Self(signature))
     }
 }

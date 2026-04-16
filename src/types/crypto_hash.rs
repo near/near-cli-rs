@@ -17,8 +17,8 @@ impl std::str::FromStr for CryptoHash {
     type Err = color_eyre::eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let crypto_hash = near_kit::CryptoHash::from_str(s)
-            .map_err(color_eyre::eyre::Report::msg)?;
+        let crypto_hash =
+            near_kit::CryptoHash::from_str(s).map_err(color_eyre::eyre::Report::msg)?;
         Ok(Self(crypto_hash))
     }
 }

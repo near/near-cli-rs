@@ -280,29 +280,26 @@ impl NetworkConfig {
             return Ok(account_id);
         }
         match self.network_name.as_str() {
-            "mainnet" => near_kit::AccountId::from_str("social.near")
-                .wrap_err("Internal error"),
-            "testnet" => near_kit::AccountId::from_str("v1.social08.testnet")
-                .wrap_err("Internal error"),
+            "mainnet" => near_kit::AccountId::from_str("social.near").wrap_err("Internal error"),
+            "testnet" => {
+                near_kit::AccountId::from_str("v1.social08.testnet").wrap_err("Internal error")
+            }
             _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "This network does not provide the \"near-social\" contract"
             )),
         }
     }
 
-    pub fn get_mpc_contract_account_id(
-        &self,
-    ) -> color_eyre::eyre::Result<near_kit::AccountId> {
+    pub fn get_mpc_contract_account_id(&self) -> color_eyre::eyre::Result<near_kit::AccountId> {
         if let Some(mpc_contract_account_id) = self.mpc_contract_account_id.clone() {
             return Ok(mpc_contract_account_id);
         }
 
         match self.network_name.as_str() {
-            "mainnet" => {
-                near_kit::AccountId::from_str("v1.signer").wrap_err("Internal error")
+            "mainnet" => near_kit::AccountId::from_str("v1.signer").wrap_err("Internal error"),
+            "testnet" => {
+                near_kit::AccountId::from_str("v1.signer-prod.testnet").wrap_err("Internal error")
             }
-            "testnet" => near_kit::AccountId::from_str("v1.signer-prod.testnet")
-                .wrap_err("Internal error"),
             _ => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "This network does not provide MPC contract account id"
             )),

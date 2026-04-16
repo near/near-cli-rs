@@ -7,7 +7,6 @@ use inquire::CustomType;
 use crate::common::RpcResultExt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-
 #[derive(Debug, Clone)]
 pub enum ContractType {
     Regular(near_kit::AccountId),
@@ -360,16 +359,15 @@ pub fn get_code(
         ),
     };
 
-    let block = crate::common::block_on(
-        network_config.client().rpc().block(block_reference.clone()),
-    )
-        .into_eyre()
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch block info for block reference {:?} on network <{}>",
-                block_reference, network_config.network_name
-            )
-        })?;
+    let block =
+        crate::common::block_on(network_config.client().rpc().block(block_reference.clone()))
+            .into_eyre()
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to fetch block info for block reference {:?} on network <{}>",
+                    block_reference, network_config.network_name
+                )
+            })?;
 
     let start_block_height = block.header.height;
     let number_of_shards = block.chunks.len() as u64;

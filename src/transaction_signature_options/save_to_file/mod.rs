@@ -35,10 +35,12 @@ impl SaveToFileContext {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                let data_signed_transaction =
-                    serde_json::to_value(FileSignedTransaction {
-                        signed_transaction: crate::types::signed_transaction::SignedTransactionAsBase64::from(signed_transaction),
-                    })?;
+                let data_signed_transaction = serde_json::to_value(FileSignedTransaction {
+                    signed_transaction:
+                        crate::types::signed_transaction::SignedTransactionAsBase64::from(
+                            signed_transaction,
+                        ),
+                })?;
 
                 std::fs::File::create(&file_path)
                     .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?

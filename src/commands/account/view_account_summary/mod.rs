@@ -65,10 +65,10 @@ pub fn get_account_inquiry(
     tracing::info!(target: "near_teach_me", "Receiving an inquiry about your account ...");
 
     let nk_account_view = crate::common::block_on(
-        network_config.client().rpc().view_account(
-            account_id,
-            block_reference.clone(),
-        ),
+        network_config
+            .client()
+            .rpc()
+            .view_account(account_id, block_reference.clone()),
     )
     .into_eyre()
     .wrap_err_with(|| {
@@ -78,10 +78,10 @@ pub fn get_account_inquiry(
         )
     })?;
     let access_key_list = crate::common::block_on(
-        network_config.client().rpc().view_access_key_list(
-            account_id,
-            block_reference.clone(),
-        ),
+        network_config
+            .client()
+            .rpc()
+            .view_access_key_list(account_id, block_reference.clone()),
     )
     .map_err(|err| {
         tracing::warn!(

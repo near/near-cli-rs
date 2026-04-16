@@ -104,12 +104,8 @@ impl DeployGlobalResult {
         context: &DeployGlobalModeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         let question = match context.mode {
-            near_kit::GlobalContractDeployMode::CodeHash => {
-                "What is the signer account ID?"
-            }
-            near_kit::GlobalContractDeployMode::AccountId => {
-                "What is the contract account ID?"
-            }
+            near_kit::GlobalContractDeployMode::CodeHash => "What is the signer account ID?",
+            near_kit::GlobalContractDeployMode::AccountId => "What is the contract account ID?",
         };
         crate::common::input_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,
@@ -150,7 +146,7 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
                     receiver_id: item.account_id.clone(),
                     actions: vec![near_kit::Action::DeployGlobalContract(
                         near_kit::DeployGlobalContractAction {
-                            code: item.code.clone().into(),
+                            code: item.code.clone(),
                             deploy_mode: item.mode.clone(),
                         },
                     )],

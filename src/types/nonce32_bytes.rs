@@ -8,7 +8,8 @@ pub struct Nonce32 {
 impl std::str::FromStr for Nonce32 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bytes = STANDARD.decode(s)
+        let bytes = STANDARD
+            .decode(s)
             .map_err(|err| format!("Invalid base64: {err}"))?;
 
         if bytes.len() != 32 {
@@ -26,7 +27,7 @@ impl std::str::FromStr for Nonce32 {
 
 impl std::fmt::Display for Nonce32 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", STANDARD.encode(&self.inner))
+        write!(f, "{}", STANDARD.encode(self.inner))
     }
 }
 

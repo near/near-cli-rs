@@ -261,19 +261,17 @@ pub fn derive_public_key(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_kit::PublicKey> {
     tracing::info!(target: "near_teach_me", "Retrieving derived public key from MPC contract ...");
-    let rpc_result = block_on(
-            network_config.client().rpc().view_function(
-                mpc_contract_address,
-                "derived_public_key",
-                &serde_json::to_vec(&serde_json::json!({
-                    "path": derivation_path,
-                    "predecessor": admin_account_id,
-                    "domain_id": near_key_type_to_mpc_domain_id(*key_type)
-                }))?,
-                near_kit::BlockReference::optimistic(),
-            ),
-        )
-        .into_eyre()?;
+    let rpc_result = block_on(network_config.client().rpc().view_function(
+        mpc_contract_address,
+        "derived_public_key",
+        &serde_json::to_vec(&serde_json::json!({
+            "path": derivation_path,
+            "predecessor": admin_account_id,
+            "domain_id": near_key_type_to_mpc_domain_id(*key_type)
+        }))?,
+        near_kit::BlockReference::optimistic(),
+    ))
+    .into_eyre()?;
 
     let public_key: near_kit::PublicKey = serde_json::from_slice(&rpc_result.result)?;
 
@@ -537,8 +535,11 @@ impl From<DepositContext> for crate::commands::TransactionContext {
 
                     let signed_transaction = match sign_outcome_view.status {
                         near_kit::FinalExecutionStatus::SuccessValue(result_b64) => {
-                            let result_bytes = base64::engine::general_purpose::STANDARD.decode(&result_b64)
-                                .map_err(|e| color_eyre::eyre::eyre!("Failed to decode base64: {e}"))?;
+                            let result_bytes = base64::engine::general_purpose::STANDARD
+                                .decode(&result_b64)
+                                .map_err(|e| {
+                                    color_eyre::eyre::eyre!("Failed to decode base64: {e}")
+                                })?;
                             let sign_result: mpc_sign_result::SignResult =
                                 serde_json::from_slice(&result_bytes)?;
                             let signature: near_kit::Signature = sign_result.into();
@@ -707,15 +708,13 @@ fn fetch_mpc_contract_response_from_dao_tx(
 ) -> color_eyre::eyre::Result<mpc_sign_result::SignResult> {
     tracing::info!(target: "near_teach_me", "Fetching executed DAO proposal ...");
 
-    let tx_response = crate::common::block_on(
-            network_config.client().rpc().tx_status(
-                &tx_hash,
-                &sender_account_id,
-                near_kit::TxExecutionStatus::Final,
-            ),
-        )
-        .into_eyre()
-        .wrap_err("Couldn't fetch DAO transaction")?;
+    let tx_response = crate::common::block_on(network_config.client().rpc().tx_status(
+        &tx_hash,
+        &sender_account_id,
+        near_kit::TxExecutionStatus::Final,
+    ))
+    .into_eyre()
+    .wrap_err("Couldn't fetch DAO transaction")?;
 
     let exec_outcome = tx_response
         .outcome

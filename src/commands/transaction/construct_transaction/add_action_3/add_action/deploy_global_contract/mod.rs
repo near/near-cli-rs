@@ -59,19 +59,17 @@ impl DeployGlobalModeContext {
         previous_context: DeployGlobalContractActionContext,
         scope: &<DeployGlobalMode as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_kit::Action::DeployGlobalContract(
-            near_kit::DeployGlobalContractAction {
-                code: previous_context.code.into(),
-                deploy_mode: match scope {
-                    DeployGlobalModeDiscriminants::AsGlobalHash => {
-                        near_kit::GlobalContractDeployMode::CodeHash
-                    }
-                    DeployGlobalModeDiscriminants::AsGlobalAccountId => {
-                        near_kit::GlobalContractDeployMode::AccountId
-                    }
-                },
+        let action = near_kit::Action::DeployGlobalContract(near_kit::DeployGlobalContractAction {
+            code: previous_context.code,
+            deploy_mode: match scope {
+                DeployGlobalModeDiscriminants::AsGlobalHash => {
+                    near_kit::GlobalContractDeployMode::CodeHash
+                }
+                DeployGlobalModeDiscriminants::AsGlobalAccountId => {
+                    near_kit::GlobalContractDeployMode::AccountId
+                }
             },
-        );
+        });
         let mut actions = previous_context.context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {

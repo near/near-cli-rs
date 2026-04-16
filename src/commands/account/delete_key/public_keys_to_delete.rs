@@ -111,13 +111,17 @@ impl PublicKeyList {
             .into_eyre()
             {
                 Ok(nk_list) => {
-                    access_key_list.extend(nk_list.keys.iter().map(
-                        |access_key_info_view| AccessKeyInfo {
-                            public_key: access_key_info_view.public_key.to_string().parse().expect("valid public key"),
+                    access_key_list.extend(nk_list.keys.iter().map(|access_key_info_view| {
+                        AccessKeyInfo {
+                            public_key: access_key_info_view
+                                .public_key
+                                .to_string()
+                                .parse()
+                                .expect("valid public key"),
                             permission: access_key_info_view.access_key.permission.clone(),
                             network_name: network_config.network_name.clone(),
-                        },
-                    ));
+                        }
+                    }));
                     processed_network.push(network_config.network_name.to_string());
                 }
                 Err(err) => {

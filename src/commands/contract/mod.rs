@@ -78,12 +78,7 @@ pub async fn get_contract_abi(
         let result = network_config
             .client()
             .rpc()
-            .view_function(
-                account_id,
-                "__contract_abi",
-                &[],
-                nk_block_ref.clone(),
-            )
+            .view_function(account_id, "__contract_abi", &[], nk_block_ref.clone())
             .await;
 
         match result {
@@ -107,13 +102,9 @@ pub async fn get_contract_abi(
             }
             Ok(view_function_result) => {
                 return serde_json::from_slice::<near_abi::AbiRoot>(
-                    &zstd::decode_all(
-                        view_function_result
-                            .result
-                            .as_slice(),
-                    )
-                    .wrap_err("Failed to 'zstd::decode_all' NEAR ABI")
-                    .map_err(FetchAbiError::AbiUnknownFormat)?,
+                    &zstd::decode_all(view_function_result.result.as_slice())
+                        .wrap_err("Failed to 'zstd::decode_all' NEAR ABI")
+                        .map_err(FetchAbiError::AbiUnknownFormat)?,
                 )
                 .wrap_err("Failed to parse NEAR ABI schema")
                 .map_err(FetchAbiError::AbiUnknownFormat);

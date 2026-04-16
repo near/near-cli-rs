@@ -117,9 +117,7 @@ impl NewAccount {
                     );
                     let parent_account_id =
                         account_id.clone().get_parent_account_id_from_sub_account();
-                    if !near_kit::AccountId::from(parent_account_id.clone())
-                        .is_top_level()
-                    {
+                    if !near_kit::AccountId::from(parent_account_id.clone()).is_top_level() {
                         let network_where_account_exist =
                             match crate::common::find_network_where_account_exist(
                                 context,

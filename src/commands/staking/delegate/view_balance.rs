@@ -23,8 +23,7 @@ impl ViewBalanceContext {
         scope: &<ViewBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let account_id = previous_context.account_id.clone();
-        let validator_account_id: near_kit::AccountId =
-            scope.validator_account_id.clone().into();
+        let validator_account_id: near_kit::AccountId = scope.validator_account_id.clone().into();
         let interacting_with_account_ids = vec![account_id.clone(), validator_account_id.clone()];
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({

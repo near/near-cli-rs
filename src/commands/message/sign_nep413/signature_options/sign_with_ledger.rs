@@ -83,11 +83,10 @@ impl UsbSignNep413Context {
         )
         .map_err(|err| color_eyre::eyre::eyre!("Ledger signing error: {:?}", err))?;
 
-        let signature = near_kit::Signature::ed25519_from_bytes(
-            signature_bytes
-                .try_into()
-                .map_err(|_| color_eyre::eyre::eyre!("Ed25519 signature must be exactly 64 bytes"))?,
-        );
+        let signature =
+            near_kit::Signature::ed25519_from_bytes(signature_bytes.try_into().map_err(|_| {
+                color_eyre::eyre::eyre!("Ed25519 signature must be exactly 64 bytes")
+            })?);
 
         let signed_message = super::super::SignedMessage {
             account_id: previous_context.final_context.signer_id.to_string(),
@@ -126,11 +125,10 @@ impl BleSignNep413Context {
 
         let public_key = near_kit::PublicKey::ed25519_from_bytes(verifying_key.to_bytes());
 
-        let signature = near_kit::Signature::ed25519_from_bytes(
-            signature_bytes
-                .try_into()
-                .map_err(|_| color_eyre::eyre::eyre!("Ed25519 signature must be exactly 64 bytes"))?,
-        );
+        let signature =
+            near_kit::Signature::ed25519_from_bytes(signature_bytes.try_into().map_err(|_| {
+                color_eyre::eyre::eyre!("Ed25519 signature must be exactly 64 bytes")
+            })?);
 
         let signed_message = super::super::SignedMessage {
             account_id: previous_context.final_context.signer_id.to_string(),

@@ -60,7 +60,11 @@ pub struct FungibleToken {
 
 impl FungibleToken {
     pub fn from_params_ft(amount: u128, decimals: u8, symbol: String) -> Self {
-        Self { amount, decimals, symbol }
+        Self {
+            amount,
+            decimals,
+            symbol,
+        }
     }
 
     pub fn normalize(&self, ft_metadata: &FtMetadata) -> color_eyre::eyre::Result<Self> {
@@ -78,7 +82,11 @@ impl FungibleToken {
                     )
                     .wrap_err("Overflow in decimal normalization")?
             };
-            Ok(Self { symbol: ft_metadata.symbol.clone(), decimals: ft_metadata.decimals, amount })
+            Ok(Self {
+                symbol: ft_metadata.symbol.clone(),
+                decimals: ft_metadata.decimals,
+                amount,
+            })
         } else {
             color_eyre::eyre::bail!(
                 "Invalid decimal places. Your FT amount exceeds {} decimal places.",
@@ -87,9 +95,15 @@ impl FungibleToken {
         }
     }
 
-    pub fn amount(&self) -> u128 { self.amount }
-    pub fn decimals(&self) -> u8 { self.decimals }
-    pub fn symbol(&self) -> &str { &self.symbol }
+    pub fn amount(&self) -> u128 {
+        self.amount
+    }
+    pub fn decimals(&self) -> u8 {
+        self.decimals
+    }
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
 
     /// Convert into a `near_kit::FtAmount` (only meaningful after normalization).
     pub fn to_ft_amount(&self) -> near_kit::FtAmount {
@@ -133,7 +147,11 @@ impl std::str::FromStr for FungibleToken {
                     .ok_or("FungibleToken: overflow happens")?
                     .checked_add(num_fract_part)
                     .ok_or("FungibleToken: overflow happens")?;
-                Ok(Self { amount, decimals: len_fract, symbol: currency })
+                Ok(Self {
+                    amount,
+                    decimals: len_fract,
+                    symbol: currency,
+                })
             }
             1 => {
                 if res_split[0].starts_with('0') && res_split[0] != "0" {
@@ -142,7 +160,11 @@ impl std::str::FromStr for FungibleToken {
                 let amount = res_split[0]
                     .parse::<u128>()
                     .map_err(|err| format!("FungibleToken: {err}"))?;
-                Ok(Self { amount, decimals: 0, symbol: currency })
+                Ok(Self {
+                    amount,
+                    decimals: 0,
+                    symbol: currency,
+                })
             }
             _ => Err("FungibleToken: incorrect number entered".to_string()),
         }
@@ -165,13 +187,19 @@ pub struct FtMetadata {
 
 impl From<near_kit::FtMetadata> for FtMetadata {
     fn from(m: near_kit::FtMetadata) -> Self {
-        Self { symbol: m.symbol, decimals: m.decimals }
+        Self {
+            symbol: m.symbol,
+            decimals: m.decimals,
+        }
     }
 }
 
 impl From<&near_kit::FtMetadata> for FtMetadata {
     fn from(m: &near_kit::FtMetadata) -> Self {
-        Self { symbol: m.symbol.clone(), decimals: m.decimals }
+        Self {
+            symbol: m.symbol.clone(),
+            decimals: m.decimals,
+        }
     }
 }
 
@@ -182,19 +210,17 @@ pub fn params_ft_metadata(
     block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
     tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
-    let result = block_on(
-        network_config.client().rpc().view_function(
-            &ft_contract_account_id,
-            "ft_metadata",
-            &[],
-            block_reference,
-        ),
-    )
+    let result = block_on(network_config.client().rpc().view_function(
+        &ft_contract_account_id,
+        "ft_metadata",
+        &[],
+        block_reference,
+    ))
     .into_eyre()
-    .wrap_err_with(||{
-        format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
-            ft_contract_account_id,
-            network_config.network_name
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
+            ft_contract_account_id, network_config.network_name
         )
     })?;
     let ft_metadata: FtMetadata = result.parse_result_from_json()?;
@@ -287,7 +313,9 @@ mod tests {
         assert_eq!(
             ft_transfer_amount,
             FungibleTokenTransferAmount::ExactAmount(FungibleToken::from_params_ft(
-                123456, 6, "USDC".to_string()
+                123456,
+                6,
+                "USDC".to_string()
             ))
         );
     }
@@ -306,7 +334,9 @@ mod tests {
         })
         .unwrap();
         assert_eq!(
-            serde_json::from_slice::<serde_json::Value>(&ft_transfer).unwrap().to_string(),
+            serde_json::from_slice::<serde_json::Value>(&ft_transfer)
+                .unwrap()
+                .to_string(),
             "{\"amount\":\"123456\",\"memo\":\"Memo\",\"receiver_id\":\"fro_volod.testnet\"}"
         );
     }
@@ -319,7 +349,9 @@ mod tests {
         })
         .unwrap();
         assert_eq!(
-            serde_json::from_slice::<serde_json::Value>(&ft_transfer).unwrap().to_string(),
+            serde_json::from_slice::<serde_json::Value>(&ft_transfer)
+                .unwrap()
+                .to_string(),
             "{\"amount\":\"123456\",\"receiver_id\":\"fro_volod.testnet\"}"
         );
     }

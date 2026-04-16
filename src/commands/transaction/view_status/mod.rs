@@ -1,6 +1,5 @@
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = TransactionInfoContext)]
@@ -31,7 +30,11 @@ impl TransactionInfoContext {
                         previous_context.verbosity
                     {
                         eprintln!("Transaction status:");
-                        println!("{}", serde_json::to_string_pretty(&query_view_transaction_status.json).unwrap_or_default());
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&query_view_transaction_status.json)
+                                .unwrap_or_default()
+                        );
                     } else {
                         println!("{}", query_view_transaction_status.json);
                     }
@@ -64,15 +67,11 @@ pub struct TransactionStatusResponse {
 
 impl TransactionStatusResponse {
     /// Extract the final execution outcome.
-    pub fn final_execution_outcome(
-        &self,
-    ) -> Option<near_kit::FinalExecutionOutcome> {
+    pub fn final_execution_outcome(&self) -> Option<near_kit::FinalExecutionOutcome> {
         self.json
             .get("final_execution_outcome")
             .and_then(|v| if v.is_null() { None } else { Some(v) })
-            .and_then(|v| {
-                serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok()
-            })
+            .and_then(|v| serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok())
     }
 }
 
@@ -97,18 +96,18 @@ pub fn get_transaction_info(
     });
 
     let json: serde_json::Value = crate::common::block_on(
-            network_config
-                .client()
-                .rpc()
-                .call("EXPERIMENTAL_tx_status", params),
+        network_config
+            .client()
+            .rpc()
+            .call("EXPERIMENTAL_tx_status", params),
+    )
+    .map_err(|err| {
+        color_eyre::eyre::eyre!(
+            "Failed to fetch query for view transaction on network <{}>: {}",
+            network_config.network_name,
+            err
         )
-        .map_err(|err| {
-            color_eyre::eyre::eyre!(
-                "Failed to fetch query for view transaction on network <{}>: {}",
-                network_config.network_name,
-                err
-            )
-        })?;
+    })?;
 
     Ok(TransactionStatusResponse { json })
 }

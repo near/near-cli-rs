@@ -65,12 +65,11 @@ fn input_function_name(
 
     if let Ok(network) = network_config
         && let Some(network_config) = network
-        && let Ok(contract_abi) =
-            crate::common::block_on(super::get_contract_abi(
-                    &network_config,
-                    &near_kit::Finality::Final.into(),
-                    contract_account_id,
-                ))
+        && let Ok(contract_abi) = crate::common::block_on(super::get_contract_abi(
+            &network_config,
+            &near_kit::Finality::Final.into(),
+            contract_account_id,
+        ))
     {
         function_names = contract_abi
             .body

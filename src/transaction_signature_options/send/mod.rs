@@ -1,7 +1,6 @@
 use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SendContext)]
@@ -43,7 +42,7 @@ impl SendContext {
                 match sending_signed_transaction(
                     &previous_context.network_config,
                     &signed_transaction,
-                    wait_until.clone(),
+                    wait_until,
                 )? {
                     Some(transaction_info) => {
                         crate::common::print_transaction_status(
@@ -123,7 +122,7 @@ pub fn sending_signed_transaction(
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
     tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
 
-    let nk_wait_until = wait_until.clone();
+    let nk_wait_until = wait_until;
 
     let retries_number = 5;
     let mut retries = (1..=retries_number).rev();
@@ -141,24 +140,18 @@ pub fn sending_signed_transaction(
             "wait_until": nk_wait_until.as_str(),
         });
 
-        let result: Result<serde_json::Value, near_kit::RpcError> = crate::common::block_on(
-                network_config
-                    .client()
-                    .rpc()
-                    .call("send_tx", params),
-            );
+        let result: Result<serde_json::Value, near_kit::RpcError> =
+            crate::common::block_on(network_config.client().rpc().call("send_tx", params));
         match result {
             Ok(response_json) => {
                 // Try to extract the final_execution_outcome from the response.
-                let outcome = response_json
-                    .get("final_execution_outcome")
-                    .and_then(|v| {
-                        if v.is_null() {
-                            None
-                        } else {
-                            serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok()
-                        }
-                    });
+                let outcome = response_json.get("final_execution_outcome").and_then(|v| {
+                    if v.is_null() {
+                        None
+                    } else {
+                        serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok()
+                    }
+                });
                 break outcome;
             }
             Err(ref err) => {

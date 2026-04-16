@@ -23,12 +23,12 @@ impl SignAccessKeyFileContext {
                 format!("Error reading data from file: {:?}", &scope.file_path)
             })?;
 
-        let secret_key: near_kit::SecretKey = account_json.private_key.to_string().parse()
+        let secret_key: near_kit::SecretKey = account_json
+            .private_key
+            .to_string()
+            .parse()
             .map_err(color_eyre::eyre::Report::msg)?;
-        let signature = super::super::sign_nep413_payload(
-            &previous_context.payload,
-            &secret_key,
-        )?;
+        let signature = super::super::sign_nep413_payload(&previous_context.payload, &secret_key)?;
 
         let signed_message = super::super::SignedMessage {
             account_id: previous_context.signer_id.to_string(),

@@ -94,10 +94,10 @@ pub fn get_password_from_keychain(
     ));
     let password = {
         let nk_list = block_on(
-            network_config.client().rpc().view_access_key_list(
-                account_id,
-                near_kit::Finality::Final.into(),
-            ),
+            network_config
+                .client()
+                .rpc()
+                .view_access_key_list(account_id, near_kit::Finality::Final.into()),
         )
         .into_eyre()
         .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?;
@@ -184,10 +184,10 @@ pub fn get_account_properties_data_path(
     }
 
     let nk_list = block_on(
-        network_config.client().rpc().view_access_key_list(
-            account_id,
-            near_kit::Finality::Final.into(),
-        ),
+        network_config
+            .client()
+            .rpc()
+            .view_access_key_list(account_id, near_kit::Finality::Final.into()),
     )
     .into_eyre()
     .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?;

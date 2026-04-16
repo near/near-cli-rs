@@ -46,7 +46,7 @@ impl Network {
     ) -> color_eyre::eyre::Result<Option<String>> {
         crate::common::input_network_name(
             &context.global_context.config,
-            &[context.signed_transaction.transaction.receiver_id.clone()],
+            std::slice::from_ref(&context.signed_transaction.transaction.receiver_id),
         )
     }
 }

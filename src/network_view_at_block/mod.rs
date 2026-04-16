@@ -144,9 +144,8 @@ impl BlockIdHashContext {
         previous_context: NetworkViewAtBlockArgsContext,
         scope: &<BlockIdHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let block_reference = BlockReference::at_hash(
-            near_kit::CryptoHash::from_str(&scope.block_id_hash).unwrap(),
-        );
+        let block_reference =
+            BlockReference::at_hash(near_kit::CryptoHash::from_str(&scope.block_id_hash).unwrap());
 
         (previous_context.on_after_getting_block_reference_callback)(
             &previous_context.network_config,

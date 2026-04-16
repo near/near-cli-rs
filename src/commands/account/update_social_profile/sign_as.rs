@@ -240,8 +240,7 @@ fn required_deposit(
         )
         .into_eyre()
         .wrap_err("Failed to fetch query for view method: 'storage_balance_of'")?;
-        result
-            .parse_result_from_json::<crate::types::socialdb::StorageBalance>()
+        result.parse_result_from_json::<crate::types::socialdb::StorageBalance>()
     };
 
     let (available_storage, initial_account_storage_balance, min_storage_balance) =
@@ -331,21 +330,21 @@ fn is_write_permission_granted(
     key: String,
 ) -> color_eyre::eyre::Result<bool> {
     let mut args = serde_json::json!({ "key": key });
-    if let (Some(args_map), Some(perm_map)) = (args.as_object_mut(), permission_key_json.as_object())
+    if let (Some(args_map), Some(perm_map)) =
+        (args.as_object_mut(), permission_key_json.as_object())
     {
         for (k, v) in perm_map {
             args_map.insert(k.clone(), v.clone());
         }
     }
-    let result = block_on(
-        network_config.client().rpc().view_function(
-            near_social_account_id,
-            "is_write_permission_granted",
-            &serde_json::to_vec(&args)
-                .wrap_err("Internal error: could not serialize `is_write_permission_granted` input args")?,
-            near_kit::Finality::Final.into(),
-        ),
-    )
+    let result = block_on(network_config.client().rpc().view_function(
+        near_social_account_id,
+        "is_write_permission_granted",
+        &serde_json::to_vec(&args).wrap_err(
+            "Internal error: could not serialize `is_write_permission_granted` input args",
+        )?,
+        near_kit::Finality::Final.into(),
+    ))
     .into_eyre()
     .wrap_err("Failed to fetch query for view method: 'is_write_permission_granted'")?;
     let serde_call_result: serde_json::Value = result
@@ -366,13 +365,11 @@ fn get_deposit(
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::info!(target: "near_teach_me", "Update the required deposit ...");
 
-    let nk_access_key_view = block_on(
-        network_config.client().rpc().view_access_key(
-            signer_account_id,
-            signer_public_key,
-            near_kit::Finality::Final.into(),
-        ),
-    )
+    let nk_access_key_view = block_on(network_config.client().rpc().view_access_key(
+        signer_account_id,
+        signer_public_key,
+        near_kit::Finality::Final.into(),
+    ))
     .into_eyre()
     .wrap_err_with(|| {
         format!("Failed to fetch query 'view access key' for <{signer_public_key}>")
@@ -407,7 +404,9 @@ fn get_deposit(
             } else if is_signer_access_key_full_access {
                 required_deposit
             } else {
-                color_eyre::eyre::bail!("ERROR: Social DB requires more storage deposit, but we cannot cover it when signing transaction with a Function Call only access key")
+                color_eyre::eyre::bail!(
+                    "ERROR: Social DB requires more storage deposit, but we cannot cover it when signing transaction with a Function Call only access key"
+                )
             }
         } else if signer_account_id == account_id {
             if is_signer_access_key_full_access {
@@ -419,7 +418,9 @@ fn get_deposit(
             } else if required_deposit.is_zero() {
                 required_deposit
             } else {
-                color_eyre::eyre::bail!("ERROR: Social DB requires more storage deposit, but we cannot cover it when signing transaction with a Function Call only access key")
+                color_eyre::eyre::bail!(
+                    "ERROR: Social DB requires more storage deposit, but we cannot cover it when signing transaction with a Function Call only access key"
+                )
             }
         } else {
             color_eyre::eyre::bail!(
@@ -427,7 +428,9 @@ fn get_deposit(
             )
         }
     } else {
-        color_eyre::eyre::bail!("ERROR: signer access key cannot be used to sign a transaction to update components in Social DB.")
+        color_eyre::eyre::bail!(
+            "ERROR: signer access key cannot be used to sign a transaction to update components in Social DB."
+        )
     };
     Ok(deposit)
 }
@@ -462,8 +465,9 @@ fn get_remote_profile(
             format!("Failed to parse view function call return value for {account_id}/profile.")
         })?
         .accounts
-        .get(&account_id) {
-            Some(account_profile) => Ok(serde_json::to_value(account_profile.profile.clone())?),
-            None => Ok(serde_json::Value::Null)
-        }
+        .get(&account_id)
+    {
+        Some(account_profile) => Ok(serde_json::to_value(account_profile.profile.clone())?),
+        None => Ok(serde_json::Value::Null),
+    }
 }

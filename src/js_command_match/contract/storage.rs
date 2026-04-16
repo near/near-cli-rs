@@ -1,5 +1,5 @@
-use base64::Engine as _;
 use crate::js_command_match::constants::{BLOCK_ID_ALIASES, NETWORK_ID_ALIASES};
+use base64::Engine as _;
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct ViewStateArgs {

@@ -40,16 +40,15 @@ impl PublicKeyFromLegacyKeychainContext {
                             return Ok(());
                         }
                         if signer_keychain_folder.exists() {
-                            let nk_list = block_on(
-                                network_config.client().rpc().view_access_key_list(
+                            let nk_list =
+                                block_on(network_config.client().rpc().view_access_key_list(
                                     &account_id.clone().into(),
                                     near_kit::Finality::Final.into(),
-                                ),
-                            )
-                            .into_eyre()
-                            .wrap_err_with(|| {
-                                format!("Failed to fetch access KeyList for {account_id}")
-                            })?;
+                                ))
+                                .into_eyre()
+                                .wrap_err_with(|| {
+                                    format!("Failed to fetch access KeyList for {account_id}")
+                                })?;
                             let full_access_key_filenames = nk_list
                                 .keys
                                 .iter()

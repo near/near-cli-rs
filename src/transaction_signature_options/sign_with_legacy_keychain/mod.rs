@@ -67,12 +67,11 @@ impl SignLegacyKeychainContext {
                         .replace(':', "_")
                 ))
             } else if signer_keychain_folder.exists() {
-                let full_access_key_filenames = block_on(
-                        network_config.client().rpc().view_access_key_list(
-                            &previous_context.prepopulated_transaction.signer_id,
-                            near_kit::Finality::Final.into(),
-                        ),
-                    )
+                let full_access_key_filenames =
+                    block_on(network_config.client().rpc().view_access_key_list(
+                        &previous_context.prepopulated_transaction.signer_id,
+                        near_kit::Finality::Final.into(),
+                    ))
                     .into_eyre()
                     .wrap_err_with(|| {
                         format!(
@@ -224,10 +223,7 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<u64>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)

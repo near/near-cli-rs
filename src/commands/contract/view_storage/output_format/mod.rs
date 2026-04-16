@@ -4,7 +4,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use crate::common::RpcResultExt;
 
-
 mod as_json;
 mod as_text;
 
@@ -52,13 +51,16 @@ pub fn get_contract_state(
         "prefix_base64": base64::engine::general_purpose::STANDARD.encode(&prefix),
         "include_proof": false,
     });
-    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
-        if let serde_json::Value::Object(map) = &mut params {
-            map.extend(block_params);
-        }
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params()
+        && let serde_json::Value::Object(map) = &mut params
+    {
+        map.extend(block_params);
     }
     let json_value = crate::common::block_on(
-        network_config.client().rpc().call::<_, serde_json::Value>("query", params),
+        network_config
+            .client()
+            .rpc()
+            .call::<_, serde_json::Value>("query", params),
     )
     .into_eyre()
     .wrap_err_with(|| {
@@ -67,6 +69,5 @@ pub fn get_contract_state(
             network_config.network_name
         )
     })?;
-    serde_json::from_value(json_value)
-        .wrap_err("Failed to parse ViewState response")
+    serde_json::from_value(json_value).wrap_err("Failed to parse ViewState response")
 }

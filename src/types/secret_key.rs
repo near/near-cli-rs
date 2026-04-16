@@ -13,8 +13,8 @@ impl std::str::FromStr for SecretKey {
     type Err = color_eyre::eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let private_key = near_kit::SecretKey::from_str(s)
-            .map_err(color_eyre::eyre::Report::msg)?;
+        let private_key =
+            near_kit::SecretKey::from_str(s).map_err(color_eyre::eyre::Report::msg)?;
         Ok(Self(private_key))
     }
 }

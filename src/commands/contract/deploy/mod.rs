@@ -103,9 +103,9 @@ impl ContractFileContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_kit::Action::DeployContract(
-                near_kit::DeployContractAction { code },
-            ),
+            deploy_action: near_kit::Action::DeployContract(near_kit::DeployContractAction {
+                code,
+            }),
         }))
     }
 }
@@ -137,14 +137,9 @@ impl ContractHashContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_kit::Action::UseGlobalContract(
-                near_kit::UseGlobalContractAction {
-                    contract_identifier:
-                        near_kit::GlobalContractIdentifier::CodeHash(
-                            scope.hash.0,
-                        ),
-                },
-            ),
+            deploy_action: near_kit::Action::UseGlobalContract(near_kit::UseGlobalContractAction {
+                contract_identifier: near_kit::GlobalContractIdentifier::CodeHash(scope.hash.0),
+            }),
         }))
     }
 }
@@ -188,14 +183,11 @@ impl ContractAccountIdContext {
             global_context: previous_context.global_context,
             receiver_account_id: previous_context.receiver_account_id,
             signer_account_id: previous_context.signer_account_id,
-            deploy_action: near_kit::Action::UseGlobalContract(
-                near_kit::UseGlobalContractAction {
-                    contract_identifier:
-                        near_kit::GlobalContractIdentifier::AccountId(
-                            scope.global_contract_account_id.clone().into(),
-                        ),
-                },
-            ),
+            deploy_action: near_kit::Action::UseGlobalContract(near_kit::UseGlobalContractAction {
+                contract_identifier: near_kit::GlobalContractIdentifier::AccountId(
+                    scope.global_contract_account_id.clone().into(),
+                ),
+            }),
         })
     }
 }

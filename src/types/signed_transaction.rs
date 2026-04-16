@@ -11,7 +11,10 @@ pub struct SignedTransactionAsBase64 {
     pub inner: near_kit::SignedTransaction,
 }
 
-fn serialize_as_base64<S>(tx: &near_kit::SignedTransaction, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_as_base64<S>(
+    tx: &near_kit::SignedTransaction,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -35,7 +38,8 @@ impl From<SignedTransactionAsBase64> for near_kit::SignedTransaction {
 impl std::str::FromStr for SignedTransactionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let bytes = base64::engine::general_purpose::STANDARD.decode(s)
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(s)
             .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?;
         let inner = near_kit::SignedTransaction::deserialize(&mut &bytes[..])
             .map_err(|err| format!("transaction could not be parsed: {err}"))?;

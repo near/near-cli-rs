@@ -56,8 +56,13 @@ pub fn login(
         if let AccountType::NearImplicitAccount = account_id_from_cli.get_account_type() {
             let pk_implicit_account: near_kit::PublicKey = {
                 let hex_str = account_id_from_cli.as_str();
-                format!("ed25519:{}", bs58::encode(hex::decode(hex_str.as_bytes()).expect("implicit account is hex")).into_string()).parse()
-                    .expect("public key from implicit account should be valid")
+                format!(
+                    "ed25519:{}",
+                    bs58::encode(hex::decode(hex_str.as_bytes()).expect("implicit account is hex"))
+                        .into_string()
+                )
+                .parse()
+                .expect("public key from implicit account should be valid")
             };
             if public_key_str == pk_implicit_account.to_string() {
                 break account_id_from_cli;

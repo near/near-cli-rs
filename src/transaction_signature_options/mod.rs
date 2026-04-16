@@ -110,10 +110,7 @@ pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
 >;
 
 pub type OnAfterSendingTransactionCallback = std::sync::Arc<
-    dyn Fn(
-        &near_kit::FinalExecutionOutcome,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&near_kit::FinalExecutionOutcome, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 #[derive(Clone)]
@@ -143,9 +140,8 @@ impl serde::Serialize for SignedTransactionOrSignedDelegateAction {
                 map.serialize_entry("SignedTransaction", &tx.to_base64())?;
             }
             Self::SignedDelegateAction(da) => {
-                let b64 = base64::engine::general_purpose::STANDARD.encode(
-                    &borsh::to_vec(da).expect("borsh serialization should not fail"),
-                );
+                let b64 = base64::engine::general_purpose::STANDARD
+                    .encode(borsh::to_vec(da).expect("borsh serialization should not fail"));
                 map.serialize_entry("SignedDelegateAction", &b64)?;
             }
         }
@@ -161,11 +157,12 @@ impl<'de> serde::Deserialize<'de> for SignedTransactionOrSignedDelegateAction {
         let map: std::collections::HashMap<String, String> =
             serde::Deserialize::deserialize(deserializer)?;
         if let Some(b64) = map.get("SignedTransaction") {
-            let tx = near_kit::SignedTransaction::from_base64(b64)
-                .map_err(serde::de::Error::custom)?;
+            let tx =
+                near_kit::SignedTransaction::from_base64(b64).map_err(serde::de::Error::custom)?;
             Ok(Self::SignedTransaction(tx))
         } else if let Some(b64) = map.get("SignedDelegateAction") {
-            let bytes = base64::engine::general_purpose::STANDARD.decode(b64)
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(b64)
                 .map_err(serde::de::Error::custom)?;
             let da: near_kit::SignedDelegateAction =
                 borsh::from_slice(&bytes).map_err(serde::de::Error::custom)?;
@@ -178,20 +175,14 @@ impl<'de> serde::Deserialize<'de> for SignedTransactionOrSignedDelegateAction {
     }
 }
 
-impl From<near_kit::SignedTransaction>
-    for SignedTransactionOrSignedDelegateAction
-{
+impl From<near_kit::SignedTransaction> for SignedTransactionOrSignedDelegateAction {
     fn from(signed_transaction: near_kit::SignedTransaction) -> Self {
         Self::SignedTransaction(signed_transaction)
     }
 }
 
-impl From<near_kit::SignedDelegateAction>
-    for SignedTransactionOrSignedDelegateAction
-{
-    fn from(
-        signed_delegate_action: near_kit::SignedDelegateAction,
-    ) -> Self {
+impl From<near_kit::SignedDelegateAction> for SignedTransactionOrSignedDelegateAction {
+    fn from(signed_delegate_action: near_kit::SignedDelegateAction) -> Self {
         Self::SignedDelegateAction(signed_delegate_action)
     }
 }
@@ -227,8 +218,8 @@ pub fn sign_transaction_with_secret_key(
     (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
     if previous_context.sign_as_delegate_action {
-        let max_block_height = block_height
-            + meta_transaction_valid_for.unwrap_or(META_TRANSACTION_VALID_FOR_DEFAULT);
+        let max_block_height =
+            block_height + meta_transaction_valid_for.unwrap_or(META_TRANSACTION_VALID_FOR_DEFAULT);
 
         let signed_delegate_action = get_signed_delegate_action(
             unsigned_transaction,
@@ -287,8 +278,8 @@ pub fn resolve_nonce_and_block(
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     block_height: Option<u64>,
 ) -> color_eyre::eyre::Result<(u64, near_kit::CryptoHash, u64)> {
-    use color_eyre::eyre::{ContextCompat, WrapErr};
     use crate::common::{RpcResultExt, block_on};
+    use color_eyre::eyre::{ContextCompat, WrapErr};
 
     if offline {
         Ok((

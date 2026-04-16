@@ -44,12 +44,12 @@ impl std::str::FromStr for TxExecutionStatus {
         match s {
             "none" => Ok(Self(near_kit::TxExecutionStatus::None)),
             "included" => Ok(Self(near_kit::TxExecutionStatus::Included)),
-            "executed-optimistic" | "executed_optimistic" => Ok(Self(
-                near_kit::TxExecutionStatus::ExecutedOptimistic,
-            )),
-            "included-final" | "included_final" => Ok(Self(
-                near_kit::TxExecutionStatus::IncludedFinal,
-            )),
+            "executed-optimistic" | "executed_optimistic" => {
+                Ok(Self(near_kit::TxExecutionStatus::ExecutedOptimistic))
+            }
+            "included-final" | "included_final" => {
+                Ok(Self(near_kit::TxExecutionStatus::IncludedFinal))
+            }
             "executed" => Ok(Self(near_kit::TxExecutionStatus::Executed)),
             "final" => Ok(Self(near_kit::TxExecutionStatus::Final)),
             _ => Err(format!(
