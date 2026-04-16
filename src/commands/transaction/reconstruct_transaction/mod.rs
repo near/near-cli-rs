@@ -70,20 +70,13 @@ impl TransactionInfoContext {
                         prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                             signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
                             receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
-                            // TODO(phase 4c): replace with direct near_kit conversion
-                            actions: {
-                                let np_signed = crate::commands::nk_action_to_np(
-                                    &near_kit::Action::Delegate(signed_delegate_action.clone()),
-                                );
-                                if let near_primitives::transaction::Action::Delegate(np_delegate) = np_signed {
-                                    np_delegate.delegate_action.get_actions()
-                                        .into_iter()
-                                        .map(crate::commands::np_action_to_nk)
-                                        .collect()
-                                } else {
-                                    unreachable!()
-                                }
-                            },
+                            actions: signed_delegate_action
+                                .delegate_action
+                                .actions
+                                .iter()
+                                .cloned()
+                                .map(near_kit::Action::from)
+                                .collect(),
                         };
                     }
 
@@ -104,12 +97,10 @@ impl TransactionInfoContext {
                     let mut cmd_cli_args = cmd.to_cli_args();
 
                     for transaction_action in prepopulated_transaction.actions {
-                        // TODO(phase 4c): remove conversion once action_transformation uses near_kit
-                        let np_action = crate::commands::nk_action_to_np(&transaction_action);
                         let next_actions = add_action_1::CliNextAction::AddAction(
                             add_action_1::add_action::CliAddAction {
                                 action: action_transformation(
-                                    np_action,
+                                    transaction_action,
                                     prepopulated_transaction.receiver_id.clone(),
                                     network_config,
                                     near_primitives::types::BlockReference::BlockId(
@@ -168,14 +159,14 @@ impl From<TransactionInfoContext> for crate::network::NetworkContext {
 }
 
 fn action_transformation(
-    archival_action: near_primitives::transaction::Action,
+    archival_action: near_kit::Action,
     receiver_id: near_primitives::types::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<
     Option<super::construct_transaction::add_action_1::add_action::CliActionSubcommand>,
 > {
-    use near_primitives::transaction::Action;
+    use near_kit::Action;
 
     use super::construct_transaction::add_action_1::add_action;
 
@@ -228,7 +219,7 @@ fn action_transformation(
                 network_config,
                 block_reference,
                 &file_path,
-                &near_primitives::hash::CryptoHash::hash_bytes(&deploy_contract_action.code)
+                &near_kit::CryptoHash::hash(&deploy_contract_action.code)
             )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
@@ -282,18 +273,20 @@ fn action_transformation(
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
-            let code_hash = near_primitives::hash::CryptoHash::try_from(action.code.as_ref()).map_err(|_| {
+            let code_hash = near_kit::CryptoHash::try_from(action.code.as_slice()).map_err(|_| {
                 color_eyre::Report::msg("Internal error: Failed to calculate code hash from the deploy global contract action code.".to_string())
             })?;
             let contract_type = match action.deploy_mode {
-                near_primitives::action::GlobalContractDeployMode::AccountId => {
+                near_kit::GlobalContractDeployMode::AccountId => {
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId {
                         account_id: receiver_id.clone(),
-                        code_hash: Some(code_hash)
+                        code_hash: Some(near_primitives::hash::CryptoHash(*code_hash.as_bytes()))
                     }
                 }
-                near_primitives::action::GlobalContractDeployMode::CodeHash => {
-                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(code_hash)
+                near_kit::GlobalContractDeployMode::CodeHash => {
+                    &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(
+                        near_primitives::hash::CryptoHash(*code_hash.as_bytes())
+                    )
                 }
             };
 
@@ -306,12 +299,12 @@ fn action_transformation(
             )?;
 
             let mode = match action.deploy_mode {
-                near_primitives::action::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
+                near_kit::GlobalContractDeployMode::AccountId => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalAccountId(
                     add_action::deploy_global_contract::CliNextCommand {
                         next_action: None
                     }
                 ),
-                near_primitives::action::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
+                near_kit::GlobalContractDeployMode::CodeHash => add_action::deploy_global_contract::CliDeployGlobalMode::AsGlobalHash(
                     add_action::deploy_global_contract::CliNextCommand {
                         next_action: None
                     }
@@ -326,9 +319,9 @@ fn action_transformation(
         }
         Action::UseGlobalContract(use_global_contract_action) => {
             let mode = match use_global_contract_action.contract_identifier {
-                near_primitives::action::GlobalContractIdentifier::CodeHash(hash) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalHash(
+                near_kit::GlobalContractIdentifier::CodeHash(hash) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalHash(
                     add_action::use_global_contract::CliUseHashAction {
-                        hash: Some(crate::types::crypto_hash::CryptoHash::from(hash)),
+                        hash: Some(crate::types::crypto_hash::CryptoHash(hash)),
                         initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
                             add_action::deploy_contract::initialize_mode::CliNoInitialize {
                                 next_action: None
@@ -336,7 +329,7 @@ fn action_transformation(
                         ))
                     }
                 ),
-                near_primitives::action::GlobalContractIdentifier::AccountId(account_id) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalAccountId(
+                near_kit::GlobalContractIdentifier::AccountId(account_id) => add_action::use_global_contract::CliUseGlobalActionMode::UseGlobalAccountId(
                     add_action::use_global_contract::CliUseAccountIdAction {
                         account_id: Some(crate::types::account_id::AccountId(account_id)),
                         initialize: Some(add_action::deploy_contract::initialize_mode::CliInitializeMode::WithoutInitCall(
@@ -366,15 +359,15 @@ fn action_transformation(
 }
 
 fn get_access_key_permission(
-    public_key: near_crypto::PublicKey,
-    access_key_permission: near_primitives::account::AccessKeyPermission,
+    public_key: near_kit::PublicKey,
+    access_key_permission: near_kit::AccessKeyPermission,
 ) -> color_eyre::eyre::Result<
     Option<super::construct_transaction::add_action_1::add_action::add_key::CliAccessKeyPermission>,
 > {
     use super::construct_transaction::add_action_1::add_action::add_key;
 
     match access_key_permission {
-        near_primitives::account::AccessKeyPermission::FullAccess => {
+        near_kit::AccessKeyPermission::FullAccess => {
             Ok(Some(add_key::CliAccessKeyPermission::GrantFullAccess(
                 add_key::access_key_type::CliFullAccessType {
                     access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
@@ -386,8 +379,8 @@ fn get_access_key_permission(
                 },
             )))
         }
-        near_primitives::account::AccessKeyPermission::FunctionCall(
-            near_primitives::account::FunctionCallPermission {
+        near_kit::AccessKeyPermission::FunctionCall(
+            near_kit::FunctionCallPermission {
                 allowance,
                 receiver_id,
                 method_names,
@@ -405,7 +398,7 @@ fn get_access_key_permission(
                             None => Some(crate::types::near_allowance::NearAllowance::unlimited()),
                         }
                     },
-                    contract_account_id: Some(receiver_id.parse()?),
+                    contract_account_id: Some(receiver_id.into()),
                     function_names: Some(crate::types::vec_string::VecString(method_names)),
                     access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
                         add_key::use_public_key::CliAddAccessKeyAction {
@@ -416,8 +409,8 @@ fn get_access_key_permission(
                 },
             ),
         )),
-        near_primitives::account::AccessKeyPermission::GasKeyFunctionCall(_, _)
-        | near_primitives::account::AccessKeyPermission::GasKeyFullAccess(_) => {
+        near_kit::AccessKeyPermission::GasKeyFunctionCall(_, _)
+        | near_kit::AccessKeyPermission::GasKeyFullAccess(_) => {
             // TODO: impl
             Err(color_eyre::eyre::eyre!(
                 "Gas key permissions are not yet supported in transaction reconstruction"
@@ -431,7 +424,7 @@ fn download_code(
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
     file_path: &crate::types::path_buf::PathBuf,
-    hash_to_match: &near_primitives::hash::CryptoHash,
+    hash_to_match: &near_kit::CryptoHash,
 ) -> color_eyre::eyre::Result<()> {
     // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
     // So we need to fetch it from archive node.
@@ -444,7 +437,7 @@ fn download_code(
         color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
     })?;
 
-    let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
+    let code_hash = near_kit::CryptoHash::hash(&code);
     tracing::info!(
         parent: &tracing::Span::none(),
         "The code for <{}> was downloaded successfully with hash <{}>",
