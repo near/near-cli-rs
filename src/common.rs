@@ -444,6 +444,90 @@ pub fn find_network_where_account_exist(
     }
 }
 
+pub fn is_receiver_on_wrong_network(
+    linkdrop_account_id: Option<&near_primitives::types::AccountId>,
+    receiver_account_id: &near_primitives::types::AccountId,
+) -> bool {
+    let Some(linkdrop) = linkdrop_account_id else {
+        return false;
+    };
+    let receiver_str = receiver_account_id.as_str();
+    match linkdrop.as_str() {
+        "near" => receiver_str.ends_with(".testnet"),
+        "testnet" => receiver_str.ends_with(".near") && !receiver_str.ends_with(".testnet"),
+        _ => false,
+    }
+}
+
+/// Returns `Ok(true)` if the transaction should proceed, `Ok(false)` if the user cancelled.
+pub fn validate_receiver_account_id(
+    network_config: &crate::config::NetworkConfig,
+    receiver_account_id: &near_primitives::types::AccountId,
+    verbosity: crate::Verbosity,
+) -> color_eyre::eyre::Result<bool> {
+    if let crate::Verbosity::Quiet = verbosity {
+        return Ok(true);
+    }
+    if is_receiver_on_wrong_network(
+        network_config.linkdrop_account_id.as_ref(),
+        receiver_account_id,
+    ) {
+        eprintln!(
+            "\nWarning: <{}> looks like it belongs to a different network than <{}>.",
+            receiver_account_id, network_config.network_name
+        );
+        return ask_if_should_proceed();
+    }
+
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(get_account_state(
+            network_config,
+            receiver_account_id,
+            near_primitives::types::BlockReference::latest(),
+        ));
+
+    match result {
+        Ok(_) => Ok(true),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+            ),
+        )) => {
+            eprintln!(
+                "\nWarning: <{}> does not exist on <{}>.",
+                receiver_account_id, network_config.network_name
+            );
+            ask_if_should_proceed()
+        }
+        // Dont block the transaction if we can't reach the RPC
+        Err(_) => Ok(true),
+    }
+}
+
+fn ask_if_should_proceed() -> color_eyre::eyre::Result<bool> {
+    #[derive(strum_macros::Display, PartialEq)]
+    enum ConfirmOptions {
+        #[strum(to_string = "Yes, I want to proceed with this receiver account ID.")]
+        Yes,
+        #[strum(to_string = "No, I want to cancel the transaction.")]
+        No,
+    }
+    match Select::new(
+        "Do you want to proceed?",
+        vec![ConfirmOptions::Yes, ConfirmOptions::No],
+    )
+    .prompt()
+    {
+        Ok(value) => Ok(value == ConfirmOptions::Yes),
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => Ok(false),
+        Err(err) => Err(err.into()),
+    }
+}
+
 pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     #[derive(strum_macros::Display, PartialEq)]
     enum ConfirmOptions {
