@@ -113,7 +113,7 @@ fn download_contract_abi(
     let abi_root = tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(super::get_contract_abi(
-            &network_config.json_rpc_client(),
+            network_config,
             block_reference,
             account_id,
         ))?;

@@ -15,10 +15,6 @@ use near_primitives::types::BlockReference;
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
-/// A type alias was introduced to simplify the usage of `Result` with a boxed error type that was
-/// necessary to fix `clippy::result_large_err` warning
-pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
-
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
 
@@ -138,24 +134,23 @@ impl AccountTransferAllowance {
 }
 
 #[derive(Debug)]
-pub enum AccountStateError<E> {
-    JsonRpcError(near_jsonrpc_client::errors::JsonRpcError<E>),
+pub enum AccountStateError {
+    RpcError(String),
     Cancel,
     Skip,
 }
 
-impl<E> std::fmt::Display for AccountStateError<E>
-where
-    E: std::fmt::Debug,
-{
+impl std::fmt::Display for AccountStateError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::JsonRpcError(err) => write!(f, "{err:?}"),
+            Self::RpcError(err) => write!(f, "{err}"),
             Self::Cancel => write!(f, "Operation was canceled by the user"),
             Self::Skip => write!(f, "Operation was skipped by the user"),
         }
     }
 }
+
+impl std::error::Error for AccountStateError {}
 
 #[tracing::instrument(name = "Waiting 3 seconds before sending a request via RPC", skip_all)]
 pub async fn sleep_after_error(additional_message_for_name: String) {
@@ -175,11 +170,9 @@ pub async fn get_account_transfer_allowance(
         get_account_state(network_config, &account_id, block_reference.clone()).await;
     let account_view = match account_state {
         Ok(account_view) => account_view,
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-            ),
-        )) if account_id.get_account_type().is_implicit() => {
+        Err(ViewAccountError::UnknownAccount { .. })
+            if account_id.get_account_type().is_implicit() =>
+        {
             return Ok(AccountTransferAllowance {
                 account_id,
                 account_liquid_balance: near_token::NearToken::ZERO,
@@ -188,13 +181,13 @@ pub async fn get_account_transfer_allowance(
                 pessimistic_transaction_fee: near_token::NearToken::ZERO,
             });
         }
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+        Err(ViewAccountError::TransportError(err)) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to connectivity issue.\n{err}",
                 network_config.network_name
             ));
         }
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(err)) => {
+        Err(err @ (ViewAccountError::UnknownAccount { .. } | ViewAccountError::ServerError(_))) => {
             return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                 "\nAccount information ({account_id}) cannot be fetched on <{}> network due to server error.\n{err}",
                 network_config.network_name
@@ -227,7 +220,7 @@ pub fn verify_account_access_key(
     network_config: crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<
     near_primitives::views::AccessKeyView,
-    AccountStateError<near_jsonrpc_primitives::types::query::RpcQueryError>,
+    AccountStateError,
 > {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
@@ -247,17 +240,7 @@ pub fn verify_account_access_key(
                     || err_str.contains("access key")
                         && err_str.contains("does not exist")
                 {
-                    return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                            near_jsonrpc_client::errors::RpcTransportError::RecvError(
-                                near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                                    near_jsonrpc_primitives::message::Message::error(
-                                        near_jsonrpc_primitives::errors::RpcError::parse_error(err_str)
-                                    )
-                                ),
-                            ),
-                        ),
-                    ));
+                    return Err(AccountStateError::RpcError(err_str));
                 }
                 // Distinguish transport vs server errors by checking for common transport error patterns
                 let is_transport = err_str.contains("transport")
@@ -282,17 +265,7 @@ pub fn verify_account_access_key(
                     return Err(AccountStateError::Cancel);
                 }
                 if let Ok(false) = need_check_account {
-                    return Err(AccountStateError::JsonRpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::TransportError(
-                            near_jsonrpc_client::errors::RpcTransportError::RecvError(
-                                near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                                    near_jsonrpc_primitives::message::Message::error(
-                                        near_jsonrpc_primitives::errors::RpcError::parse_error(err_str)
-                                    )
-                                ),
-                            ),
-                        ),
-                    ));
+                    return Err(AccountStateError::RpcError(err_str));
                 }
             }
         }
@@ -367,11 +340,7 @@ pub fn find_network_where_account_exist(
 
         match result {
             Ok(_) => return Ok(Some(network_config.clone())),
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-                ),
-            )) => {
+            Err(ViewAccountError::UnknownAccount { .. }) => {
                 unknown_account_result.insert(network_config.network_name.clone());
             }
             Err(_err) => {
@@ -425,96 +394,63 @@ pub fn ask_if_different_account_id_wanted() -> color_eyre::eyre::Result<bool> {
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
+/// Error type for `get_account_state` that categorizes errors from the RPC call.
+///
+/// Callers can match on variants to distinguish between "account not found",
+/// "transport/connectivity" issues, and other server errors.
+#[derive(Debug)]
+pub enum ViewAccountError {
+    /// The account does not exist on-chain.
+    UnknownAccount {
+        account_id: near_primitives::types::AccountId,
+    },
+    /// A transport / connectivity error occurred.
+    TransportError(String),
+    /// Any other server-side error.
+    ServerError(String),
+}
+
+impl std::fmt::Display for ViewAccountError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownAccount { account_id } => {
+                write!(f, "Account not found: {account_id}")
+            }
+            Self::TransportError(msg) => write!(f, "Transport error: {msg}"),
+            Self::ServerError(msg) => write!(f, "Server error: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for ViewAccountError {}
+
+/// Classify a near-kit `RpcError` into a `ViewAccountError`.
+fn classify_view_account_error(
+    err: near_kit::RpcError,
+    account_id: &near_primitives::types::AccountId,
+) -> ViewAccountError {
+    match &err {
+        near_kit::RpcError::AccountNotFound(_) => ViewAccountError::UnknownAccount {
+            account_id: account_id.clone(),
+        },
+        near_kit::RpcError::Http(_)
+        | near_kit::RpcError::Network { .. }
+        | near_kit::RpcError::Timeout(_) => ViewAccountError::TransportError(err.to_string()),
+        _ => ViewAccountError::ServerError(err.to_string()),
+    }
+}
+
 #[tracing::instrument(name = "Getting account status information for", skip_all)]
 pub async fn get_account_state(
     network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     block_reference: BlockReference,
-) -> color_eyre::eyre::Result<
-    near_primitives::views::AccountView,
-    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
+) -> Result<near_primitives::views::AccountView, ViewAccountError> {
     tracing::Span::current().pb_set_message(&format!(
         "<{account_id}> on network <{}> ...",
         network_config.network_name
     ));
     tracing::info!(target: "near_teach_me", "Getting account status information for <{account_id}> on network <{}> ...", network_config.network_name);
-
-    let mut retries_left = (0..5).rev();
-    loop {
-        let query_view_method_response = view_account(
-            format!("{}", network_config.rpc_url),
-            &network_config.json_rpc_client(),
-            account_id,
-            block_reference.clone(),
-        )
-        .await;
-
-        match query_view_method_response {
-            Ok(rpc_query_response) => {
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(
-                    account_view,
-                ) = rpc_query_response.kind
-                {
-                    return Ok(account_view);
-                } else {
-                    return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
-                        near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
-                        ),
-                    )));
-                }
-            }
-            Err(
-                err @ near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                    near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                        near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount {
-                            ..
-                        },
-                    ),
-                ),
-            ) => {
-                return Err(err);
-            }
-            Err(
-                err @ (near_jsonrpc_client::errors::JsonRpcError::TransportError(_)
-                | near_jsonrpc_client::errors::JsonRpcError::ServerError(_)),
-            ) => {
-                if let Some(retries_left) = retries_left.next() {
-                    sleep_after_error(format!(
-                        "(Previous attempt failed with error: `{}`. Will retry {} more times)",
-                        err.to_string().red(),
-                        retries_left
-                    ))
-                    .await;
-                } else {
-                    return Err(err);
-                }
-            }
-        }
-    }
-}
-
-#[tracing::instrument(name = "Receiving request via RPC", skip_all)]
-async fn view_account(
-    instrument_message: String,
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    account_id: &near_primitives::types::AccountId,
-    block_reference: BlockReference,
-) -> Result<
-    near_jsonrpc_primitives::types::query::RpcQueryResponse,
-    near_jsonrpc_client::errors::JsonRpcError<near_jsonrpc_primitives::types::query::RpcQueryError>,
-> {
-    tracing::Span::current().pb_set_message(&instrument_message);
-    tracing::info!(target: "near_teach_me", "Receiving request via RPC {instrument_message}");
-
-    let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-        block_reference,
-        request: near_primitives::views::QueryRequest::ViewAccount {
-            account_id: account_id.clone(),
-        },
-    };
-
     tracing::info!(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
@@ -522,53 +458,56 @@ async fn view_account(
         account_id
     );
 
-    if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(&query_view_method_request) {
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            json_rpc_client.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Request Body:\n{}",
-            indent_payload(&format!("{request_payload:#}"))
-        );
-    }
+    let nk_block_ref = to_nk_block_reference(&block_reference);
 
-    json_rpc_client
-        .call(query_view_method_request)
-        .await
-        .inspect_err(|err| match err {
-            near_jsonrpc_client::errors::JsonRpcError::TransportError(transport_error) => {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Request failed due to connectivity issue:\n{}",
-                    indent_payload(&format!("{transport_error:#?}"))
-                );
+    let mut retries_left = (0..5).rev();
+    loop {
+        let result = network_config
+            .client()
+            .rpc()
+            .view_account(account_id, nk_block_ref.clone())
+            .await;
+
+        match result {
+            Ok(nk_account_view) => {
+                return Ok(near_primitives::views::AccountView {
+                    amount: nk_account_view.amount,
+                    locked: nk_account_view.locked,
+                    code_hash: near_primitives::hash::CryptoHash(
+                        *nk_account_view.code_hash.as_bytes(),
+                    ),
+                    storage_usage: nk_account_view.storage_usage,
+                    storage_paid_at: nk_account_view.storage_paid_at,
+                    global_contract_hash: nk_account_view.global_contract_hash.map(|h| {
+                        near_primitives::hash::CryptoHash(*h.as_bytes())
+                    }),
+                    global_contract_account_id: nk_account_view
+                        .global_contract_account_id
+                        .map(|a| a.to_string().parse().expect("AccountId round-trip")),
+                });
             }
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler_error),
-            ) => {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Request returned a handling error:\n{}",
-                    indent_payload(&serde_json::to_string_pretty(handler_error).unwrap_or_else(|_| handler_error.to_string()))
-                );
+            Err(err) => {
+                let classified = classify_view_account_error(err, account_id);
+                match &classified {
+                    ViewAccountError::UnknownAccount { .. } => {
+                        return Err(classified);
+                    }
+                    ViewAccountError::TransportError(_) | ViewAccountError::ServerError(_) => {
+                        if let Some(retries_left) = retries_left.next() {
+                            sleep_after_error(format!(
+                                "(Previous attempt failed with error: `{}`. Will retry {} more times)",
+                                classified.to_string().red(),
+                                retries_left
+                            ))
+                            .await;
+                        } else {
+                            return Err(classified);
+                        }
+                    }
+                }
             }
-            near_jsonrpc_client::errors::JsonRpcError::ServerError(server_error) => {
-                tracing::info!(
-                    target: "near_teach_me",
-                    parent: &tracing::Span::none(),
-                    "JSON RPC Request returned a generic server error:\n{}",
-                    indent_payload(&format!("{server_error:#?}"))
-                );
-            }
-        })
-        .inspect(teach_me_call_response)
+        }
+    }
 }
 
 fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
@@ -1097,49 +1036,6 @@ fn print_value_successful_transaction(
     }
     info_str.push('\n');
     info_str
-}
-
-/// Classify an RPC send-transaction error as retryable (`Ok(message)`)
-/// or fatal (`Err(report)`).  Retryable errors are transient transport /
-/// timeout / rate-limit problems that the send loop should retry.
-pub fn classify_send_tx_error(
-    err: &near_jsonrpc_client::errors::JsonRpcError<
-        near_jsonrpc_client::methods::send_tx::RpcTransactionError,
-    >,
-) -> color_eyre::Result<String> {
-    match err {
-        near_jsonrpc_client::errors::JsonRpcError::TransportError(_) => {
-            Ok(format!("Transport error: {err}"))
-        }
-        near_jsonrpc_client::errors::JsonRpcError::ServerError(server_err) => match server_err {
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(handler) => match handler
-            {
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError => {
-                    Ok("Timeout error transaction".to_string())
-                }
-                // InvalidTransaction is fatal — the transaction itself is bad.
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::InvalidTransaction {
-                    context,
-                } => Err(color_eyre::eyre::eyre!("{}", context)),
-                // Everything else is fatal but Display gives a reasonable message.
-                _ => Err(color_eyre::eyre::eyre!("{}", err)),
-            },
-            near_jsonrpc_client::errors::JsonRpcServerError::InternalError { .. } => {
-                Ok(format!("{}", server_err))
-            }
-            near_jsonrpc_client::errors::JsonRpcServerError::ResponseStatusError(status_err) => {
-                match status_err {
-                    near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TooManyRequests
-                    | near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::TimeoutError
-                    | near_jsonrpc_client::errors::JsonRpcServerResponseStatusError::ServiceUnavailable => {
-                        Ok(format!("{}", status_err))
-                    }
-                    _ => Err(color_eyre::eyre::eyre!("{}", status_err)),
-                }
-            }
-            _ => Err(color_eyre::eyre::eyre!("{}", server_err)),
-        },
-    }
 }
 
 fn get_near_usd_exchange_rate(coingecko_url: &url::Url) -> color_eyre::Result<f64> {
@@ -2230,6 +2126,20 @@ pub fn from_nk_crypto_hash(hash: &near_kit::CryptoHash) -> near_primitives::hash
     near_primitives::hash::CryptoHash(*hash.as_bytes())
 }
 
+/// Convert a `near_primitives::views::TxExecutionStatus` to `near_kit::TxExecutionStatus`.
+pub fn to_nk_tx_execution_status(
+    status: &near_primitives::views::TxExecutionStatus,
+) -> near_kit::TxExecutionStatus {
+    match status {
+        near_primitives::views::TxExecutionStatus::None => near_kit::TxExecutionStatus::None,
+        near_primitives::views::TxExecutionStatus::Included => near_kit::TxExecutionStatus::Included,
+        near_primitives::views::TxExecutionStatus::ExecutedOptimistic => near_kit::TxExecutionStatus::ExecutedOptimistic,
+        near_primitives::views::TxExecutionStatus::IncludedFinal => near_kit::TxExecutionStatus::IncludedFinal,
+        near_primitives::views::TxExecutionStatus::Executed => near_kit::TxExecutionStatus::Executed,
+        near_primitives::views::TxExecutionStatus::Final => near_kit::TxExecutionStatus::Final,
+    }
+}
+
 /// Blocking helper: fetch an access key via near-kit.
 ///
 /// Returns the near-kit `AccessKeyView` which contains `nonce`, `block_hash`,
@@ -2646,38 +2556,6 @@ fn replace_params_with_file(
     }
 }
 
-pub(crate) fn teach_me_call_response(response: &impl serde::Serialize) {
-    if let Ok(response_payload) = serde_json::to_value(response) {
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON RPC Response:\n{}",
-            indent_payload(&format!("{response_payload:#}"))
-        );
-    }
-}
-
-#[cfg(feature = "inspect_contract")]
-pub(crate) fn teach_me_request_payload(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    request: &near_jsonrpc_client::methods::query::RpcQueryRequest,
-) {
-    if let Ok(request_payload) = near_jsonrpc_client::methods::to_json(request) {
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "HTTP POST {}",
-            json_rpc_client.server_addr()
-        );
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "JSON Request Body:\n{}",
-            indent_payload(&format!("{request_payload:#}"))
-        );
-    }
-}
-
 pub fn indent_payload(s: &str) -> String {
     use std::fmt::Write;
 
@@ -2687,61 +2565,6 @@ pub fn indent_payload(s: &str) -> String {
         .write_str(s)
         .ok();
     indented_string
-}
-
-#[easy_ext::ext(RpcQueryResponseExt)]
-pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
-    fn access_key_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyView> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKey(
-            access_key_view,
-        ) = &self.kind
-        {
-            Ok(access_key_view.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a View Access Key query call",
-            );
-        }
-    }
-
-    fn access_key_list_view(
-        &self,
-    ) -> color_eyre::eyre::Result<near_primitives::views::AccessKeyList> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-            access_key_list,
-        ) = &self.kind
-        {
-            Ok(access_key_list.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a View Access Key List query call",
-            );
-        }
-    }
-
-    fn account_view(&self) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewAccount(account_view) =
-            &self.kind
-        {
-            Ok(account_view.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a View Account query call",
-            );
-        }
-    }
-
-    fn call_result(&self) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::CallResult(result) =
-            &self.kind
-        {
-            Ok(result.clone())
-        } else {
-            color_eyre::eyre::bail!(
-                "Internal error: Received unexpected query kind in response to a view-function query call",
-            );
-        }
-    }
 }
 
 #[easy_ext::ext(CallResultExt)]

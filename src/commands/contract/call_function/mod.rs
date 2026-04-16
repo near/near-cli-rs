@@ -69,7 +69,7 @@ fn input_function_name(
             tokio::runtime::Runtime::new()
                 .unwrap()
                 .block_on(super::get_contract_abi(
-                    &network_config.json_rpc_client(),
+                    &network_config,
                     &near_primitives::types::Finality::Final.into(),
                     contract_account_id,
                 ))

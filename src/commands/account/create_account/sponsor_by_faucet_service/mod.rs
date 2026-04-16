@@ -152,7 +152,7 @@ fn print_account_creation_status(
             }
 
             let account_creation_transaction = response
-                .json::<near_jsonrpc_client::methods::tx::RpcTransactionResponse>()?
+                .json::<near_jsonrpc_primitives::types::transactions::RpcTransactionResponse>()?
                 .final_execution_outcome
                 .map(|outcome| outcome.into_outcome())
                 .ok_or_else(|| {

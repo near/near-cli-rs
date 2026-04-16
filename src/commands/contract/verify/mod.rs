@@ -185,7 +185,7 @@ fn get_contract_properties_from_repository(
     tracing::info!(target: "near_teach_me", "Getting the contract properties from the repository ...");
     let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
         super::inspect::get_contract_source_metadata(
-            &network_config.json_rpc_client(),
+            network_config,
             block_reference,
             account_id,
         ),
@@ -294,32 +294,22 @@ fn get_contract_code_from_contract_account_id(
             "I am making HTTP call to NEAR JSON RPC to get the contract code (Wasm binary) deployed to `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-contract-code",
             account_id
     );
-    let view_code_response = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config.json_rpc_client().call(
-                near_jsonrpc_client::methods::query::RpcQueryRequest {
-                    block_reference: block_reference.clone(),
-                    request: near_primitives::views::QueryRequest::ViewCode {
-                        account_id: account_id.clone(),
-                    },
-                },
-            ),
+    let view_code_json = crate::common::blocking_view_code(
+        network_config,
+        account_id,
+        block_reference.clone(),
+    )
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query ViewCode for <{}> on network <{}>",
+            &account_id, network_config.network_name
         )
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewCode for <{}> on network <{}>",
-                &account_id, network_config.network_name
-            )
-        })?;
+    })?;
 
-    let contract_code_view =
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-            view_code_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg("Error call result".to_string()));
-        };
-    Ok(contract_code_view.code)
+    let code_base64 = view_code_json
+        .get("code_base64")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| color_eyre::Report::msg("Error: missing code_base64 in view_code response"))?;
+    near_primitives::serialize::from_base64(code_base64)
+        .map_err(|e| color_eyre::Report::msg(format!("Error decoding code_base64: {e}")))
 }

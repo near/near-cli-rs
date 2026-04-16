@@ -30,13 +30,12 @@ impl TransactionInfoContext {
 
                 move |network_config: &crate::config::NetworkConfig| {
                     let query_view_transaction_status = super::view_status::get_transaction_info(network_config, tx_hash)?
-                        .final_execution_outcome
+                        .final_execution_outcome()
                         .wrap_err_with(|| {
                             format!(
                                 "Failed to get the final execution outcome for the transaction {tx_hash}"
                             )
-                        })?
-                        .into_outcome();
+                        })?;
 
                     let mut prepopulated_transaction = crate::commands::PrepopulatedTransaction {
                         signer_id: query_view_transaction_status.transaction.signer_id,

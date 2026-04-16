@@ -197,12 +197,8 @@ fn validate_new_account_id(
             account_id,
             network_config.network_name
         )),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-            ),
-        )) => Ok(()),
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+        Err(crate::common::ViewAccountError::UnknownAccount { .. }) => Ok(()),
+        Err(crate::common::ViewAccountError::TransportError(_)) => {
             tracing::warn!(
                 parent: &tracing::Span::none(),
                 "{}{}",

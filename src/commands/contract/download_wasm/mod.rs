@@ -329,34 +329,35 @@ pub fn get_code(
     block_reference: near_primitives::types::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     tracing::info!(target: "near_teach_me", "Trying to download contract code ...");
-    let (request, hash_to_match) = match contract_type.clone() {
+    // Build the base query params depending on the contract type.
+    let (base_query_params, hash_to_match) = match contract_type.clone() {
         ContractType::Regular(account_id) => (
-            near_primitives::views::QueryRequest::ViewCode { account_id },
+            serde_json::json!({
+                "request_type": "view_code",
+                "account_id": account_id.to_string(),
+            }),
             None,
         ),
         ContractType::GlobalContractByAccountId {
             account_id,
             code_hash,
         } => (
-            near_primitives::views::QueryRequest::ViewGlobalContractCodeByAccountId { account_id },
+            serde_json::json!({
+                "request_type": "view_global_contract_code_by_account_id",
+                "account_id": account_id.to_string(),
+            }),
             code_hash,
         ),
         ContractType::GlobalContractByCodeHash(code_hash) => (
-            near_primitives::views::QueryRequest::ViewGlobalContractCode { code_hash },
+            serde_json::json!({
+                "request_type": "view_global_contract_code",
+                "code_hash": code_hash.to_string(),
+            }),
             Some(code_hash),
         ),
     };
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
-    let block = rt
-        .block_on(
-            network_config.json_rpc_client().call(
-                near_jsonrpc_client::methods::block::RpcBlockRequest {
-                    block_reference: block_reference.clone(),
-                },
-            ),
-        )
+    let block = crate::common::blocking_block(network_config, block_reference.clone())
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch block info for block reference {:?} on network <{}>",
@@ -364,40 +365,42 @@ pub fn get_code(
             )
         })?;
 
-    let block_height = block.header.height;
+    let start_block_height = block.header.height;
     let number_of_shards = block.chunks.len() as u64;
 
-    for block_height in block_height..=block_height + number_of_shards * 2 {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+
+    for block_height in start_block_height..=start_block_height + number_of_shards * 2 {
         tracing::info!(
         parent: &tracing::Span::none(),
             "Trying to fetch contract code for <{}> at block height {} on network <{}>...",
             contract_type, block_height, network_config.network_name
         );
 
-        let Ok(query_view_method_response) = rt.block_on(
-            network_config.json_rpc_client().call(
-                near_jsonrpc_client::methods::query::RpcQueryRequest {
-                    block_reference: near_primitives::types::BlockReference::BlockId(
-                        near_primitives::types::BlockId::Height(block_height),
-                    ),
-                    request: request.clone(),
-                },
-            ),
+        let mut params = base_query_params.clone();
+        if let serde_json::Value::Object(map) = &mut params {
+            map.insert("block_id".to_string(), serde_json::json!(block_height));
+        }
+
+        let Ok(view_code_json) = rt.block_on(
+            network_config
+                .client()
+                .rpc()
+                .call::<_, serde_json::Value>("query", params),
         ) else {
             continue;
         };
 
-        let call_access_view =
-            if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-                query_view_method_response.kind
-            {
-                result
-            } else {
-                return Err(color_eyre::Report::msg("Error call result".to_string()));
-            };
+        let code_base64 = view_code_json
+            .get("code_base64")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        let Ok(code_bytes) = near_primitives::serialize::from_base64(code_base64) else {
+            continue;
+        };
 
         if let Some(hash_to_match) = hash_to_match {
-            let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&call_access_view.code);
+            let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code_bytes);
             if code_hash != hash_to_match {
                 tracing::warn!(
                     parent: &tracing::Span::none(),
@@ -409,13 +412,13 @@ pub fn get_code(
             }
         }
 
-        return Ok(call_access_view.code);
+        return Ok(code_bytes);
     }
 
     Err(color_eyre::Report::msg(format!(
         "Failed to fetch contract code for <{}> on network <{}> after trying {} block heights.",
         contract_type,
         network_config.network_name,
-        block_height + number_of_shards * 2 - block_height + 1
+        number_of_shards * 2 + 1
     )))
 }
