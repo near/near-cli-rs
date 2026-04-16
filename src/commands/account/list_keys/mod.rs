@@ -1,6 +1,6 @@
 use color_eyre::eyre::Context;
 
-use crate::common::blocking_view_access_key_list;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -26,11 +26,13 @@ impl ViewListKeysContext {
             let account_id: near_kit::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
-                let nk_list = blocking_view_access_key_list(
-                    network_config,
-                    &account_id,
-                    block_reference.clone(),
+                let nk_list = block_on(
+                    network_config.client().rpc().view_access_key_list(
+                        &account_id,
+                        block_reference.clone(),
+                    ),
                 )
+                .into_eyre()
                 .wrap_err_with(|| {
                     format!(
                         "Failed to fetch query AccessKeyList for {}",

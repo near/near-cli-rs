@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use futures::{StreamExt, TryStreamExt};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::CallResultExt;
+use crate::common::{CallResultExt, RpcResultExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -64,21 +64,24 @@ pub fn get_account_inquiry(
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Receiving an inquiry about your account ...");
 
-    let nk_account_view = crate::common::blocking_view_account(
-        network_config,
-        account_id,
-        block_reference.clone(),
+    let nk_account_view = crate::common::block_on(
+        network_config.client().rpc().view_account(
+            account_id,
+            block_reference.clone(),
+        ),
     )
+    .into_eyre()
     .wrap_err_with(|| {
         format!(
             "Failed to fetch query ViewAccount for account <{}> on network <{}>",
             account_id, network_config.network_name
         )
     })?;
-    let access_key_list = crate::common::blocking_view_access_key_list(
-        network_config,
-        account_id,
-        block_reference.clone(),
+    let access_key_list = crate::common::block_on(
+        network_config.client().rpc().view_access_key_list(
+            account_id,
+            block_reference.clone(),
+        ),
     )
     .map_err(|err| {
         tracing::warn!(
@@ -245,15 +248,17 @@ fn get_account_profile(
 ) -> color_eyre::Result<Option<crate::types::socialdb::AccountProfile>> {
     tracing::info!(target: "near_teach_me", "Getting an account profile ...");
     if let Ok(contract_account_id) = network_config.get_near_social_account_id_from_network() {
-        let result = crate::common::blocking_view_function(
-            network_config,
-            &contract_account_id,
-            "get",
-            serde_json::to_vec(&serde_json::json!({
-                "keys": vec![format!("{account_id}/profile/**")],
-            }))?,
-            block_reference.clone(),
+        let result = crate::common::block_on(
+            network_config.client().rpc().view_function(
+                &contract_account_id,
+                "get",
+                &serde_json::to_vec(&serde_json::json!({
+                    "keys": vec![format!("{account_id}/profile/**")],
+                }))?,
+                block_reference.clone(),
+            ),
         )
+        .into_eyre()
         .wrap_err_with(|| {
             format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
                 contract_account_id,

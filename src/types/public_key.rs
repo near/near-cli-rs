@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PublicKey(pub near_kit::PublicKey);
 

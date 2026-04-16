@@ -11,7 +11,7 @@ use tracing_indicatif::span_ext::IndicatifSpanExt;
 use near_kit::BlockReference;
 
 use super::FetchAbiError;
-use crate::common::{CallResultExt, sleep_after_error};
+use crate::common::{CallResultExt, RpcResultExt, sleep_after_error};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -48,9 +48,7 @@ impl ContractContext {
             let account_id: near_kit::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(display_inspect_contract(
+                crate::common::block_on(display_inspect_contract(
                         &account_id,
                         network_config,
                         block_reference,
@@ -78,11 +76,19 @@ fn get_contract_code(
     block_reference: &near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
     tracing::info!(target: "near_teach_me", "Obtaining the contract code ...");
-    crate::common::blocking_view_code(
-        network_config,
-        account_id,
-        block_reference.clone(),
+    let mut params = serde_json::json!({
+        "request_type": "view_code",
+        "account_id": account_id.to_string(),
+    });
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
+        if let serde_json::Value::Object(map) = &mut params {
+            map.extend(block_params);
+        }
+    }
+    crate::common::block_on(
+        network_config.client().rpc().call::<_, serde_json::Value>("query", params),
     )
+    .into_eyre()
     .wrap_err_with(|| {
         format!(
             "Failed to fetch query ViewCode for <{}> on network <{}>",

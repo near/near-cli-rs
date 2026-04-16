@@ -1,7 +1,7 @@
 use color_eyre::eyre::WrapErr;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::{CallResultExt, blocking_view_function};
+use crate::common::{CallResultExt, RpcResultExt, block_on};
 
 const STORAGE_COST_PER_BYTE: u128 = 10u128.pow(19);
 
@@ -85,15 +85,17 @@ fn get_storage_balance(
 ) -> color_eyre::eyre::Result<crate::types::socialdb::StorageBalance> {
     tracing::Span::current().pb_set_message(account_id.as_ref());
     tracing::info!(target: "near_teach_me", "Getting storage balance for {account_id}");
-    let result = blocking_view_function(
-        network_config,
-        contract_account_id,
-        "storage_balance_of",
-        serde_json::to_vec(&serde_json::json!({
-            "account_id": account_id.to_string(),
-        }))?,
-        block_reference.clone(),
+    let result = block_on(
+        network_config.client().rpc().view_function(
+            contract_account_id,
+            "storage_balance_of",
+            &serde_json::to_vec(&serde_json::json!({
+                "account_id": account_id.to_string(),
+            }))?,
+            block_reference.clone(),
+        ),
     )
+    .into_eyre()
     .wrap_err_with(|| {
         format!("Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
             contract_account_id,

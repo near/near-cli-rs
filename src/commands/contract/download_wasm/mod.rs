@@ -3,6 +3,8 @@ use std::io::Write;
 
 use color_eyre::eyre::Context;
 use inquire::CustomType;
+
+use crate::common::RpcResultExt;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 
@@ -358,7 +360,10 @@ pub fn get_code(
         ),
     };
 
-    let block = crate::common::blocking_block(network_config, block_reference.clone())
+    let block = crate::common::block_on(
+        network_config.client().rpc().block(block_reference.clone()),
+    )
+        .into_eyre()
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch block info for block reference {:?} on network <{}>",

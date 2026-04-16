@@ -110,9 +110,7 @@ fn download_contract_abi(
     verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Download the ABI for the contract ...");
-    let abi_root = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(super::get_contract_abi(
+    let abi_root = crate::common::block_on(super::get_contract_abi(
             network_config,
             block_reference,
             account_id,

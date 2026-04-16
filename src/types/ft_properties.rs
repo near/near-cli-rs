@@ -3,7 +3,7 @@ use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use crate::common::CallResultExt;
-use crate::common::{blocking_view_function};
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub enum FungibleTokenTransferAmount {
@@ -205,13 +205,15 @@ pub fn params_ft_metadata(
     block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
     tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
-    let result = blocking_view_function(
-        network_config,
-        &ft_contract_account_id,
-        "ft_metadata",
-        vec![],
-        block_reference,
+    let result = block_on(
+        network_config.client().rpc().view_function(
+            &ft_contract_account_id,
+            "ft_metadata",
+            &[],
+            block_reference,
+        ),
     )
+    .into_eyre()
     .wrap_err_with(||{
         format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
             ft_contract_account_id,

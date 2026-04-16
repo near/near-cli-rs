@@ -5,7 +5,7 @@ use std::str::FromStr;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select};
 
-use crate::common::{blocking_view_access_key, blocking_view_access_key_list};
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -76,11 +76,13 @@ impl SignLegacyKeychainContext {
                         .replace(':', "_")
                 ))
             } else if signer_keychain_folder.exists() {
-                let full_access_key_filenames = blocking_view_access_key_list(
-                        &network_config,
-                        &previous_context.prepopulated_transaction.signer_id,
-                        near_kit::Finality::Final.into(),
+                let full_access_key_filenames = block_on(
+                        network_config.client().rpc().view_access_key_list(
+                            &previous_context.prepopulated_transaction.signer_id,
+                            near_kit::Finality::Final.into(),
+                        ),
                     )
+                    .into_eyre()
                     .wrap_err_with(|| {
                         format!(
                             "Failed to fetch access KeyList for {}",
@@ -154,12 +156,14 @@ impl SignLegacyKeychainContext {
                     .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
         } else {
-            let access_key_view = blocking_view_access_key(
-                    &network_config,
-                    &previous_context.prepopulated_transaction.signer_id,
-                    &signer_access_key.public_key,
-                    near_kit::BlockReference::optimistic(),
+            let access_key_view = block_on(
+                    network_config.client().rpc().view_access_key(
+                        &previous_context.prepopulated_transaction.signer_id,
+                        &signer_access_key.public_key,
+                        near_kit::BlockReference::optimistic(),
+                    ),
                 )
+                .into_eyre()
                 .wrap_err(
                     "Cannot sign a transaction due to an error while fetching the most recent nonce value",
                 )?;

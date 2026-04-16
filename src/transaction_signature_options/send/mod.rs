@@ -141,9 +141,7 @@ pub fn sending_signed_transaction(
             "wait_until": nk_wait_until.as_str(),
         });
 
-        let result: Result<serde_json::Value, near_kit::RpcError> = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(
+        let result: Result<serde_json::Value, near_kit::RpcError> = crate::common::block_on(
                 network_config
                     .client()
                     .rpc()

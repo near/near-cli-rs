@@ -1,5 +1,8 @@
+use base64::Engine as _;
 use color_eyre::eyre::Context;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
+use crate::common::RpcResultExt;
 
 
 mod as_json;
@@ -43,12 +46,21 @@ pub fn get_contract_state(
     block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<ViewStateResult> {
     tracing::info!(target: "near_teach_me", "Obtaining the state of the contract ...");
-    let json_value = crate::common::blocking_view_state(
-        network_config,
-        contract_account_id,
-        prefix.as_ref(),
-        block_reference,
+    let mut params = serde_json::json!({
+        "request_type": "view_state",
+        "account_id": contract_account_id.to_string(),
+        "prefix_base64": base64::engine::general_purpose::STANDARD.encode(&prefix),
+        "include_proof": false,
+    });
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
+        if let serde_json::Value::Object(map) = &mut params {
+            map.extend(block_params);
+        }
+    }
+    let json_value = crate::common::block_on(
+        network_config.client().rpc().call::<_, serde_json::Value>("query", params),
     )
+    .into_eyre()
     .wrap_err_with(|| {
         format!(
             "Failed to fetch query ViewState for <{contract_account_id}> on network <{}>",

@@ -226,11 +226,11 @@ pub fn verify_account_access_key(
 > {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
-        match blocking_view_access_key(
-            &network_config,
-            &account_id,
-            &public_key,
-            near_kit::BlockReference::optimistic(),
+        match block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_access_key(&account_id, &public_key, near_kit::BlockReference::optimistic()),
         ) {
             Ok(access_key_view) => {
                 return Ok(access_key_view);
@@ -332,9 +332,7 @@ pub fn find_network_where_account_exist(
             checked_networks.insert(network_config.network_name.clone());
         }
 
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(get_account_state(
+        let result = block_on(get_account_state(
                 network_config,
                 &new_account_id,
                 near_kit::BlockReference::optimistic(),
@@ -1436,7 +1434,8 @@ pub fn get_delegated_validator_list_from_mainnet(
         .get("mainnet")
         .wrap_err("There is no 'mainnet' network in your configuration.")?;
 
-    let epoch_validator_info = blocking_validators(network_config)?;
+    let epoch_validator_info = block_on(network_config.client().rpc().validators(None))
+        .into_eyre()?;
 
     Ok(epoch_validator_info
         .current_proposals
@@ -1616,21 +1615,17 @@ pub fn fetch_currently_active_staking_pools(
     let prefix_base64 =
         base64::engine::general_purpose::STANDARD.encode(b"se");
 
-    let result: ViewStateResult = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config.client().rpc().call(
-                "query",
-                serde_json::json!({
-                    "request_type": "view_state",
-                    "finality": "final",
-                    "account_id": staking_pools_factory_account_id.to_string(),
-                    "prefix_base64": prefix_base64,
-                    "include_proof": false,
-                }),
-            ),
-        )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))?;
+    let result: ViewStateResult = block_on(network_config.client().rpc().call(
+            "query",
+            serde_json::json!({
+                "request_type": "view_state",
+                "finality": "final",
+                "account_id": staking_pools_factory_account_id.to_string(),
+                "prefix_base64": prefix_base64,
+                "include_proof": false,
+            }),
+        ))
+        .into_eyre()?;
 
     Ok(result
         .values
@@ -1649,7 +1644,8 @@ pub fn get_validators_stake(
     std::collections::HashMap<near_kit::AccountId, near_token::NearToken>,
 > {
     tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
-    let epoch_validator_info = blocking_validators(network_config)?;
+    let epoch_validator_info = block_on(network_config.client().rpc().validators(None))
+        .into_eyre()?;
 
     Ok(epoch_validator_info
         .current_proposals
@@ -2095,256 +2091,13 @@ pub fn input_network_name(
 }
 
 
-/// Blocking helper: fetch an access key via near-kit.
+/// Run a future on a new single-threaded tokio runtime.
 ///
-/// Returns the near-kit `AccessKeyView` which contains `nonce`, `block_hash`,
-/// `block_height`, and `permission`.
-#[tracing::instrument(name = "Getting access key information:", skip_all)]
-pub fn blocking_view_access_key(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_kit::AccountId,
-    public_key: &near_kit::PublicKey,
-    block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<near_kit::AccessKeyView> {
-    tracing::Span::current().pb_set_message(&format!(
-        "public key {public_key} on account <{account_id}>..."
-    ));
-    tracing::info!(target: "near_teach_me", "Getting access key information for public key {public_key} on account <{account_id}>...");
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "I am making HTTP call to NEAR JSON RPC to get an access key details for public key {} on account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key",
-        public_key,
-        account_id
-    );
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .view_access_key(account_id, public_key, block_reference),
-        )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
-}
-
-/// Blocking helper: fetch all access keys for an account via near-kit.
-#[tracing::instrument(name = "Getting a list of", skip_all)]
-pub fn blocking_view_access_key_list(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_kit::AccountId,
-    block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<near_kit::AccessKeyListView> {
-    tracing::Span::current()
-        .pb_set_message(&format!("access keys on account <{account_id}>..."));
-    tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
-        account_id
-    );
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .view_access_key_list(account_id, block_reference),
-        )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
-}
-
-/// Blocking helper: fetch account info via near-kit.
-#[tracing::instrument(name = "Getting information about", skip_all)]
-pub fn blocking_view_account(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_kit::AccountId,
-    block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<near_kit::AccountView> {
-    tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
-    tracing::info!(target: "near_teach_me", "Getting information about account <{account_id}>...");
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "I am making HTTP call to NEAR JSON RPC to query information about account <{}>, learn more https://docs.near.org/api/rpc/contracts#view-account",
-        account_id
-    );
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .view_account(account_id, block_reference),
-        )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
-}
-
-/// Blocking helper: call a view function via near-kit.
-#[tracing::instrument(name = "Getting the result of executing", skip_all)]
-pub fn blocking_view_function(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_kit::AccountId,
-    function_name: &str,
-    args: Vec<u8>,
-    block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
-    tracing::Span::current().pb_set_message(&format!(
-        "a read-only function '{function_name}' of the <{account_id}> contract ..."
-    ));
-    tracing::info!(target: "near_teach_me", "Getting the result of executing a read-only function '{function_name}' of the <{account_id}> contract ...");
-    tracing::info!(
-        target: "near_teach_me",
-        parent: &tracing::Span::none(),
-        "I am making HTTP call to NEAR JSON RPC to call a read-only function `{}` on `{}` account, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
-        function_name,
-        account_id
-    );
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .view_function(account_id, function_name, &args, block_reference),
-        )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
-}
-
-/// Blocking helper: fetch validator info via near-kit.
-pub fn blocking_validators(
-    network_config: &crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<near_kit::EpochValidatorInfo> {
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(network_config.client().rpc().validators(None))
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
-}
-
-/// Blocking helper: fetch block info via near-kit.
-pub fn blocking_block(
-    network_config: &crate::config::NetworkConfig,
-    block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<near_kit::BlockView> {
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(network_config.client().rpc().block(block_reference))
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
-}
-
-/// Blocking helper: send a signed transaction via near-kit.
-pub fn blocking_send_tx(
-    network_config: &crate::config::NetworkConfig,
-    signed_transaction: &near_kit::SignedTransaction,
-    wait_until: near_kit::TxExecutionStatus,
-) -> Result<near_kit::RawTransactionResponse, near_kit::RpcError> {
-    let tx_bytes = borsh::to_vec(signed_transaction)
-        .expect("SignedTransaction borsh serialization should never fail");
-    let tx_base64 = base64::engine::general_purpose::STANDARD.encode(&tx_bytes);
-
-    let params = serde_json::json!({
-        "signed_tx_base64": tx_base64,
-        "wait_until": wait_until.as_str(),
-    });
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .call::<_, near_kit::RawTransactionResponse>("send_tx", params),
-        )
-}
-
-/// Blocking helper: get transaction status via near-kit.
-pub fn blocking_tx_status(
-    network_config: &crate::config::NetworkConfig,
-    tx_hash: &near_kit::CryptoHash,
-    sender_id: &near_kit::AccountId,
-    wait_until: near_kit::TxExecutionStatus,
-) -> Result<near_kit::RawTransactionResponse, near_kit::RpcError> {
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .tx_status(tx_hash, sender_id, wait_until),
-        )
-}
-
-
-
-/// Blocking helper: query view state via near-kit escape hatch.
-///
-/// near-kit does not have a dedicated `view_state` method, so we use the
-/// raw RPC call escape hatch with the standard `query` endpoint.
-/// Returns a JSON value that must be extracted by the caller.
-pub fn blocking_view_state(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_kit::AccountId,
-    prefix: &[u8],
-    block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<serde_json::Value> {
-    let mut params = serde_json::json!({
-        "request_type": "view_state",
-        "account_id": account_id.to_string(),
-        "prefix_base64": base64::engine::general_purpose::STANDARD.encode(prefix),
-        "include_proof": false,
-    });
-    // Merge block reference params
-    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
-        if let serde_json::Value::Object(map) = &mut params {
-            map.extend(block_params);
-        }
-    }
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .call::<_, serde_json::Value>("query", params),
-        )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
-}
-
-/// Blocking helper: query view code via near-kit escape hatch.
-///
-/// near-kit does not have a dedicated `view_code` method, so we use the
-/// raw RPC call escape hatch.
-/// Returns a JSON value that must be extracted by the caller.
-pub fn blocking_view_code(
-    network_config: &crate::config::NetworkConfig,
-    account_id: &near_kit::AccountId,
-    block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<serde_json::Value> {
-    let mut params = serde_json::json!({
-        "request_type": "view_code",
-        "account_id": account_id.to_string(),
-    });
-    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
-        if let serde_json::Value::Object(map) = &mut params {
-            map.extend(block_params);
-        }
-    }
-
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
-            network_config
-                .client()
-                .rpc()
-                .call::<_, serde_json::Value>("query", params),
-        )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+/// This is a thin helper for calling near-kit async methods from synchronous
+/// code paths.  All of the old `blocking_*` wrappers have been replaced by
+/// `block_on(…)` calls at the respective callsites.
+pub fn block_on<F: std::future::Future>(f: F) -> F::Output {
+    tokio::runtime::Runtime::new().unwrap().block_on(f)
 }
 
 pub fn indent_payload(s: &str) -> String {
@@ -2356,6 +2109,18 @@ pub fn indent_payload(s: &str) -> String {
         .write_str(s)
         .ok();
     indented_string
+}
+
+/// Extension trait to convert `Result<T, near_kit::RpcError>` into
+/// `Result<T, color_eyre::eyre::Error>` via `.into_eyre()`.
+pub trait RpcResultExt<T> {
+    fn into_eyre(self) -> color_eyre::eyre::Result<T>;
+}
+
+impl<T> RpcResultExt<T> for Result<T, near_kit::RpcError> {
+    fn into_eyre(self) -> color_eyre::eyre::Result<T> {
+        self.map_err(|err| color_eyre::eyre::eyre!("{}", err))
+    }
 }
 
 #[easy_ext::ext(CallResultExt)]

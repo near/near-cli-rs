@@ -3,7 +3,7 @@ use inquire::CustomType;
 use near_ledger::NEARLedgerError;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::blocking_view_access_key;
+use crate::common::{RpcResultExt, block_on};
 
 #[cfg(feature = "ledger-ble")]
 pub mod ble_helpers;
@@ -220,12 +220,14 @@ fn sign_transaction_with_usb(
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
     } else {
-        let access_key_view = blocking_view_access_key(
-                &network_config,
-                &previous_context.prepopulated_transaction.signer_id,
-                &public_key,
-                near_kit::BlockReference::optimistic(),
+        let access_key_view = block_on(
+                network_config.client().rpc().view_access_key(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    &public_key,
+                    near_kit::BlockReference::optimistic(),
+                ),
             )
+            .into_eyre()
             .wrap_err_with(||
                 format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
             )?;
@@ -472,12 +474,14 @@ fn sign_transaction_with_ble(
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
     } else {
-        let access_key_view = blocking_view_access_key(
-                &network_config,
-                &previous_context.prepopulated_transaction.signer_id,
-                &public_key,
-                near_kit::BlockReference::optimistic(),
+        let access_key_view = block_on(
+                network_config.client().rpc().view_access_key(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    &public_key,
+                    near_kit::BlockReference::optimistic(),
+                ),
             )
+            .into_eyre()
             .wrap_err_with(||
                 format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
             )?;

@@ -1,7 +1,7 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 
-use crate::common::blocking_view_access_key;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -71,12 +71,14 @@ impl SignAccessKeyFileContext {
                     .wrap_err("Block Height is required to sign a transaction in offline mode")?,
             )
         } else {
-            let access_key_view = blocking_view_access_key(
-                &network_config,
-                &previous_context.prepopulated_transaction.signer_id,
-                &account_json.public_key,
-                near_kit::BlockReference::optimistic(),
+            let access_key_view = block_on(
+                network_config.client().rpc().view_access_key(
+                    &previous_context.prepopulated_transaction.signer_id,
+                    &account_json.public_key,
+                    near_kit::BlockReference::optimistic(),
+                ),
             )
+            .into_eyre()
             .wrap_err_with(||
                 format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
             )?;

@@ -96,9 +96,7 @@ pub fn get_transaction_info(
         "wait_until": near_kit::TxExecutionStatus::Final.as_str(),
     });
 
-    let json: serde_json::Value = tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(
+    let json: serde_json::Value = crate::common::block_on(
             network_config
                 .client()
                 .rpc()

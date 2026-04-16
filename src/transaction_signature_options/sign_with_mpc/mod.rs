@@ -3,7 +3,7 @@ use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{blocking_view_access_key, blocking_view_function};
+use crate::common::{RpcResultExt, block_on};
 
 pub mod mpc_sign_request;
 pub mod mpc_sign_result;
@@ -194,12 +194,14 @@ impl MpcDeriveKeyContext {
             &network_config,
         )?;
 
-        let access_key_view = blocking_view_access_key(
-                    &network_config,
-                    &controllable_account,
-                    &derived_public_key,
-                    near_kit::BlockReference::optimistic(),
+        let access_key_view = block_on(
+                    network_config.client().rpc().view_access_key(
+                        &controllable_account,
+                        &derived_public_key,
+                        near_kit::BlockReference::optimistic(),
+                    ),
                 )
+                .into_eyre()
                 .inspect_err(|err| {
                     if err.to_string().contains("AccessKeyNotFound") || err.to_string().contains("UnknownAccessKey") || err.to_string().contains("access_key_not_found") {
                         tracing::error!(
@@ -259,17 +261,19 @@ pub fn derive_public_key(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_kit::PublicKey> {
     tracing::info!(target: "near_teach_me", "Retrieving derived public key from MPC contract ...");
-    let rpc_result = blocking_view_function(
-            network_config,
-            mpc_contract_address,
-            "derived_public_key",
-            serde_json::to_vec(&serde_json::json!({
-                "path": derivation_path,
-                "predecessor": admin_account_id,
-                "domain_id": near_key_type_to_mpc_domain_id(*key_type)
-            }))?,
-            near_kit::BlockReference::optimistic(),
-        )?;
+    let rpc_result = block_on(
+            network_config.client().rpc().view_function(
+                mpc_contract_address,
+                "derived_public_key",
+                &serde_json::to_vec(&serde_json::json!({
+                    "path": derivation_path,
+                    "predecessor": admin_account_id,
+                    "domain_id": near_key_type_to_mpc_domain_id(*key_type)
+                }))?,
+                near_kit::BlockReference::optimistic(),
+            ),
+        )
+        .into_eyre()?;
 
     let public_key: near_kit::PublicKey = serde_json::from_slice(&rpc_result.result)?;
 
@@ -703,13 +707,14 @@ fn fetch_mpc_contract_response_from_dao_tx(
 ) -> color_eyre::eyre::Result<mpc_sign_result::SignResult> {
     tracing::info!(target: "near_teach_me", "Fetching executed DAO proposal ...");
 
-    let tx_response = crate::common::blocking_tx_status(
-            network_config,
-            &tx_hash,
-            &sender_account_id,
-            near_kit::TxExecutionStatus::Final,
+    let tx_response = crate::common::block_on(
+            network_config.client().rpc().tx_status(
+                &tx_hash,
+                &sender_account_id,
+                near_kit::TxExecutionStatus::Final,
+            ),
         )
-        .map_err(|err| color_eyre::eyre::eyre!("{}", err))
+        .into_eyre()
         .wrap_err("Couldn't fetch DAO transaction")?;
 
     let exec_outcome = tx_response

@@ -1,6 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::blocking_view_access_key_list;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -39,11 +39,13 @@ impl PublicKeyFromKeychainContext {
                     ));
 
                     let password = {
-                        let nk_list = blocking_view_access_key_list(
-                            network_config,
-                            &account_id.clone().into(),
-                            near_kit::Finality::Final.into(),
+                        let nk_list = block_on(
+                            network_config.client().rpc().view_access_key_list(
+                                &account_id.clone().into(),
+                                near_kit::Finality::Final.into(),
+                            ),
                         )
+                        .into_eyre()
                         .wrap_err_with(|| {
                             format!("Failed to fetch access key list for {account_id}")
                         })?;

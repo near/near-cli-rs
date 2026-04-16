@@ -184,9 +184,7 @@ fn validate_new_account_id(
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Validation new account_id ...");
     let account_state =
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(crate::common::get_account_state(
+        crate::common::block_on(crate::common::get_account_state(
                 network_config,
                 account_id,
                 near_kit::BlockReference::optimistic(),

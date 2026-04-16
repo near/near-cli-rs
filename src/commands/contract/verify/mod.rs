@@ -4,6 +4,8 @@ use color_eyre::{
     owo_colors::OwoColorize,
 };
 
+use crate::common::RpcResultExt;
+
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
@@ -184,7 +186,7 @@ fn get_contract_properties_from_repository(
     no_image_whitelist: bool,
 ) -> color_eyre::eyre::Result<ContractProperties> {
     tracing::info!(target: "near_teach_me", "Getting the contract properties from the repository ...");
-    let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
+    let contract_source_metadata = crate::common::block_on(
         super::inspect::get_contract_source_metadata(
             network_config,
             block_reference,
@@ -295,11 +297,19 @@ fn get_contract_code_from_contract_account_id(
             "I am making HTTP call to NEAR JSON RPC to get the contract code (Wasm binary) deployed to `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-contract-code",
             account_id
     );
-    let view_code_json = crate::common::blocking_view_code(
-        network_config,
-        account_id,
-        block_reference.clone(),
+    let mut params = serde_json::json!({
+        "request_type": "view_code",
+        "account_id": account_id.to_string(),
+    });
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params() {
+        if let serde_json::Value::Object(map) = &mut params {
+            map.extend(block_params);
+        }
+    }
+    let view_code_json = crate::common::block_on(
+        network_config.client().rpc().call::<_, serde_json::Value>("query", params),
     )
+    .into_eyre()
     .wrap_err_with(|| {
         format!(
             "Failed to fetch query ViewCode for <{}> on network <{}>",
