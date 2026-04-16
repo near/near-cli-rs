@@ -2,7 +2,7 @@ use color_eyre::owo_colors::OwoColorize;
 use inquire::ui::{Color, RenderConfig, Styled};
 use inquire::{CustomType, MultiSelect, formatter::MultiOptionFormatter};
 
-use crate::common::{RpcResultExt, block_on, query_view_access_key_list};
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DeleteKeysCommandContext)]
@@ -103,11 +103,12 @@ impl PublicKeyList {
             if processed_network.contains(&network_config.network_name) {
                 continue;
             }
-            match block_on(query_view_access_key_list(
-                network_config.client().rpc(),
-                &context.owner_account_id,
-                near_kit::Finality::Final.into(),
-            ))
+            match block_on(
+                network_config.client().rpc().view_access_key_list(
+                    &context.owner_account_id,
+                    near_kit::Finality::Final.into(),
+                ),
+            )
             .into_eyre()
             {
                 Ok(nk_list) => {

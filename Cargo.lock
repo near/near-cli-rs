@@ -2717,9 +2717,9 @@ dependencies = [
 
 [[package]]
 name = "near-sandbox"
-version = "0.3.8"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e46aa8d7659ddd07b56f2e4849037bd3d66e1e48234600c3c30dcc76539f3c5b"
+checksum = "ffb6493715a4b5d18f23abcb3d6438e466373aba66f25764516c4b32433e92e0"
 dependencies = [
  "flate2",
  "fs4",

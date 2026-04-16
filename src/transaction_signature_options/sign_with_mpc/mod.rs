@@ -3,7 +3,7 @@ use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{RpcResultExt, block_on, query_view_access_key, query_view_function};
+use crate::common::{RpcResultExt, block_on};
 
 pub mod mpc_sign_request;
 pub mod mpc_sign_result;
@@ -194,12 +194,13 @@ impl MpcDeriveKeyContext {
             &network_config,
         )?;
 
-        let access_key_view = block_on(query_view_access_key(
-                    network_config.client().rpc(),
-                    &controllable_account,
-                    &derived_public_key,
-                    near_kit::BlockReference::optimistic(),
-                ))
+        let access_key_view = block_on(
+                    network_config.client().rpc().view_access_key(
+                        &controllable_account,
+                        &derived_public_key,
+                        near_kit::BlockReference::optimistic(),
+                    ),
+                )
                 .into_eyre()
                 .inspect_err(|err| {
                     if err.to_string().contains("AccessKeyNotFound") || err.to_string().contains("UnknownAccessKey") || err.to_string().contains("access_key_not_found") {
@@ -260,8 +261,7 @@ pub fn derive_public_key(
     network_config: &crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_kit::PublicKey> {
     tracing::info!(target: "near_teach_me", "Retrieving derived public key from MPC contract ...");
-    let rpc_result = block_on(query_view_function(
-        network_config.client().rpc(),
+    let rpc_result = block_on(network_config.client().rpc().view_function(
         mpc_contract_address,
         "derived_public_key",
         &serde_json::to_vec(&serde_json::json!({

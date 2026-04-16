@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use std::io::Write;
 
 use crate::common::CallResultExt;
-use crate::common::{RpcResultExt, block_on, query_view_function};
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -130,13 +130,14 @@ fn call_view_function(
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Getting a response to a read-only function call ...");
     let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
-    let nk_result = block_on(query_view_function(
-        network_config.client().rpc(),
-        account_id,
-        function_name,
-        &args,
-        block_reference.clone(),
-    ))
+    let nk_result = block_on(
+        network_config.client().rpc().view_function(
+            account_id,
+            function_name,
+            &args,
+            block_reference.clone(),
+        ),
+    )
     .into_eyre()
     .wrap_err_with(|| {
         format!(

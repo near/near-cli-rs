@@ -283,7 +283,7 @@ pub fn resolve_nonce_and_block(
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     block_height: Option<u64>,
 ) -> color_eyre::eyre::Result<(u64, near_kit::CryptoHash, u64)> {
-    use crate::common::{RpcResultExt, block_on, query_view_access_key};
+    use crate::common::{RpcResultExt, block_on};
     use color_eyre::eyre::{ContextCompat, WrapErr};
 
     if offline {
@@ -296,12 +296,13 @@ pub fn resolve_nonce_and_block(
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         ))
     } else {
-        let access_key_view = block_on(query_view_access_key(
-                network_config.client().rpc(),
-                signer_id,
-                public_key,
-                near_kit::BlockReference::optimistic(),
-            ))
+        let access_key_view = block_on(
+                network_config.client().rpc().view_access_key(
+                    signer_id,
+                    public_key,
+                    near_kit::BlockReference::optimistic(),
+                ),
+            )
             .into_eyre()
             .wrap_err_with(||
                 format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)

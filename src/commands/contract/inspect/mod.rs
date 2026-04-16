@@ -11,10 +11,7 @@ use tracing_indicatif::span_ext::IndicatifSpanExt;
 use near_kit::BlockReference;
 
 use super::FetchAbiError;
-use crate::common::{
-    CallResultExt, RpcResultExt, query_view_access_key_list, query_view_account,
-    query_view_function, sleep_after_error,
-};
+use crate::common::{CallResultExt, RpcResultExt, sleep_after_error};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -433,12 +430,11 @@ async fn get_account_view(
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
     tracing::info!(target: "near_teach_me", "Getting information about {account_id} ...");
     for _ in 0..5 {
-        let result = query_view_account(
-            network_config.client().rpc(),
-            account_id,
-            block_reference.clone(),
-        )
-        .await;
+        let result = network_config
+            .client()
+            .rpc()
+            .view_account(account_id, block_reference.clone())
+            .await;
 
         match result {
             Ok(account_view) => {
@@ -472,12 +468,11 @@ async fn get_access_keys(
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
     for _ in 0..5 {
-        let result = query_view_access_key_list(
-            network_config.client().rpc(),
-            account_id,
-            block_reference.clone(),
-        )
-        .await;
+        let result = network_config
+            .client()
+            .rpc()
+            .view_access_key_list(account_id, block_reference.clone())
+            .await;
 
         match result {
             Ok(access_key_list) => {
@@ -537,14 +532,16 @@ pub async fn get_contract_source_metadata(
 
     let mut retries_left = (0..5).rev();
     loop {
-        let result = query_view_function(
-            network_config.client().rpc(),
-            account_id,
-            "contract_source_metadata",
-            &[],
-            block_reference.clone(),
-        )
-        .await;
+        let result = network_config
+            .client()
+            .rpc()
+            .view_function(
+                account_id,
+                "contract_source_metadata",
+                &[],
+                block_reference.clone(),
+            )
+            .await;
 
         match result {
             Err(ref err) if err.is_retryable() => {

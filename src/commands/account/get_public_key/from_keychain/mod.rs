@@ -1,6 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::{RpcResultExt, block_on, query_view_access_key_list};
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -39,8 +39,7 @@ impl PublicKeyFromKeychainContext {
                     ));
 
                     let password = {
-                        let nk_list = block_on(query_view_access_key_list(
-                            network_config.client().rpc(),
+                        let nk_list = block_on(network_config.client().rpc().view_access_key_list(
                             &account_id.clone().into(),
                             near_kit::Finality::Final.into(),
                         ))

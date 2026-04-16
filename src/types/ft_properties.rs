@@ -3,7 +3,7 @@ use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use crate::common::CallResultExt;
-use crate::common::{RpcResultExt, block_on, query_view_function};
+use crate::common::{RpcResultExt, block_on};
 
 /// CLI-specific enum for interactive_clap: either an exact FT amount or "all".
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -210,8 +210,7 @@ pub fn params_ft_metadata(
     block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
     tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
-    let result = block_on(query_view_function(
-        network_config.client().rpc(),
+    let result = block_on(network_config.client().rpc().view_function(
         &ft_contract_account_id,
         "ft_metadata",
         &[],

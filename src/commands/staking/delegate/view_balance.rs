@@ -1,6 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::{CallResultExt, RpcResultExt, block_on, query_view_function};
+use crate::common::{CallResultExt, RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::StakeDelegationContext)]
@@ -130,15 +130,16 @@ pub fn get_user_staked_balance(
     account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
     tracing::info!(target: "near_teach_me", "Getting the staked balance for the user ...");
-    let result = block_on(query_view_function(
-        network_config.client().rpc(),
-        validator_account_id,
-        "get_account_staked_balance",
-        &serde_json::to_vec(&serde_json::json!({
-            "account_id": account_id,
-        }))?,
-        block_reference.clone(),
-    ))
+    let result = block_on(
+        network_config.client().rpc().view_function(
+            validator_account_id,
+            "get_account_staked_balance",
+            &serde_json::to_vec(&serde_json::json!({
+                "account_id": account_id,
+            }))?,
+            block_reference.clone(),
+        ),
+    )
     .into_eyre()
     .wrap_err_with(||{
         format!("Failed to fetch query for view method: 'get_account_staked_balance' (contract <{}> on network <{}>)",
@@ -160,15 +161,16 @@ pub fn get_user_unstaked_balance(
     account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
     tracing::info!(target: "near_teach_me", "Getting the unstaked balance for the user ...");
-    let result = block_on(query_view_function(
-        network_config.client().rpc(),
-        validator_account_id,
-        "get_account_unstaked_balance",
-        &serde_json::to_vec(&serde_json::json!({
-            "account_id": account_id,
-        }))?,
-        block_reference.clone(),
-    ))
+    let result = block_on(
+        network_config.client().rpc().view_function(
+            validator_account_id,
+            "get_account_unstaked_balance",
+            &serde_json::to_vec(&serde_json::json!({
+                "account_id": account_id,
+            }))?,
+            block_reference.clone(),
+        ),
+    )
     .into_eyre()
     .wrap_err_with(||{
         format!("Failed to fetch query for view method: 'get_account_unstaked_balance' (contract <{}> on network <{}>)",
@@ -190,15 +192,16 @@ pub fn get_user_total_balance(
     account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
     tracing::info!(target: "near_teach_me", "Getting the total balance for the user ...");
-    let result = block_on(query_view_function(
-        network_config.client().rpc(),
-        validator_account_id,
-        "get_account_total_balance",
-        &serde_json::to_vec(&serde_json::json!({
-            "account_id": account_id,
-        }))?,
-        block_reference.clone(),
-    ))
+    let result = block_on(
+        network_config.client().rpc().view_function(
+            validator_account_id,
+            "get_account_total_balance",
+            &serde_json::to_vec(&serde_json::json!({
+                "account_id": account_id,
+            }))?,
+            block_reference.clone(),
+        ),
+    )
     .into_eyre()
     .wrap_err_with(||{
         format!("Failed to fetch query for view method: 'get_account_total_balance' (contract <{}> on network <{}>)",
@@ -222,17 +225,18 @@ pub fn is_account_unstaked_balance_available_for_withdrawal(
     account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
     tracing::info!(target: "near_teach_me", "Getting account unstaked balance available for withdrawal ...");
-    let result = block_on(query_view_function(
-        network_config.client().rpc(),
-        validator_account_id,
-        "is_account_unstaked_balance_available",
-        &serde_json::to_vec(&serde_json::json!({
-            "account_id": account_id.to_string(),
-        }))?,
-        near_kit::BlockReference::Finality(
-            near_kit::Finality::Final,
+    let result = block_on(
+        network_config.client().rpc().view_function(
+            validator_account_id,
+            "is_account_unstaked_balance_available",
+            &serde_json::to_vec(&serde_json::json!({
+                "account_id": account_id.to_string(),
+            }))?,
+            near_kit::BlockReference::Finality(
+                near_kit::Finality::Final,
+            ),
         ),
-    ))
+    )
     .into_eyre()
     .wrap_err_with(||{
         format!("Failed to fetch query for view method: 'is_account_unstaked_balance_available' (contract <{}> on network <{}>)",

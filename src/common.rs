@@ -223,8 +223,7 @@ pub fn verify_account_access_key(
 ) -> color_eyre::eyre::Result<near_kit::AccessKeyView, AccountStateError> {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
     loop {
-        match block_on(query_view_access_key(
-            network_config.client().rpc(),
+        match block_on(network_config.client().rpc().view_access_key(
             &account_id,
             &public_key,
             near_kit::BlockReference::optimistic(),
@@ -456,12 +455,11 @@ pub async fn get_account_state(
 
     let mut retries_left = (0..5).rev();
     loop {
-        let result = query_view_account(
-            network_config.client().rpc(),
-            account_id,
-            nk_block_ref.clone(),
-        )
-        .await;
+        let result = network_config
+            .client()
+            .rpc()
+            .view_account(account_id, nk_block_ref.clone())
+            .await;
 
         match result {
             Ok(account_view) => {
@@ -1666,14 +1664,14 @@ async fn get_staking_pool_info(
     validator_account_id: near_kit::AccountId,
     stake: near_token::NearToken,
 ) -> color_eyre::Result<StakingPoolInfo> {
-    let fee = match query_view_function(
-        rpc,
-        &validator_account_id,
-        "get_reward_fee_fraction",
-        &[],
-        near_kit::BlockReference::final_(),
-    )
-    .await
+    let fee = match rpc
+        .view_function(
+            &validator_account_id,
+            "get_reward_fee_fraction",
+            &[],
+            near_kit::BlockReference::final_(),
+        )
+        .await
     {
         Ok(result) => Some(result.json::<RewardFeeFraction>().wrap_err(
             "Failed to parse return value of view function call for RewardFeeFraction.",
@@ -1685,14 +1683,14 @@ async fn get_staking_pool_info(
         Err(err) => return Err(err.into()),
     };
 
-    let delegators = match query_view_function(
-        rpc,
-        &validator_account_id,
-        "get_number_of_accounts",
-        &[],
-        near_kit::BlockReference::final_(),
-    )
-    .await
+    let delegators = match rpc
+        .view_function(
+            &validator_account_id,
+            "get_number_of_accounts",
+            &[],
+            near_kit::BlockReference::final_(),
+        )
+        .await
     {
         Ok(result) => Some(
             result
@@ -2130,110 +2128,6 @@ pub impl near_kit::ViewFunctionResult {
             indent_payload(&info_str)
         );
     }
-}
-
-// ============================================================================
-// Standard query RPC helpers
-//
-// near-kit 0.9's high-level methods (view_account, view_access_key, etc.)
-// use EXPERIMENTAL_* RPC endpoints internally. near-sandbox (used in CI)
-// runs an older nearcore that does not support those endpoints. The helpers
-// below use the standard "query" RPC method, which is compatible with all
-// nearcore versions including sandbox.
-// ============================================================================
-
-/// Merge block reference fields into an existing JSON object.
-fn merge_block_ref(params: &mut serde_json::Value, block: &near_kit::BlockReference) {
-    if let serde_json::Value::Object(block_params) = block.to_rpc_params()
-        && let serde_json::Value::Object(map) = params
-    {
-        map.extend(block_params);
-    }
-}
-
-/// View account using the standard `query` RPC method (compatible with all
-/// nearcore versions including sandbox).
-pub async fn query_view_account(
-    rpc: &near_kit::RpcClient,
-    account_id: &near_kit::AccountId,
-    block: near_kit::BlockReference,
-) -> Result<near_kit::AccountView, near_kit::RpcError> {
-    let mut params = serde_json::json!({
-        "request_type": "view_account",
-        "account_id": account_id.to_string(),
-    });
-    merge_block_ref(&mut params, &block);
-    rpc.call("query", params).await
-}
-
-/// View a single access key using the standard `query` RPC method.
-pub async fn query_view_access_key(
-    rpc: &near_kit::RpcClient,
-    account_id: &near_kit::AccountId,
-    public_key: &near_kit::PublicKey,
-    block: near_kit::BlockReference,
-) -> Result<near_kit::AccessKeyView, near_kit::RpcError> {
-    let mut params = serde_json::json!({
-        "request_type": "view_access_key",
-        "account_id": account_id.to_string(),
-        "public_key": public_key.to_string(),
-    });
-    merge_block_ref(&mut params, &block);
-    rpc.call::<_, near_kit::AccessKeyView>("query", params)
-        .await
-        .map_err(|e| match e {
-            near_kit::RpcError::AccessKeyNotFound { public_key, .. } => {
-                near_kit::RpcError::AccessKeyNotFound {
-                    account_id: account_id.clone(),
-                    public_key,
-                }
-            }
-            other => other,
-        })
-}
-
-/// View all access keys for an account using the standard `query` RPC method.
-pub async fn query_view_access_key_list(
-    rpc: &near_kit::RpcClient,
-    account_id: &near_kit::AccountId,
-    block: near_kit::BlockReference,
-) -> Result<near_kit::AccessKeyListView, near_kit::RpcError> {
-    let mut params = serde_json::json!({
-        "request_type": "view_access_key_list",
-        "account_id": account_id.to_string(),
-    });
-    merge_block_ref(&mut params, &block);
-    rpc.call("query", params).await
-}
-
-/// Call a view function using the standard `query` RPC method.
-pub async fn query_view_function(
-    rpc: &near_kit::RpcClient,
-    account_id: &near_kit::AccountId,
-    method_name: &str,
-    args: &[u8],
-    block: near_kit::BlockReference,
-) -> Result<near_kit::ViewFunctionResult, near_kit::RpcError> {
-    use base64::engine::general_purpose::STANDARD;
-    let mut params = serde_json::json!({
-        "request_type": "call_function",
-        "account_id": account_id.to_string(),
-        "method_name": method_name,
-        "args_base64": STANDARD.encode(args),
-    });
-    merge_block_ref(&mut params, &block);
-    rpc.call::<_, near_kit::ViewFunctionResult>("query", params)
-        .await
-        .map_err(|e| match e {
-            near_kit::RpcError::ContractExecution { message, .. } => {
-                near_kit::RpcError::ContractExecution {
-                    contract_id: account_id.clone(),
-                    method_name: Some(method_name.to_string()),
-                    message,
-                }
-            }
-            other => other,
-        })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]

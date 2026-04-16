@@ -1,7 +1,7 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{RpcResultExt, block_on, query_view_access_key_list};
+use crate::common::{RpcResultExt, block_on};
 
 mod using_private_key;
 mod using_seed_phrase;
@@ -93,11 +93,12 @@ pub fn get_password_from_keychain(
         account_id.as_str()
     ));
     let password = {
-        let nk_list = block_on(query_view_access_key_list(
-            network_config.client().rpc(),
-            account_id,
-            near_kit::Finality::Final.into(),
-        ))
+        let nk_list = block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_access_key_list(account_id, near_kit::Finality::Final.into()),
+        )
         .into_eyre()
         .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?;
         nk_list
@@ -182,11 +183,12 @@ pub fn get_account_properties_data_path(
         }
     }
 
-    let nk_list = block_on(query_view_access_key_list(
-        network_config.client().rpc(),
-        account_id,
-        near_kit::Finality::Final.into(),
-    ))
+    let nk_list = block_on(
+        network_config
+            .client()
+            .rpc()
+            .view_access_key_list(account_id, near_kit::Finality::Final.into()),
+    )
     .into_eyre()
     .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?;
     let mut path = std::path::PathBuf::from(credentials_home_dir);
