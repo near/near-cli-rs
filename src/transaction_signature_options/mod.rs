@@ -110,7 +110,7 @@ pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
 
 pub type OnAfterSendingTransactionCallback = std::sync::Arc<
     dyn Fn(
-        &near_primitives::views::FinalExecutionOutcomeView,
+        &near_kit::FinalExecutionOutcome,
         &crate::config::NetworkConfig,
     ) -> crate::CliResult,
 >;

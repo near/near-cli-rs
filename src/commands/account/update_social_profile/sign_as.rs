@@ -85,7 +85,7 @@ impl From<SignerContext> for crate::commands::ActionContext {
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = Arc::new({
             move |transaction_info, _network_config| {
-                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = transaction_info.status {
+                if transaction_info.is_success() {
                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         eprintln!("Profile for {account_id} updated successfully");
                     }

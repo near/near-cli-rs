@@ -1,6 +1,17 @@
 use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
+/// Convert a near_primitives FinalExecutionOutcomeView to near_kit FinalExecutionOutcome
+/// via JSON round-trip. Both types serialize/deserialize the same JSON format (NEAR RPC).
+pub fn np_outcome_to_nk(
+    outcome: &near_primitives::views::FinalExecutionOutcomeView,
+) -> near_kit::FinalExecutionOutcome {
+    let json = serde_json::to_value(outcome)
+        .expect("FinalExecutionOutcomeView should always serialize to JSON");
+    serde_json::from_value(json)
+        .expect("near_kit::FinalExecutionOutcome should deserialize from the same JSON format")
+}
+
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
@@ -46,14 +57,15 @@ impl SendContext {
                     wait_until.clone(),
                 )? {
                     Some(transaction_info) => {
+                        let nk_outcome = np_outcome_to_nk(&transaction_info);
                         crate::common::print_transaction_status(
-                            &transaction_info,
+                            &nk_outcome,
                             &previous_context.network_config,
                             previous_context.global_context.verbosity,
                         )?;
 
                         (previous_context.on_after_sending_transaction_callback)(
-                            &transaction_info,
+                            &nk_outcome,
                             &previous_context.network_config,
                         )
                         .map_err(color_eyre::Report::msg)?;

@@ -972,21 +972,21 @@ pub fn print_unsigned_transaction(
 }
 
 fn print_value_successful_transaction(
-    transaction_info: near_primitives::views::FinalExecutionOutcomeView,
+    transaction_info: near_kit::FinalExecutionOutcome,
 ) -> String {
     let mut info_str: String = String::from('\n');
     for action in transaction_info.transaction.actions {
         match action {
-            near_primitives::views::ActionView::CreateAccount => {
+            near_kit::ActionView::CreateAccount => {
                 info_str.push_str(&format!(
                     "\nNew account <{}> has been successfully created.",
                     transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::DeployContract { code: _ } => {
+            near_kit::ActionView::DeployContract { code: _ } => {
                 info_str.push_str("Contract code has been successfully deployed.");
             }
-            near_primitives::views::ActionView::FunctionCall {
+            near_kit::ActionView::FunctionCall {
                 method_name,
                 args: _,
                 gas: _,
@@ -999,7 +999,7 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.signer_id,
                 ));
             }
-            near_primitives::views::ActionView::Transfer { deposit } => {
+            near_kit::ActionView::Transfer { deposit } => {
                 info_str.push_str(&format!(
                     "\n<{}> has transferred {} to <{}> successfully.",
                     transaction_info.transaction.signer_id,
@@ -1007,7 +1007,7 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::Stake {
+            near_kit::ActionView::Stake {
                 stake,
                 public_key: _,
             } => {
@@ -1024,7 +1024,7 @@ fn print_value_successful_transaction(
                     ));
                 }
             }
-            near_primitives::views::ActionView::AddKey {
+            near_kit::ActionView::AddKey {
                 public_key,
                 access_key: _,
             } => {
@@ -1033,19 +1033,19 @@ fn print_value_successful_transaction(
                     public_key, transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::DeleteKey { public_key } => {
+            near_kit::ActionView::DeleteKey { public_key } => {
                 info_str.push_str(&format!(
                     "\nAccess key <{}> for account <{}> has been successfully deleted.",
                     public_key, transaction_info.transaction.signer_id,
                 ));
             }
-            near_primitives::views::ActionView::DeleteAccount { beneficiary_id: _ } => {
+            near_kit::ActionView::DeleteAccount { beneficiary_id: _ } => {
                 info_str.push_str(&format!(
                     "\nAccount <{}> has been successfully deleted.",
                     transaction_info.transaction.signer_id,
                 ));
             }
-            near_primitives::views::ActionView::Delegate {
+            near_kit::ActionView::Delegate {
                 delegate_action,
                 signature: _,
             } => {
@@ -1054,17 +1054,17 @@ fn print_value_successful_transaction(
                     delegate_action.sender_id,
                 ));
             }
-            near_primitives::views::ActionView::DeployGlobalContract { code: _ }
-            | near_primitives::views::ActionView::DeployGlobalContractByAccountId { code: _ } => {
+            near_kit::ActionView::DeployGlobalContract { code: _ }
+            | near_kit::ActionView::DeployGlobalContractByAccountId { code: _ } => {
                 info_str.push_str("Global contract has been successfully deployed.");
             }
-            near_primitives::views::ActionView::UseGlobalContractByAccountId { account_id } => {
+            near_kit::ActionView::UseGlobalContractByAccountId { account_id } => {
                 info_str.push_str(&format!("Contract has been successfully deployed with the code from the global account <{account_id}>."));
             }
-            near_primitives::views::ActionView::UseGlobalContract { code_hash } => {
+            near_kit::ActionView::UseGlobalContract { code_hash } => {
                 info_str.push_str(&format!("Contract has been successfully deployed with the code from the global hash <{code_hash}>."));
             }
-            near_primitives::views::ActionView::DeterministicStateInit {
+            near_kit::ActionView::DeterministicStateInit {
                 code: _,
                 data: _,
                 deposit: _,
@@ -1074,7 +1074,7 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.receiver_id,
                 ));
             }
-            near_primitives::views::ActionView::TransferToGasKey {
+            near_kit::ActionView::TransferToGasKey {
                 public_key,
                 deposit,
             } => {
@@ -1085,7 +1085,7 @@ fn print_value_successful_transaction(
                     public_key,
                 ));
             }
-            near_primitives::views::ActionView::WithdrawFromGasKey { public_key, amount } => {
+            near_kit::ActionView::WithdrawFromGasKey { public_key, amount } => {
                 info_str.push_str(&format!(
                     "\n<{}> has withdrawn {} from gas key <{}> successfully.",
                     transaction_info.transaction.signer_id,
@@ -1189,7 +1189,7 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
 }
 
 pub fn print_transaction_status(
-    transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
+    transaction_info: &near_kit::FinalExecutionOutcome,
     network_config: &crate::config::NetworkConfig,
     verbosity: crate::Verbosity,
 ) -> crate::CliResult {
@@ -1203,7 +1203,7 @@ pub fn print_transaction_status(
     let mut returned_value_bytes: Vec<u8> = Vec::new();
 
     let result = match &transaction_info.status {
-        near_primitives::views::FinalExecutionStatus::NotStarted => {
+        near_kit::FinalExecutionStatus::NotStarted => {
             if let crate::Verbosity::Quiet = verbosity {
                 return Ok(());
             }
@@ -1213,7 +1213,7 @@ pub fn print_transaction_status(
             );
             Ok(())
         }
-        near_primitives::views::FinalExecutionStatus::Started => {
+        near_kit::FinalExecutionStatus::Started => {
             if let crate::Verbosity::Quiet = verbosity {
                 return Ok(());
             }
@@ -1223,22 +1223,24 @@ pub fn print_transaction_status(
             );
             Ok(())
         }
-        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+        near_kit::FinalExecutionStatus::Failure(tx_execution_error) => {
             Err(color_eyre::eyre::eyre!("{}", tx_execution_error))
         }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
+        near_kit::FinalExecutionStatus::SuccessValue(base64_result) => {
+            let bytes_result = near_primitives::serialize::from_base64(base64_result)
+                .unwrap_or_default();
             if let crate::Verbosity::Quiet = verbosity {
-                std::io::stdout().write_all(bytes_result)?;
+                std::io::stdout().write_all(&bytes_result)?;
                 return Ok(());
             };
-            returned_value_bytes.append(&mut bytes_result.clone());
+            returned_value_bytes = bytes_result.clone();
             return_value = if bytes_result.is_empty() {
                 "Empty return value".to_string()
             } else if let Ok(json_result) =
-                serde_json::from_slice::<serde_json::Value>(bytes_result)
+                serde_json::from_slice::<serde_json::Value>(&bytes_result)
             {
                 serde_json::to_string_pretty(&json_result)?
-            } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
+            } else if let Ok(string_result) = String::from_utf8(bytes_result) {
                 string_result
             } else {
                 "The returned value is not printable (binary data)".to_string()
@@ -1309,7 +1311,7 @@ pub fn print_transaction_status(
     }
 
     for action in &transaction_info.transaction.actions {
-        if let near_primitives::views::ActionView::FunctionCall { .. } = action {
+        if let near_kit::ActionView::FunctionCall { .. } = action {
             tracing::info!(
                 parent: &tracing::Span::none(),
                 "Function execution logs:{}",

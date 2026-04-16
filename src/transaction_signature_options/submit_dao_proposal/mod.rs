@@ -43,7 +43,7 @@ impl DaoProposalContext {
             previous_context.on_after_sending_transaction_callback
         } else {
             std::sync::Arc::new(
-                |_final_outcome_view: &near_primitives::views::FinalExecutionOutcomeView,
+                |_final_outcome_view: &near_kit::FinalExecutionOutcome,
                  _network_config: &crate::config::NetworkConfig| Ok(()),
             )
         };
@@ -255,7 +255,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let new_prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.dao_account_id,
             receiver_id: item.receiver_id,
-            // TODO(phase 6): remove conversion once signing is migrated to near_kit
+            // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
             actions: vec![near_kit::Action::FunctionCall(
                 near_kit::FunctionCallAction {
                     method_name: "add_proposal".to_string(),

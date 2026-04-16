@@ -80,7 +80,7 @@ pub struct PrepopulatedTransaction {
 }
 
 impl PrepopulatedTransaction {
-    // TODO(phase 6): remove once sign_with_*/ is migrated
+    // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
     /// Convert near_kit actions back to near_primitives for the signing boundary.
     pub fn to_np_actions(&self) -> Vec<near_primitives::transaction::Action> {
         self.actions.iter().map(nk_action_to_np).collect()
@@ -107,7 +107,7 @@ impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction
     }
 }
 
-// TODO(phase 6): remove once sign_with_*/ is migrated
+// TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
 /// Convert a near_kit Action to near_primitives Action (for signing boundary).
 /// Uses borsh round-trip — safe because near_kit Action is byte-identical to
 /// near_primitives Action (verified in commit 106a671).

@@ -32,7 +32,7 @@ impl SignLaterContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLater as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // TODO(phase 6): remove conversion once signing is migrated to near_kit
+        // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
         let np_actions = previous_context.prepopulated_transaction.to_np_actions();
         let unsigned_transaction = near_primitives::transaction::Transaction::V0(TransactionV0 {
             signer_id: previous_context.prepopulated_transaction.signer_id,

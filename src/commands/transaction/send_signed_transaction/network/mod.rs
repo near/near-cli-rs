@@ -80,8 +80,9 @@ impl SubmitContext {
             )?;
 
         if let Some(transaction_info) = transaction_info {
+            let nk_outcome = crate::transaction_signature_options::send::np_outcome_to_nk(&transaction_info);
             crate::common::print_transaction_status(
-                &transaction_info,
+                &nk_outcome,
                 &previous_context.network_config,
                 previous_context.global_context.verbosity,
             )?;

@@ -80,7 +80,7 @@ impl SignerAccountIdContext {
 
             move |outcome_view, network_config| {
                 let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
-                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status
+                if outcome_view.is_success()
                     && let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         tracing_indicatif::suspend_tracing_indicatif(|| {
                             eprintln!(

@@ -82,7 +82,7 @@ impl SignPrivateKeyContext {
             )
         };
 
-        // TODO(phase 6): remove conversion once signing is migrated to near_kit
+        // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
         let np_actions = previous_context.prepopulated_transaction.to_np_actions();
         let mut unsigned_transaction = TransactionV0 {
             public_key: public_key.clone(),

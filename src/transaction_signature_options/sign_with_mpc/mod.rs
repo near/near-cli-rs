@@ -3,7 +3,7 @@ use inquire::CustomType;
 use near_primitives::transaction::{Transaction, TransactionV0};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::{blocking_view_access_key, blocking_view_function, from_nk_crypto_hash, to_call_result};
+use crate::common::{blocking_view_access_key, blocking_view_function, from_nk_crypto_hash};
 
 pub mod mpc_sign_request;
 pub mod mpc_sign_result;
@@ -378,7 +378,7 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // TODO(phase 6): remove conversion once signing is migrated to near_kit
+        // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
         let np_actions = previous_context.tx_context.prepopulated_transaction.to_np_actions();
         let controllable_account = previous_context
             .tx_context
@@ -475,7 +475,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let mpc_sign_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.admin_account_id.clone(),
             receiver_id: item.mpc_contract_address.clone(),
-            // TODO(phase 6): remove conversion once signing is migrated to near_kit
+            // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
             actions: vec![near_kit::Action::FunctionCall(
                 near_kit::FunctionCallAction {
                     method_name: "sign".to_string(),
@@ -581,10 +581,11 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 // callback will be called only after `crate::common::print_transaction_status`,
                 // which will check for failure of transaction already
 
-                if let Some(near_primitives::views::ActionView::FunctionCall { method_name, args, .. }) =
+                if let Some(near_kit::ActionView::FunctionCall { method_name, args, .. }) =
       outcome_view.transaction.actions.first()
                     && method_name == "add_proposal"
-                        && let Ok(Some(proposal)) = serde_json::from_slice::<serde_json::Value>(args).map(|parsed_args| parsed_args.get("proposal").cloned())
+                        && let Ok(args_bytes) = near_primitives::serialize::from_base64(args)
+                        && let Ok(Some(proposal)) = serde_json::from_slice::<serde_json::Value>(&args_bytes).map(|parsed_args| parsed_args.get("proposal").cloned())
                             && let Some(kind) = proposal.get("kind")
                                 && serde_json::from_value::<super::submit_dao_proposal::dao_kind_arguments::ProposalKind>(kind.clone()).is_ok() {
                                     dao_sign_with_mpc_after_send_flow(
@@ -627,7 +628,7 @@ pub fn near_key_type_to_mpc_domain_id(key_type: near_crypto::KeyType) -> u64 {
 pub fn dao_sign_with_mpc_after_send_flow(
     global_context: &crate::GlobalContext,
     network_config: &crate::config::NetworkConfig,
-    outcome_view: &near_primitives::views::FinalExecutionOutcomeView,
+    outcome_view: &near_kit::FinalExecutionOutcome,
     unsigned_mpc_transaction: &near_primitives::transaction::Transaction,
     original_sign_request: &mpc_sign_request::MpcSignRequest,
 ) -> color_eyre::eyre::Result<()> {

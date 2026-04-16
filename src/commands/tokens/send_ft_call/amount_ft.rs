@@ -251,15 +251,16 @@ fn build_action_context(
         let verbosity = previous_context.global_context.verbosity;
 
         move |outcome_view, network_config| {
-            if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
+            if outcome_view.is_success() {
                 for action in outcome_view.transaction.actions.clone() {
-                    if let near_primitives::views::ActionView::FunctionCall { method_name: _, args, gas: _, deposit: _ } = action
-                        && let Ok(ft_transfer_call) = serde_json::from_slice::<crate::types::ft_properties::FtTransferCall>(&args)
+                    if let near_kit::ActionView::FunctionCall { method_name: _, args, gas: _, deposit: _ } = action
+                        && let Ok(args_bytes) = near_primitives::serialize::from_base64(&args)
+                        && let Ok(ft_transfer_call) = serde_json::from_slice::<crate::types::ft_properties::FtTransferCall>(&args_bytes)
                             && let Ok(ft_balance) = crate::commands::tokens::send_ft::get_ft_balance_for_account(
                                 network_config,
                                 &signer_account_id,
                                 &ft_contract_account_id,
-                                near_primitives::types::BlockId::Hash(outcome_view.receipts_outcome.last().expect("FT transfer call should have at least one receipt outcome, but none was received").block_hash).into()
+                                near_primitives::types::BlockId::Hash(crate::common::from_nk_crypto_hash(&outcome_view.receipts_outcome.last().expect("FT transfer call should have at least one receipt outcome, but none was received").block_hash)).into()
                             ) {
                                 let ft_transfer_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
                                     ft_transfer_call.amount,
