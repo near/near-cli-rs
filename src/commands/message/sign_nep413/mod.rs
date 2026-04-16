@@ -1,6 +1,5 @@
-use near_crypto::{SecretKey, Signature};
-use near_primitives::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_primitives::hash::hash;
+use borsh::{BorshDeserialize, BorshSerialize};
+use near_kit::{CryptoHash, SecretKey, Signature};
 use serde::Serialize;
 
 pub mod message_type;
@@ -33,8 +32,8 @@ pub fn sign_nep413_payload(
     const NEP413_SIGN_MESSAGE_PREFIX: u32 = (1u32 << 31u32) + 413u32;
     let mut bytes = NEP413_SIGN_MESSAGE_PREFIX.to_le_bytes().to_vec();
     borsh::to_writer(&mut bytes, payload)?;
-    let hash = hash(&bytes);
-    let signature = secret_key.sign(hash.as_ref());
+    let hash = CryptoHash::hash(&bytes);
+    let signature = secret_key.sign(hash.as_bytes());
     Ok(signature)
 }
 
