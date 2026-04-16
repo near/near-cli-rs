@@ -2531,7 +2531,7 @@ dependencies = [
 
 [[package]]
 name = "near-cli-rs"
-version = "0.25.0"
+version = "0.25.1"
 dependencies = [
  "bip39",
  "borsh",
@@ -2564,6 +2564,7 @@ dependencies = [
  "near-parameters",
  "near-primitives",
  "near-sandbox",
+ "near-slip10",
  "near-socialdb-client",
  "near-token",
  "near-verify-rs",
@@ -2580,7 +2581,6 @@ dependencies = [
  "serde_with",
  "shell-words",
  "shellexpand",
- "slipped10",
  "smart-default",
  "strum",
  "strum_macros",
@@ -2695,9 +2695,9 @@ dependencies = [
 
 [[package]]
 name = "near-ledger"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbc04735bd42debf28c620d52897f7b2ea81dc3d1477db8536563a6a519872c6"
+checksum = "424f7235bf804ced014da18a6732bfd37f82f01b750d2e7532d79b55026f56ff"
 dependencies = [
  "borsh",
  "btleplug",
@@ -2709,7 +2709,7 @@ dependencies = [
  "ledger-transport",
  "ledger-transport-hid",
  "log",
- "slipped10",
+ "near-slip10",
  "tokio",
  "uuid",
 ]
@@ -2843,6 +2843,17 @@ name = "near-schema-checker-macro"
 version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b61eccf333a27e5dc076290f9eb59b18fc848188377bf3e99e0fe0a93627e18"
+
+[[package]]
+name = "near-slip10"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f476bc5f8bcb36242d25ef252ce43edb22d4dfb8dcdd1b61812c7c9a7594400f"
+dependencies = [
+ "ed25519-dalek",
+ "hmac",
+ "sha2 0.9.9",
+]
 
 [[package]]
 name = "near-socialdb-client"
@@ -4277,17 +4288,6 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
-
-[[package]]
-name = "slipped10"
-version = "0.4.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a45443e66aa5d96db5e02d17db056e1ca970232a4fe73e1f9bc1816d68f4e98"
-dependencies = [
- "ed25519-dalek",
- "hmac",
- "sha2 0.9.9",
-]
 
 [[package]]
 name = "smallvec"

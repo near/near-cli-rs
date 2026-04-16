@@ -21,7 +21,9 @@ impl TransactionInfoContext {
         previous_context: crate::GlobalContext,
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        use super::construct_transaction::{CliConstructTransaction, add_action_1, skip_action};
+        use super::construct_transaction::{
+            CliConstructTransaction, CliDirectReceiver, CliReceiverMode, add_action_1, skip_action,
+        };
         use super::{CliTransactionActions, CliTransactionCommands};
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
@@ -78,10 +80,14 @@ impl TransactionInfoContext {
                                     sender_account_id: Some(
                                         prepopulated_transaction.signer_id.into(),
                                     ),
-                                    receiver_account_id: Some(
-                                        prepopulated_transaction.receiver_id.clone().into(),
-                                    ),
-                                    next_actions: None,
+                                    receiver: Some(CliReceiverMode::ReceiverId(
+                                        CliDirectReceiver {
+                                            receiver_account_id: Some(
+                                                prepopulated_transaction.receiver_id.clone().into(),
+                                            ),
+                                            next_actions: None,
+                                        },
+                                    )),
                                 },
                             )),
                         });

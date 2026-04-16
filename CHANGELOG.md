@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.1](https://github.com/near/near-cli-rs/compare/v0.25.0...v0.25.1) - 2026-04-15
+
+### Other
+
+- *(deps)* replace `slipped10` with `near-slip10` ([#584](https://github.com/near/near-cli-rs/pull/584))
+
 ## [0.25.0](https://github.com/near/near-cli-rs/compare/v0.24.0...v0.25.0) - 2026-04-08
 
 ### Added

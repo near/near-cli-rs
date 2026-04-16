@@ -6,7 +6,7 @@
 const BLE_SCAN_MAX_RETRIES: usize = 3;
 
 pub fn ble_connect_and_get_public_key(
-    seed_phrase_hd_path: slipped10::BIP32Path,
+    seed_phrase_hd_path: near_slip10::BIP32Path,
 ) -> color_eyre::eyre::Result<ed25519_dalek::VerifyingKey> {
     let rt = new_ble_runtime()?;
 
@@ -18,7 +18,7 @@ pub fn ble_connect_and_get_public_key(
 }
 
 pub fn ble_get_public_key_and_sign_nep413(
-    seed_phrase_hd_path: slipped10::BIP32Path,
+    seed_phrase_hd_path: near_slip10::BIP32Path,
     payload: near_ledger::NEP413Payload,
 ) -> color_eyre::eyre::Result<(ed25519_dalek::VerifyingKey, near_ledger::SignatureBytes)> {
     let rt = new_ble_runtime()?;
@@ -51,7 +51,7 @@ pub struct BleSession {
 
 impl BleSession {
     pub fn connect_open_and_get_public_key(
-        seed_phrase_hd_path: slipped10::BIP32Path,
+        seed_phrase_hd_path: near_slip10::BIP32Path,
     ) -> color_eyre::eyre::Result<(Self, ed25519_dalek::VerifyingKey)> {
         let rt = new_ble_runtime()?;
 
@@ -68,7 +68,7 @@ impl BleSession {
     pub fn sign_transaction(
         &self,
         unsigned_tx: &[u8],
-        seed_phrase_hd_path: slipped10::BIP32Path,
+        seed_phrase_hd_path: near_slip10::BIP32Path,
     ) -> Result<near_ledger::SignatureBytes, near_ledger::NEARLedgerError> {
         self.rt.block_on(async {
             near_ledger::sign_transaction_ble(&self.transport, unsigned_tx, seed_phrase_hd_path)
@@ -79,7 +79,7 @@ impl BleSession {
     pub fn sign_message_nep366_delegate_action(
         &self,
         payload: &[u8],
-        seed_phrase_hd_path: slipped10::BIP32Path,
+        seed_phrase_hd_path: near_slip10::BIP32Path,
     ) -> Result<near_ledger::SignatureBytes, near_ledger::NEARLedgerError> {
         self.rt.block_on(async {
             near_ledger::sign_message_nep366_delegate_action_ble(
@@ -150,7 +150,7 @@ async fn open_near_app(transport: &near_ledger::TransportBle) -> color_eyre::eyr
 )]
 async fn get_public_key(
     transport: &near_ledger::TransportBle,
-    seed_phrase_hd_path: slipped10::BIP32Path,
+    seed_phrase_hd_path: near_slip10::BIP32Path,
 ) -> color_eyre::eyre::Result<ed25519_dalek::VerifyingKey> {
     near_ledger::get_public_key_ble(transport, seed_phrase_hd_path)
         .await
