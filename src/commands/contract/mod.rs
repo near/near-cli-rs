@@ -81,11 +81,14 @@ pub async fn get_contract_abi(
     let nk_block_ref = block_reference;
     let mut retries_left = (0..5).rev();
     loop {
-        let result = network_config
-            .client()
-            .rpc()
-            .view_function(account_id, "__contract_abi", &[], nk_block_ref.clone())
-            .await;
+        let result = crate::common::query_view_function(
+            network_config.client().rpc(),
+            account_id,
+            "__contract_abi",
+            &[],
+            nk_block_ref.clone(),
+        )
+        .await;
 
         match result {
             Err(ref err) if err.is_retryable() && retries_left.next().is_some() => {

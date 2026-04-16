@@ -2,7 +2,7 @@ use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::{RpcResultExt, block_on};
+use crate::common::{RpcResultExt, block_on, query_view_access_key_list};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -81,7 +81,8 @@ impl SignKeychainContext {
                 }
             }
         } else {
-            let access_key_list = block_on(network_config.client().rpc().view_access_key_list(
+            let access_key_list = block_on(query_view_access_key_list(
+                network_config.client().rpc(),
                 &previous_context.prepopulated_transaction.signer_id,
                 near_kit::Finality::Final.into(),
             ))

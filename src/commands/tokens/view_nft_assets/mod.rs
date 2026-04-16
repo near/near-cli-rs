@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
-use crate::common::{RpcResultExt, block_on};
+use crate::common::{RpcResultExt, block_on, query_view_function};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::TokensCommandsContext)]
@@ -81,14 +81,13 @@ fn get_nft_balance(
     block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
     tracing::info!(target: "near_teach_me", "Getting NFT balance ...");
-    let result = block_on(
-        network_config.client().rpc().view_function(
-            nft_contract_account_id,
-            "nft_tokens_for_owner",
-            &args,
-            block_reference,
-        ),
-    )
+    let result = block_on(query_view_function(
+        network_config.client().rpc(),
+        nft_contract_account_id,
+        "nft_tokens_for_owner",
+        &args,
+        block_reference,
+    ))
     .into_eyre()
     .wrap_err_with(||{
         format!("Failed to fetch query for view method: 'nft_tokens_for_owner' (contract <{}> on network <{}>)",

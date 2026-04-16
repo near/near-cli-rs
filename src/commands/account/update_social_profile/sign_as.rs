@@ -4,7 +4,9 @@ use std::sync::Arc;
 use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize};
 use inquire::{CustomType, Select};
 
-use crate::common::{CallResultExt, RpcResultExt, block_on};
+use crate::common::{
+    CallResultExt, RpcResultExt, block_on, query_view_access_key, query_view_function,
+};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::profile_args_type::ArgsContext)]
@@ -229,16 +231,15 @@ fn required_deposit(
     const EXTRA_STORAGE_BALANCE: i128 = STORAGE_COST_PER_BYTE * 5000;
 
     let storage_balance_result: color_eyre::eyre::Result<crate::types::socialdb::StorageBalance> = {
-        let result = block_on(
-            network_config.client().rpc().view_function(
-                near_social_account_id,
-                "storage_balance_of",
-                &serde_json::json!({ "account_id": account_id })
-                    .to_string()
-                    .into_bytes(),
-                near_kit::Finality::Final.into(),
-            ),
-        )
+        let result = block_on(query_view_function(
+            network_config.client().rpc(),
+            near_social_account_id,
+            "storage_balance_of",
+            &serde_json::json!({ "account_id": account_id })
+                .to_string()
+                .into_bytes(),
+            near_kit::Finality::Final.into(),
+        ))
         .into_eyre()
         .wrap_err("Failed to fetch query for view method: 'storage_balance_of'")?;
         result.parse_result_from_json::<crate::types::socialdb::StorageBalance>()
@@ -338,7 +339,8 @@ fn is_write_permission_granted(
             args_map.insert(k.clone(), v.clone());
         }
     }
-    let result = block_on(network_config.client().rpc().view_function(
+    let result = block_on(query_view_function(
+        network_config.client().rpc(),
         near_social_account_id,
         "is_write_permission_granted",
         &serde_json::to_vec(&args).wrap_err(
@@ -366,7 +368,8 @@ fn get_deposit(
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::info!(target: "near_teach_me", "Update the required deposit ...");
 
-    let nk_access_key_view = block_on(network_config.client().rpc().view_access_key(
+    let nk_access_key_view = block_on(query_view_access_key(
+        network_config.client().rpc(),
         signer_account_id,
         signer_public_key,
         near_kit::Finality::Final.into(),
@@ -443,16 +446,15 @@ fn get_remote_profile(
     account_id: near_kit::AccountId,
 ) -> color_eyre::eyre::Result<serde_json::Value> {
     tracing::info!(target: "near_teach_me", "Getting data about a remote profile ...");
-    let result = block_on(
-        network_config.client().rpc().view_function(
-            near_social_account_id,
-            "get",
-            &serde_json::to_vec(&serde_json::json!({
-                "keys": vec![format!("{account_id}/profile/**")],
-            }))?,
-            near_kit::Finality::Final.into(),
-        ),
-    )
+    let result = block_on(query_view_function(
+        network_config.client().rpc(),
+        near_social_account_id,
+        "get",
+        &serde_json::to_vec(&serde_json::json!({
+            "keys": vec![format!("{account_id}/profile/**")],
+        }))?,
+        near_kit::Finality::Final.into(),
+    ))
     .into_eyre()
     .wrap_err_with(|| {
         format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",

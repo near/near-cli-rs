@@ -645,13 +645,11 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                 move |network_config| {
                     let receiver_id = &item.receiver_account_id;
                     let result = crate::common::block_on(
-                        network_config
-                            .client()
-                            .rpc()
-                            .view_account(
-                                receiver_id,
-                                near_kit::Finality::Final.into(),
-                            ),
+                        crate::common::query_view_account(
+                            network_config.client().rpc(),
+                            receiver_id,
+                            near_kit::Finality::Final.into(),
+                        ),
                     );
                     // Best-effort check — only cancel if we positively confirm account exists.
                     // All errors (UnknownAccount, network timeout, connection refused, etc.)

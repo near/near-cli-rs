@@ -5,7 +5,7 @@ use std::str::FromStr;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select};
 
-use crate::common::{RpcResultExt, block_on};
+use crate::common::{RpcResultExt, block_on, query_view_access_key_list};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -67,34 +67,34 @@ impl SignLegacyKeychainContext {
                         .replace(':', "_")
                 ))
             } else if signer_keychain_folder.exists() {
-                let full_access_key_filenames =
-                    block_on(network_config.client().rpc().view_access_key_list(
-                        &previous_context.prepopulated_transaction.signer_id,
-                        near_kit::Finality::Final.into(),
-                    ))
-                    .into_eyre()
-                    .wrap_err_with(|| {
-                        format!(
-                            "Failed to fetch access KeyList for {}",
-                            previous_context.prepopulated_transaction.signer_id
-                        )
-                    })?
-                    .keys
-                    .iter()
-                    .filter(|access_key_info| {
-                        matches!(
-                            access_key_info.access_key.permission,
-                            near_kit::AccessKeyPermissionView::FullAccess
-                        )
-                    })
-                    .map(|access_key_info| {
-                        format!(
-                            "{}.json",
-                            access_key_info.public_key.to_string().replace(":", "_")
-                        )
-                        .into()
-                    })
-                    .collect::<std::collections::HashSet<std::ffi::OsString>>();
+                let full_access_key_filenames = block_on(query_view_access_key_list(
+                    network_config.client().rpc(),
+                    &previous_context.prepopulated_transaction.signer_id,
+                    near_kit::Finality::Final.into(),
+                ))
+                .into_eyre()
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch access KeyList for {}",
+                        previous_context.prepopulated_transaction.signer_id
+                    )
+                })?
+                .keys
+                .iter()
+                .filter(|access_key_info| {
+                    matches!(
+                        access_key_info.access_key.permission,
+                        near_kit::AccessKeyPermissionView::FullAccess
+                    )
+                })
+                .map(|access_key_info| {
+                    format!(
+                        "{}.json",
+                        access_key_info.public_key.to_string().replace(":", "_")
+                    )
+                    .into()
+                })
+                .collect::<std::collections::HashSet<std::ffi::OsString>>();
 
                 signer_keychain_folder
                     .read_dir()

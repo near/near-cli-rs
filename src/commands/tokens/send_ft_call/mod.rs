@@ -2,7 +2,7 @@ use color_eyre::eyre::{Context, ContextCompat};
 use serde_json::{Value, json};
 
 use crate::common::CallResultExt;
-use crate::common::{RpcResultExt, block_on};
+use crate::common::{RpcResultExt, block_on, query_view_function};
 
 use super::send_ft::input_ft_contract_account_id;
 
@@ -162,14 +162,13 @@ pub fn get_prepopulated_transaction(
 
     let args = serde_json::to_vec(&json!({"account_id": receiver_account_id}))?;
 
-    let call_result = block_on(
-            network_config.client().rpc().view_function(
-                ft_contract_account_id,
-                "storage_balance_of",
-                &args,
-                near_kit::Finality::Final.into(),
-            ),
-        )
+    let call_result = block_on(query_view_function(
+            network_config.client().rpc(),
+            ft_contract_account_id,
+            "storage_balance_of",
+            &args,
+            near_kit::Finality::Final.into(),
+        ))
         .into_eyre()
         .wrap_err_with(|| {
             format!(

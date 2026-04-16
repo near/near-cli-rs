@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
-use crate::common::{RpcResultExt, block_on};
+use crate::common::{RpcResultExt, block_on, query_view_function};
 
 use super::send_ft::input_ft_contract_account_id;
 
@@ -99,14 +99,13 @@ pub fn get_ft_balance(
     block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
     tracing::info!(target: "near_teach_me", "Getting FT balance ...");
-    let result = block_on(
-            network_config.client().rpc().view_function(
-                ft_contract_account_id,
-                "ft_balance_of",
-                &args,
-                block_reference,
-            ),
-        )
+    let result = block_on(query_view_function(
+            network_config.client().rpc(),
+            ft_contract_account_id,
+            "ft_balance_of",
+            &args,
+            block_reference,
+        ))
         .into_eyre()
         .wrap_err_with(||{
             format!("Failed to fetch query for view method: 'ft_balance_of' (contract <{}> on network <{}>)",

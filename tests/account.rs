@@ -48,7 +48,12 @@ async fn test_view_account_summary_nonexistent() -> Result<(), Box<dyn std::erro
 
     let stderr = String::from_utf8_lossy(&output.stderr);
 
-    assert!(stderr.contains("account nonexistent.near does not exist while viewing"));
+    assert!(
+        stderr.contains("Account not found: nonexistent.near")
+            || stderr.contains("account nonexistent.near does not exist"),
+        "Expected error about nonexistent account, got stderr: {}",
+        stderr
+    );
 
     Ok(())
 }
