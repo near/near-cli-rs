@@ -4,8 +4,6 @@
 /// If this test passes, external signers (Ledger, MPC) keep working after we swap the types.
 #[cfg(test)]
 mod tests {
-    use borsh::BorshSerialize;
-
     // Fixed ed25519 public key bytes (deterministic, valid curve point).
     // This is the public key for the all-ones secret key.
     fn fixed_ed25519_public_key_bytes() -> [u8; 32] {

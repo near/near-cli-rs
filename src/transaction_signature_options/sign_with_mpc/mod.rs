@@ -378,7 +378,7 @@ impl DepositContext {
         previous_context: PrepaidGasContext,
         scope: &<Deposit as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
+        // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
         let np_actions = previous_context.tx_context.prepopulated_transaction.to_np_actions();
         let controllable_account = previous_context
             .tx_context
@@ -475,7 +475,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let mpc_sign_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.admin_account_id.clone(),
             receiver_id: item.mpc_contract_address.clone(),
-            // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
+            // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
             actions: vec![near_kit::Action::FunctionCall(
                 near_kit::FunctionCallAction {
                     method_name: "sign".to_string(),

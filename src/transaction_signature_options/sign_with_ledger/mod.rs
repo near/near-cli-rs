@@ -247,7 +247,7 @@ fn sign_transaction_with_usb(
             .prepopulated_transaction
             .receiver_id
             .clone(),
-        // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
+        // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
         actions: previous_context.prepopulated_transaction.to_np_actions(),
     };
 
@@ -505,7 +505,7 @@ fn sign_transaction_with_ble(
             .prepopulated_transaction
             .receiver_id
             .clone(),
-        // TODO(phase 7): remove once OnBeforeSigningCallback accepts near_kit::Transaction
+        // TODO(near-kit-migration): remove once OnBeforeSigningCallback accepts near_kit::Transaction
         actions: previous_context.prepopulated_transaction.to_np_actions(),
     };
 
