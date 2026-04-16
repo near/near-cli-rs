@@ -10,6 +10,7 @@ use futures::{StreamExt, TryStreamExt};
 use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
+use serde_with::{base64::Base64, serde_as};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
@@ -940,32 +941,30 @@ pub fn print_unsigned_transaction(
             near_primitives::transaction::Action::DeterministicStateInit(
                 deterministic_init_action,
             ) => {
+                let deterministic_account_id =
+                    near_primitives::utils::derive_near_deterministic_account_id(
+                        &deterministic_init_action.state_init,
+                    );
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20}",
-                    "--", "initizalize deterministic account id:"
+                    "--",
+                    format!("create deterministic account <{deterministic_account_id}>:")
                 ));
                 info_str.push_str(&format!(
-                    "\n{:>18} {:<13} {}",
-                    "", "deposit:", deterministic_init_action.deposit
+                    "\n{:>18} {:<12}: {}",
+                    "", "deposit", deterministic_init_action.deposit
                 ));
-                let state_init = match &deterministic_init_action.state_init {
-                    near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
-                        let mut ret = "V1".to_string();
-                        ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", deterministic_account_state_init_v1.data));
-                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match deterministic_account_state_init_v1.code {
-                            GlobalContractIdentifier::CodeHash(hash) => {
-                                format!("use global <{hash}> code to deploy from")
-                            }
-                            GlobalContractIdentifier::AccountId(ref account_id) => {
-                                format!("use global <{account_id}> code to deploy from")
-                            }
-                        }));
+                let state_init_json =
+                    serde_json::to_string_pretty(&DeterministicAccountStateInitView::from(
+                        deterministic_init_action.state_init.clone(),
+                    ))
+                    .expect("DeterministicAccountStateInitView is always serializable");
+                let state_init_indented = state_init_json.replace('\n', &format!("\n{:33}", ""));
 
-                        ret
-                    },
-                };
-
-                info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<12}: {}",
+                    "", "state-init", state_init_indented
+                ));
             }
             near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
@@ -3441,4 +3440,76 @@ pub fn save_cli_command(cli_cmd_str: &str) {
     if let Err(err) = writeln!(tmp_file, "{cli_cmd_str}") {
         eprintln!("Failed to store a cli command in a temporary file: {err}");
     }
+}
+
+/// Parses a JSON object with base64-encoded keys and values into a `BTreeMap<Vec<u8>, Vec<u8>>`.
+///
+/// Example input: `{"AAEC": "AwQF"}` (standard base64, padding optional)
+/// Empty state: `{}`
+pub fn parse_base64_kv_map(
+    input: &str,
+) -> color_eyre::eyre::Result<std::collections::BTreeMap<Vec<u8>, Vec<u8>>> {
+    #[serde_as]
+    #[derive(serde::Deserialize)]
+    struct Data(
+        #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+        std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+    );
+
+    let data: Data = serde_json::from_str(input)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to parse base64 KV map: {e}"))?;
+    Ok(data.0)
+}
+
+// NOTE: workaround for not yet released version of near-primitives that accounts for proper
+// serialization of GlobalContractIdentifier
+// ref: https://github.com/near/nearcore/commit/1bcb01fb09ada9243182d061b8b2e2ad7bf544c3
+#[serde_as]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct DeterministicAccountStateInitV1View {
+    code: near_primitives::views::GlobalContractIdentifierView,
+    #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+    data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) enum DeterministicAccountStateInitView {
+    V1(DeterministicAccountStateInitV1View),
+}
+
+impl From<near_primitives::deterministic_account_id::DeterministicAccountStateInit>
+    for DeterministicAccountStateInitView
+{
+    fn from(
+        near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(v1): near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+    ) -> Self {
+        Self::V1(DeterministicAccountStateInitV1View {
+            code: v1.code.into(),
+            data: v1.data,
+        })
+    }
+}
+
+impl From<DeterministicAccountStateInitView>
+    for near_primitives::deterministic_account_id::DeterministicAccountStateInit
+{
+    fn from(DeterministicAccountStateInitView::V1(v1): DeterministicAccountStateInitView) -> Self {
+        Self::V1(
+            near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
+                code: v1.code.into(),
+                data: v1.data,
+            },
+        )
+    }
+}
+
+/// Deserializes a `DeterministicAccountStateInit` from borsh-serialized bytes.
+pub fn parse_borsh_base64_state_init(
+    bytes: &[u8],
+) -> color_eyre::eyre::Result<
+    near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+> {
+    use borsh::BorshDeserialize;
+    near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(bytes)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
 }

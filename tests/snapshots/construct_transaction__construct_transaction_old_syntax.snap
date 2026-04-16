@@ -1,0 +1,14 @@
+---
+source: tests/construct_transaction.rs
+assertion_line: 54
+expression: normalize_output(&stdout)
+---
+
+Transaction hash to sign:
+597bf3586ac2cb435509b08d4b7f5c9bb77365df62f86a29919feb3d9936a30a.
+
+Unsigned transaction (serialized as base64):
+CQAAAHRlc3QubmVhcgBNp+D0CWqvLOVeNxZXzTCJuh6fWfTW4nvQLkcqFqYdwQAAAAAAAAAACQAAAHRlc3QubmVhcgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAMAAACh7czOG8LTAAAAAAAA
+
+This base64-encoded transaction can be signed and sent later. There is a helper command on near CLI that can do that:
+$ near transaction sign-transaction
