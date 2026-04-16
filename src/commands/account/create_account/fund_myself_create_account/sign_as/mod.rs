@@ -154,6 +154,7 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback,
             sign_as_delegate_action: false,
+            on_sending_delegate_action_callback: None,
         }
     }
 }

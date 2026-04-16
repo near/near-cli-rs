@@ -94,6 +94,8 @@ pub struct ActionContext {
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    pub on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     pub sign_as_delegate_action: bool,
 }
 
@@ -108,5 +110,7 @@ pub struct TransactionContext {
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    pub on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     pub sign_as_delegate_action: bool,
 }

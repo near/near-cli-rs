@@ -10,6 +10,7 @@ use color_eyre::owo_colors::OwoColorize;
 use futures::{StreamExt, TryStreamExt};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
+use serde_with::{base64::Base64, serde_as};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
@@ -521,9 +522,9 @@ pub fn get_key_pair_properties_from_seed_phrase(
     master_seed_phrase: String,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
     let master_seed = bip39::Mnemonic::parse(&master_seed_phrase)?.to_seed("");
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -550,13 +551,13 @@ pub fn get_key_pair_properties_from_seed_phrase(
 }
 
 pub fn get_public_key_from_seed_phrase(
-    seed_phrase_hd_path: slipped10::BIP32Path,
+    seed_phrase_hd_path: near_slip10::BIP32Path,
     master_seed_phrase: &str,
 ) -> color_eyre::eyre::Result<near_kit::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &seed_phrase_hd_path,
     )
     .map_err(|err| {
@@ -586,9 +587,9 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &generate_keypair.seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -845,13 +846,16 @@ pub fn print_unsigned_transaction(
                 info_str.push_str(&format!("{:>5} {:<70}", "--", identifier));
             }
             near_kit::Action::DeterministicStateInit(deterministic_init_action) => {
+                let deterministic_account_id =
+                    deterministic_init_action.state_init.derive_account_id();
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20}",
-                    "--", "initizalize deterministic account id:"
+                    "--",
+                    format!("create deterministic account <{deterministic_account_id}>:")
                 ));
                 info_str.push_str(&format!(
-                    "\n{:>18} {:<13} {}",
-                    "", "deposit:", deterministic_init_action.deposit
+                    "\n{:>18} {:<12}: {}",
+                    "", "deposit", deterministic_init_action.deposit
                 ));
                 let state_init = match &deterministic_init_action.state_init {
                     near_kit::DeterministicAccountStateInit::V1(v1) => {
@@ -1543,7 +1547,7 @@ pub fn get_validator_list(
             .buffer_unordered(concurrency)
             .try_collect::<Vec<_>>(),
     )?;
-    validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
+    validator_list.sort_by_key(|b| std::cmp::Reverse(b.stake));
     Ok(validator_list)
 }
 
@@ -2438,4 +2442,95 @@ pub fn save_cli_command(cli_cmd_str: &str) {
     if let Err(err) = writeln!(tmp_file, "{cli_cmd_str}") {
         eprintln!("Failed to store a cli command in a temporary file: {err}");
     }
+}
+
+/// Parses a JSON object with base64-encoded keys and values into a `BTreeMap<Vec<u8>, Vec<u8>>`.
+///
+/// Example input: `{"AAEC": "AwQF"}` (standard base64, padding optional)
+/// Empty state: `{}`
+pub fn parse_base64_kv_map(
+    input: &str,
+) -> color_eyre::eyre::Result<std::collections::BTreeMap<Vec<u8>, Vec<u8>>> {
+    #[serde_as]
+    #[derive(serde::Deserialize)]
+    struct Data(
+        #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+        std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+    );
+
+    let data: Data = serde_json::from_str(input)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to parse base64 KV map: {e}"))?;
+    Ok(data.0)
+}
+
+// Serializable view for GlobalContractIdentifier — near-kit's
+// GlobalContractIdentifierView only implements Deserialize, so we keep a
+// local view type that also derives Serialize for JSON round-tripping.
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
+pub(crate) enum GlobalContractIdentifierSerde {
+    CodeHash { hash: near_kit::CryptoHash },
+    AccountId { account_id: near_kit::AccountId },
+}
+
+impl From<near_kit::GlobalContractIdentifier> for GlobalContractIdentifierSerde {
+    fn from(value: near_kit::GlobalContractIdentifier) -> Self {
+        match value {
+            near_kit::GlobalContractIdentifier::CodeHash(hash) => Self::CodeHash { hash },
+            near_kit::GlobalContractIdentifier::AccountId(account_id) => {
+                Self::AccountId { account_id }
+            }
+        }
+    }
+}
+
+impl From<GlobalContractIdentifierSerde> for near_kit::GlobalContractIdentifier {
+    fn from(value: GlobalContractIdentifierSerde) -> Self {
+        match value {
+            GlobalContractIdentifierSerde::CodeHash { hash } => Self::CodeHash(hash),
+            GlobalContractIdentifierSerde::AccountId { account_id } => Self::AccountId(account_id),
+        }
+    }
+}
+
+#[serde_as]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct DeterministicAccountStateInitV1View {
+    code: GlobalContractIdentifierSerde,
+    #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+    data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) enum DeterministicAccountStateInitView {
+    V1(DeterministicAccountStateInitV1View),
+}
+
+impl From<near_kit::DeterministicAccountStateInit> for DeterministicAccountStateInitView {
+    fn from(value: near_kit::DeterministicAccountStateInit) -> Self {
+        let near_kit::DeterministicAccountStateInit::V1(v1) = value;
+        Self::V1(DeterministicAccountStateInitV1View {
+            code: v1.code.into(),
+            data: v1.data,
+        })
+    }
+}
+
+impl From<DeterministicAccountStateInitView> for near_kit::DeterministicAccountStateInit {
+    fn from(value: DeterministicAccountStateInitView) -> Self {
+        let DeterministicAccountStateInitView::V1(v1) = value;
+        Self::V1(near_kit::DeterministicAccountStateInitV1 {
+            code: v1.code.into(),
+            data: v1.data,
+        })
+    }
+}
+
+/// Deserializes a `DeterministicAccountStateInit` from borsh-serialized bytes.
+pub fn parse_borsh_base64_state_init(
+    bytes: &[u8],
+) -> color_eyre::eyre::Result<near_kit::DeterministicAccountStateInit> {
+    use borsh::BorshDeserialize;
+    near_kit::DeterministicAccountStateInit::try_from_slice(bytes)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
 }

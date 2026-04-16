@@ -373,6 +373,9 @@ pub struct DepositContext {
     mpc_sign_request_serialized: Vec<u8>,
     global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
+    sign_as_delegate_action: bool,
 }
 
 impl DepositContext {
@@ -440,6 +443,10 @@ impl DepositContext {
             mpc_sign_request_serialized,
             global_context: previous_context.tx_context.global_context,
             network_config: previous_context.tx_context.network_config,
+            on_sending_delegate_action_callback: previous_context
+                .tx_context
+                .on_sending_delegate_action_callback,
+            sign_as_delegate_action: previous_context.tx_context.sign_as_delegate_action,
         })
     }
 }
@@ -472,7 +479,6 @@ impl Deposit {
 
 impl From<DepositContext> for crate::commands::TransactionContext {
     fn from(item: DepositContext) -> Self {
-        let sign_as_delegate_action = item.network_config.meta_transaction_relayer_url.is_some();
         let mpc_sign_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.admin_account_id.clone(),
             receiver_id: item.mpc_contract_address.clone(),
@@ -615,7 +621,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback,
-            sign_as_delegate_action,
+            on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
+            sign_as_delegate_action: item.sign_as_delegate_action,
         }
     }
 }
@@ -693,6 +700,7 @@ pub fn dao_sign_with_mpc_after_send_flow(
             std::sync::Arc::new(
                 |_outcome_view, _network_config| Ok(()),
         ),
+        on_sending_delegate_action_callback: None,
     };
 
     prompt_and_submit(submit_context)

@@ -10,6 +10,7 @@ mod download_abi;
 pub mod download_wasm;
 #[cfg(feature = "inspect_contract")]
 mod inspect;
+pub mod state_init;
 
 #[cfg(feature = "verify_contract")]
 mod verify;
@@ -43,6 +44,11 @@ pub enum ContractActions {
     ))]
     /// Add a global contract code
     DeployAsGlobal(self::deploy_global::Contract),
+    #[strum_discriminants(strum(
+        message = "state-init       - Initialize a deterministic account with a global contract and state data"
+    ))]
+    /// Initialize a deterministic account with a global contract and state data
+    StateInit(self::state_init::StateInit),
     #[strum_discriminants(strum(
         message = "inspect          - Get a list of available function names"
     ))]

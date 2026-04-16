@@ -93,7 +93,7 @@ impl UsbSignNep413Context {
             public_key: public_key.to_string(),
             signature: signature.to_string(),
         };
-        println!("{}", serde_json::to_string_pretty(&signed_message)?);
+        (previous_context.final_context.on_after_signing_callback)(signed_message)?;
 
         Ok(Self)
     }
@@ -135,7 +135,7 @@ impl BleSignNep413Context {
             public_key: public_key.to_string(),
             signature: signature.to_string(),
         };
-        println!("{}", serde_json::to_string_pretty(&signed_message)?);
+        (previous_context.final_context.on_after_signing_callback)(signed_message)?;
 
         Ok(Self)
     }

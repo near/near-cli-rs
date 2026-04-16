@@ -35,6 +35,7 @@ impl SignAsWrapperContext {
             global_context: previous_context.global_context,
             payload,
             signer_id: scope.signer_account_id.clone().into(),
+            on_after_signing_callback: super::default_on_after_signing_nep413_callback(),
         }))
     }
 }

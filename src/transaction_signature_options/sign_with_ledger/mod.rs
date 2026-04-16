@@ -198,11 +198,11 @@ fn sign_transaction_with_ledger(
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     block_height: Option<u64>,
     meta_transaction_valid_for: Option<u64>,
-    sign_tx_fn: impl Fn(&[u8], slipped10::BIP32Path) -> Result<Vec<u8>, NEARLedgerError>,
-    sign_delegate_fn: impl Fn(&[u8], slipped10::BIP32Path) -> Result<Vec<u8>, NEARLedgerError>,
+    sign_tx_fn: impl Fn(&[u8], near_slip10::BIP32Path) -> Result<Vec<u8>, NEARLedgerError>,
+    sign_delegate_fn: impl Fn(&[u8], near_slip10::BIP32Path) -> Result<Vec<u8>, NEARLedgerError>,
 ) -> color_eyre::eyre::Result<super::SubmitContext> {
     let network_config = previous_context.network_config.clone();
-    let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
+    let seed_phrase_hd_path_raw: near_slip10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_kit::PublicKey = signer_public_key.clone().into();
 
     let nk_public_key = public_key.clone();
@@ -280,6 +280,9 @@ fn sign_transaction_with_ledger(
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback
                 .clone(),
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback
+                .clone(),
         });
     }
 
@@ -329,6 +332,9 @@ fn sign_transaction_with_ledger(
             .clone(),
         on_after_sending_transaction_callback: previous_context
             .on_after_sending_transaction_callback
+            .clone(),
+        on_sending_delegate_action_callback: previous_context
+            .on_sending_delegate_action_callback
             .clone(),
     })
 }

@@ -22,6 +22,9 @@ pub struct DaoProposalContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
+    sign_as_delegate_action: bool,
     dao_account_id: near_kit::AccountId,
     receiver_id: near_kit::AccountId,
     proposal_kind: dao_kind_arguments::ProposalKind,
@@ -52,6 +55,9 @@ impl DaoProposalContext {
             global_context: previous_context.global_context,
             network_config: previous_context.network_config,
             on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
             dao_account_id: scope.dao_account_id.clone().into(),
             receiver_id: previous_context.prepopulated_transaction.signer_id.clone(),
             proposal_kind,
@@ -88,6 +94,9 @@ pub struct DaoProposalArgumentsContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
+    sign_as_delegate_action: bool,
     dao_account_id: near_kit::AccountId,
     receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
@@ -110,6 +119,9 @@ impl DaoProposalArgumentsContext {
             network_config: previous_context.network_config,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
             dao_account_id: previous_context.dao_account_id,
             receiver_id: previous_context.receiver_id,
             proposal_args,
@@ -145,6 +157,9 @@ pub struct PrepaidGasContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
+    sign_as_delegate_action: bool,
     dao_account_id: near_kit::AccountId,
     receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
@@ -161,6 +176,9 @@ impl PrepaidGasContext {
             network_config: previous_context.network_config,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
             dao_account_id: previous_context.dao_account_id,
             receiver_id: previous_context.receiver_id,
             proposal_args: previous_context.proposal_args,
@@ -211,6 +229,9 @@ pub struct DepositContext {
     network_config: crate::config::NetworkConfig,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
+    sign_as_delegate_action: bool,
     dao_account_id: near_kit::AccountId,
     receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
@@ -228,6 +249,9 @@ impl DepositContext {
             network_config: previous_context.network_config,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
+            sign_as_delegate_action: previous_context.sign_as_delegate_action,
             dao_account_id: previous_context.dao_account_id,
             receiver_id: previous_context.receiver_id,
             proposal_args: previous_context.proposal_args,
@@ -251,7 +275,6 @@ impl Deposit {
 
 impl From<DepositContext> for crate::commands::TransactionContext {
     fn from(item: DepositContext) -> Self {
-        let sign_as_delegate_action = item.network_config.meta_transaction_relayer_url.is_some();
         let new_prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.dao_account_id,
             receiver_id: item.receiver_id,
@@ -287,7 +310,8 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                 |_signed_transaction, _network_config| Ok(String::new()),
             ),
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
-            sign_as_delegate_action,
+            on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
+            sign_as_delegate_action: item.sign_as_delegate_action,
         }
     }
 }

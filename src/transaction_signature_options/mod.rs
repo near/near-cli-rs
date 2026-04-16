@@ -110,6 +110,10 @@ pub type OnAfterSendingTransactionCallback = std::sync::Arc<
     dyn Fn(&near_kit::FinalExecutionOutcome, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
+pub type OnSendingDelegateActionCallback = std::sync::Arc<
+    dyn Fn(near_kit::SignedDelegateAction, &crate::config::NetworkConfig) -> crate::CliResult,
+>;
+
 #[derive(Clone)]
 pub struct SubmitContext {
     pub network_config: crate::config::NetworkConfig,
@@ -117,6 +121,7 @@ pub struct SubmitContext {
     pub signed_transaction_or_signed_delegate_action: SignedTransactionOrSignedDelegateAction,
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
+    pub on_sending_delegate_action_callback: Option<OnSendingDelegateActionCallback>,
 }
 
 #[derive(Debug, Clone)]
@@ -233,6 +238,8 @@ pub fn sign_transaction_with_secret_key(
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
         });
     }
 
@@ -261,6 +268,7 @@ pub fn sign_transaction_with_secret_key(
             .on_before_sending_transaction_callback,
         on_after_sending_transaction_callback: previous_context
             .on_after_sending_transaction_callback,
+        on_sending_delegate_action_callback: previous_context.on_sending_delegate_action_callback,
     })
 }
 
