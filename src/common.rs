@@ -485,7 +485,9 @@ pub fn validate_receiver_account_id(
             )
             .red()
         );
-        return ask_if_should_proceed();
+        return suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(|| {
+            ask_if_should_proceed()
+        });
     }
 
     let result = tokio::runtime::Runtime::new()
