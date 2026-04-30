@@ -459,11 +459,17 @@ pub fn is_receiver_on_wrong_network(
 }
 
 /// Returns `Ok(true)` if the transaction should proceed, `Ok(false)` if the user cancelled.
+#[tracing::instrument(name = "Validating the recipient account", skip_all)]
 pub fn validate_receiver_account_id(
     network_config: &crate::config::NetworkConfig,
     receiver_account_id: &near_primitives::types::AccountId,
     verbosity: crate::Verbosity,
 ) -> color_eyre::eyre::Result<bool> {
+    tracing::Span::current().pb_set_message(&format!(
+        "<{receiver_account_id}> on network <{}> ...",
+        network_config.network_name
+    ));
+    tracing::info!(target: "near_teach_me", "Validating the recipient account <{receiver_account_id}> on network <{}> ...", network_config.network_name);
     if let crate::Verbosity::Quiet = verbosity {
         return Ok(true);
     }
@@ -505,7 +511,9 @@ pub fn validate_receiver_account_id(
                 )
                 .red()
             );
-            ask_if_should_proceed()
+            suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(|| {
+                ask_if_should_proceed()
+            })
         }
         // Dont block the transaction if we can't reach the RPC
         Err(_) => Ok(true),
