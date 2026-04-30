@@ -471,9 +471,13 @@ pub fn validate_receiver_account_id(
         network_config.linkdrop_account_id.as_ref(),
         receiver_account_id,
     ) {
-        eprintln!(
-            "\nWarning: <{}> looks like it belongs to a different network than <{}>.",
-            receiver_account_id, network_config.network_name
+        tracing::warn!(
+            "{}",
+            format!(
+                "<{}> looks like it belongs to a different network than <{}>.",
+                receiver_account_id, network_config.network_name
+            )
+            .red()
         );
         return ask_if_should_proceed();
     }
@@ -493,9 +497,13 @@ pub fn validate_receiver_account_id(
                 near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
             ),
         )) => {
-            eprintln!(
-                "\nWarning: <{}> does not exist on <{}>.",
-                receiver_account_id, network_config.network_name
+            tracing::warn!(
+                "{}",
+                format!(
+                    "<{}> does not exist on <{}>.",
+                    receiver_account_id, network_config.network_name
+                )
+                .red()
             );
             ask_if_should_proceed()
         }
