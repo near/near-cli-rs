@@ -85,7 +85,7 @@ near-jsonrpc-primitives = "0.35"
 near-parameters = "0.35"
 near-socialdb-client = "0.15"
 
-near-ledger = { version = "0.9.3", optional = true }
+near-ledger = { version = "0.9.4", optional = true }
 
 near-gas = { version = "0.3", features = [
     "serde",
