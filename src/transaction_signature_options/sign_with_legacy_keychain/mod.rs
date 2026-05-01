@@ -43,6 +43,8 @@ pub struct SignLegacyKeychainContext {
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     pub(crate) on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    pub(crate) on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
 }
 
 impl SignLegacyKeychainContext {
@@ -94,14 +96,12 @@ impl SignLegacyKeychainContext {
                     .access_key_list_view()?
                     .keys
                     .iter()
-                    .filter(
-                        |access_key_info| match access_key_info.access_key.permission {
-                            near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                            near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                                ..
-                            } => false,
-                        },
-                    )
+                    .filter(|access_key_info| {
+                        matches!(
+                            access_key_info.access_key.permission,
+                            near_primitives::views::AccessKeyPermissionView::FullAccess
+                        )
+                    })
                     .map(|access_key_info| {
                         format!(
                             "{}.json",
@@ -213,6 +213,8 @@ impl SignLegacyKeychainContext {
                     .on_before_sending_transaction_callback,
                 on_after_sending_transaction_callback: previous_context
                     .on_after_sending_transaction_callback,
+                on_sending_delegate_action_callback: previous_context
+                    .on_sending_delegate_action_callback,
             });
         }
 
@@ -248,6 +250,8 @@ impl SignLegacyKeychainContext {
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
         })
     }
 }
@@ -261,6 +265,7 @@ impl From<SignLegacyKeychainContext> for super::SubmitContext {
                 .signed_transaction_or_signed_delegate_action,
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
         }
     }
 }

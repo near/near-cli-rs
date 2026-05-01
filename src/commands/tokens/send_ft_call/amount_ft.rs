@@ -314,5 +314,6 @@ fn build_action_context(
         ),
         on_after_sending_transaction_callback,
         sign_as_delegate_action: false,
+        on_sending_delegate_action_callback: None,
     })
 }

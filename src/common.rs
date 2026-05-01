@@ -10,6 +10,7 @@ use futures::{StreamExt, TryStreamExt};
 use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
+use serde_with::{base64::Base64, serde_as};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
 
@@ -742,9 +743,9 @@ pub fn get_key_pair_properties_from_seed_phrase(
     master_seed_phrase: String,
 ) -> color_eyre::eyre::Result<KeyPairProperties> {
     let master_seed = bip39::Mnemonic::parse(&master_seed_phrase)?.to_seed("");
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -771,13 +772,13 @@ pub fn get_key_pair_properties_from_seed_phrase(
 }
 
 pub fn get_public_key_from_seed_phrase(
-    seed_phrase_hd_path: slipped10::BIP32Path,
+    seed_phrase_hd_path: near_slip10::BIP32Path,
     master_seed_phrase: &str,
 ) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
     let master_seed = bip39::Mnemonic::parse(master_seed_phrase)?.to_seed("");
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &seed_phrase_hd_path,
     )
     .map_err(|err| {
@@ -807,9 +808,9 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
             (master_seed_phrase, mnemonic.to_seed(""))
         };
 
-    let derived_private_key = slipped10::derive_key_from_path(
+    let derived_private_key = near_slip10::derive_key_from_path(
         &master_seed,
-        slipped10::Curve::Ed25519,
+        near_slip10::Curve::Ed25519,
         &generate_keypair.seed_phrase_hd_path.clone().into(),
     )
     .map_err(|err| {
@@ -858,7 +859,11 @@ pub fn print_full_unsigned_transaction(
         "public_key:",
         &transaction.public_key()
     ));
-    info_str.push_str(&format!("\n{:<13} {}", "nonce:", &transaction.nonce()));
+    info_str.push_str(&format!(
+        "\n{:<13} {}",
+        "nonce:",
+        transaction.nonce().nonce()
+    ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "block_hash:",
@@ -1040,32 +1045,56 @@ pub fn print_unsigned_transaction(
             near_primitives::transaction::Action::DeterministicStateInit(
                 deterministic_init_action,
             ) => {
+                let deterministic_account_id =
+                    near_primitives::utils::derive_near_deterministic_account_id(
+                        &deterministic_init_action.state_init,
+                    );
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20}",
-                    "--", "initizalize deterministic account id:"
+                    "--",
+                    format!("create deterministic account <{deterministic_account_id}>:")
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<12}: {}",
+                    "", "deposit", deterministic_init_action.deposit
+                ));
+                let state_init_json =
+                    serde_json::to_string_pretty(&DeterministicAccountStateInitView::from(
+                        deterministic_init_action.state_init.clone(),
+                    ))
+                    .expect("DeterministicAccountStateInitView is always serializable");
+                let state_init_indented = state_init_json.replace('\n', &format!("\n{:33}", ""));
+
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<12}: {}",
+                    "", "state-init", state_init_indented
+                ));
+            }
+            near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "", "public key:", &transfer_to_gas_key.public_key
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "deposit:", deterministic_init_action.deposit
+                    "",
+                    "deposit:",
+                    transfer_to_gas_key.deposit.exact_amount_display()
                 ));
-                let state_init = match &deterministic_init_action.state_init {
-                    near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(deterministic_account_state_init_v1) => {
-                        let mut ret = "V1".to_string();
-                        ret.push_str(&format!("\n{:>31} {:<13} {:?}", "", "data", deterministic_account_state_init_v1.data));
-                        ret.push_str(&format!("\n{:>31} {:<13} {}", "", "code", match deterministic_account_state_init_v1.code {
-                            GlobalContractIdentifier::CodeHash(hash) => {
-                                format!("use global <{hash}> code to deploy from")
-                            }
-                            GlobalContractIdentifier::AccountId(ref account_id) => {
-                                format!("use global <{account_id}> code to deploy from")
-                            }
-                        }));
-
-                        ret
-                    },
-                };
-
-                info_str.push_str(&format!("\n{:>18} {:<13} {}", "", "state:", state_init));
+            }
+            near_primitives::transaction::Action::WithdrawFromGasKey(withdraw_from_gas_key) => {
+                info_str.push_str(&format!("\n{:>5} {:<20}", "--", "withdraw from gas key:"));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "", "public key:", &withdraw_from_gas_key.public_key
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<13} {}",
+                    "",
+                    "amount:",
+                    withdraw_from_gas_key.amount.exact_amount_display()
+                ));
             }
         }
     }
@@ -1174,6 +1203,25 @@ fn print_value_successful_transaction(
                 info_str.push_str(&format!(
                     "\nNew deterministic account <{}> has been successfully created.",
                     transaction_info.transaction.receiver_id,
+                ));
+            }
+            near_primitives::views::ActionView::TransferToGasKey {
+                public_key,
+                deposit,
+            } => {
+                info_str.push_str(&format!(
+                    "\n<{}> has transferred {} to gas key <{}> successfully.",
+                    transaction_info.transaction.signer_id,
+                    deposit.exact_amount_display(),
+                    public_key,
+                ));
+            }
+            near_primitives::views::ActionView::WithdrawFromGasKey { public_key, amount } => {
+                info_str.push_str(&format!(
+                    "\n<{}> has withdrawn {} from gas key <{}> successfully.",
+                    transaction_info.transaction.signer_id,
+                    amount.exact_amount_display(),
+                    public_key,
                 ));
             }
         }
@@ -1408,6 +1456,41 @@ pub fn convert_action_error_to_cli_result(
                 identifier
             ))
         }
+        near_primitives::errors::ActionErrorKind::GasKeyDoesNotExist {
+            account_id,
+            public_key,
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Gas key <{}> does not exist for account <{}>.",
+            public_key,
+            account_id
+        )),
+        near_primitives::errors::ActionErrorKind::InsufficientGasKeyBalance {
+            account_id,
+            public_key,
+            balance,
+            ..
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Gas key <{}> for account <{}> has insufficient balance ({}).",
+            public_key,
+            account_id,
+            balance.exact_amount_display()
+        )),
+        near_primitives::errors::ActionErrorKind::GasKeyBalanceTooHigh {
+            account_id,
+            public_key,
+            balance,
+        } => {
+            let key_info = match public_key {
+                Some(pk) => format!("gas key <{pk}>"),
+                None => "gas keys".to_string(),
+            };
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Balance ({}) of {} for account <{}> is too high to perform this action.",
+                balance.exact_amount_display(),
+                key_info,
+                account_id
+            ))
+        }
     }
 }
 
@@ -1538,6 +1621,15 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 near_primitives::errors::ActionsValidationError::DeterministicStateInitValueLengthExceeded { length, limit } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: DeterministicStateInit contains value of length {} but at most {} is allowed.", length, limit))
                 },
+                near_primitives::errors::ActionsValidationError::GasKeyInvalidNumNonces { requested_nonces, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas key requested invalid number of nonces: {} (must be between 1 and {}).", requested_nonces, limit))
+                },
+                near_primitives::errors::ActionsValidationError::AddGasKeyWithNonZeroBalance { balance } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Adding a gas key with non-zero balance is not allowed: balance = {}.", balance.exact_amount_display()))
+                },
+                near_primitives::errors::ActionsValidationError::GasKeyFunctionCallAllowanceNotAllowed => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas keys with FunctionCall permission cannot have an allowance set."))
+                },
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
@@ -1556,6 +1648,23 @@ pub fn convert_invalid_tx_error_to_cli_result(
         },
         near_primitives::errors::InvalidTxError::ShardCongested { shard_id, congestion_level } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is too congested ({congestion_level:.2}/1.00) and can't accept new transaction")),
         near_primitives::errors::InvalidTxError::ShardStuck { shard_id, missed_chunks } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The shard ({shard_id}) is {missed_chunks} blocks behind and can't accept new transaction until it will be in the sync")),
+        near_primitives::errors::InvalidTxError::InvalidNonceIndex { tx_nonce_index, num_nonces } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid nonce_index {:?} for key with {} nonces.", tx_nonce_index, num_nonces))
+        }
+        near_primitives::errors::InvalidTxError::NotEnoughGasKeyBalance { signer_id, balance, cost } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas key for <{}> does not have enough balance ({}) for gas cost ({}).",
+                signer_id,
+                balance.exact_amount_display(),
+                cost.exact_amount_display()
+            ))
+        }
+        near_primitives::errors::InvalidTxError::NotEnoughBalanceForDeposit { signer_id, balance, cost, .. } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Sender <{}> does not have enough balance ({}) to cover deposit cost ({}).",
+                signer_id,
+                balance.exact_amount_display(),
+                cost.exact_amount_display()
+            ))
+        }
     }
 }
 
@@ -2084,7 +2193,7 @@ pub fn get_validator_list(
             .buffer_unordered(concurrency)
             .try_collect::<Vec<_>>(),
     )?;
-    validator_list.sort_by(|a, b| b.stake.cmp(&a.stake));
+    validator_list.sort_by_key(|b| std::cmp::Reverse(b.stake));
     Ok(validator_list)
 }
 
@@ -2527,6 +2636,32 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
                         "only do {method_names:?} function calls on {receiver_id} {allowance_message}"
                     )
                 }
+            }
+            AccessKeyPermissionView::GasKeyFunctionCall {
+                balance,
+                num_nonces,
+                allowance: _,
+                receiver_id,
+                method_names,
+            } => {
+                let methods = if method_names.is_empty() {
+                    "any methods".to_string()
+                } else {
+                    format!("{method_names:?}")
+                };
+                format!(
+                    "gas key for function calls on {receiver_id} ({methods}), balance: {}, nonces: {num_nonces}",
+                    balance.exact_amount_display()
+                )
+            }
+            AccessKeyPermissionView::GasKeyFullAccess {
+                balance,
+                num_nonces,
+            } => {
+                format!(
+                    "gas key with full access, balance: {}, nonces: {num_nonces}",
+                    balance.exact_amount_display()
+                )
             }
         };
 
@@ -3409,4 +3544,76 @@ pub fn save_cli_command(cli_cmd_str: &str) {
     if let Err(err) = writeln!(tmp_file, "{cli_cmd_str}") {
         eprintln!("Failed to store a cli command in a temporary file: {err}");
     }
+}
+
+/// Parses a JSON object with base64-encoded keys and values into a `BTreeMap<Vec<u8>, Vec<u8>>`.
+///
+/// Example input: `{"AAEC": "AwQF"}` (standard base64, padding optional)
+/// Empty state: `{}`
+pub fn parse_base64_kv_map(
+    input: &str,
+) -> color_eyre::eyre::Result<std::collections::BTreeMap<Vec<u8>, Vec<u8>>> {
+    #[serde_as]
+    #[derive(serde::Deserialize)]
+    struct Data(
+        #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+        std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+    );
+
+    let data: Data = serde_json::from_str(input)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to parse base64 KV map: {e}"))?;
+    Ok(data.0)
+}
+
+// NOTE: workaround for not yet released version of near-primitives that accounts for proper
+// serialization of GlobalContractIdentifier
+// ref: https://github.com/near/nearcore/commit/1bcb01fb09ada9243182d061b8b2e2ad7bf544c3
+#[serde_as]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct DeterministicAccountStateInitV1View {
+    code: near_primitives::views::GlobalContractIdentifierView,
+    #[serde_as(as = "std::collections::BTreeMap<Base64, Base64>")]
+    data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) enum DeterministicAccountStateInitView {
+    V1(DeterministicAccountStateInitV1View),
+}
+
+impl From<near_primitives::deterministic_account_id::DeterministicAccountStateInit>
+    for DeterministicAccountStateInitView
+{
+    fn from(
+        near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(v1): near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+    ) -> Self {
+        Self::V1(DeterministicAccountStateInitV1View {
+            code: v1.code.into(),
+            data: v1.data,
+        })
+    }
+}
+
+impl From<DeterministicAccountStateInitView>
+    for near_primitives::deterministic_account_id::DeterministicAccountStateInit
+{
+    fn from(DeterministicAccountStateInitView::V1(v1): DeterministicAccountStateInitView) -> Self {
+        Self::V1(
+            near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
+                code: v1.code.into(),
+                data: v1.data,
+            },
+        )
+    }
+}
+
+/// Deserializes a `DeterministicAccountStateInit` from borsh-serialized bytes.
+pub fn parse_borsh_base64_state_init(
+    bytes: &[u8],
+) -> color_eyre::eyre::Result<
+    near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+> {
+    use borsh::BorshDeserialize;
+    near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(bytes)
+        .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
 }

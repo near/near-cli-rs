@@ -22,6 +22,8 @@ pub struct NetworkForTransactionArgsContext {
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
     on_after_sending_transaction_callback:
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
+    on_sending_delegate_action_callback:
+        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     sign_as_delegate_action: bool,
 }
 
@@ -54,6 +56,8 @@ impl NetworkForTransactionArgsContext {
                 .on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
             sign_as_delegate_action,
         })
     }
@@ -71,6 +75,7 @@ impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionCont
             ),
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
             sign_as_delegate_action: item.sign_as_delegate_action,
         }
     }

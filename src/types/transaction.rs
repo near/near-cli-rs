@@ -16,7 +16,7 @@ impl From<near_primitives::transaction::Transaction> for TransactionAsBase64 {
         Self {
             inner: near_primitives::transaction::TransactionV0 {
                 public_key: value.public_key().clone(),
-                nonce: value.nonce(),
+                nonce: value.nonce().nonce(),
                 signer_id: value.signer_id().clone(),
                 receiver_id: value.receiver_id().clone(),
                 block_hash: *value.block_hash(),

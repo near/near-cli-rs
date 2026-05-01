@@ -73,6 +73,17 @@ impl SendContext {
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
             ) if previous_context
+                .on_sending_delegate_action_callback
+                .is_some() =>
+            {
+                let callback = previous_context
+                    .on_sending_delegate_action_callback
+                    .unwrap();
+                callback(signed_delegate_action, &previous_context.network_config)?;
+            }
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
+                signed_delegate_action,
+            ) if previous_context
                 .network_config
                 .meta_transaction_relayer_url
                 .is_some() =>

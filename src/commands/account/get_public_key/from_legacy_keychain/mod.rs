@@ -42,35 +42,31 @@ impl PublicKeyFromLegacyKeychainContext {
                         }
                         if signer_keychain_folder.exists() {
                             let full_access_key_filenames = network_config
-                            .json_rpc_client()
-                            .blocking_call_view_access_key_list(
-                                &account_id.clone().into(),
-                                near_primitives::types::Finality::Final.into(),
-                            )
-                            .wrap_err_with(|| {
-                                format!(
-                                    "Failed to fetch access KeyList for {account_id}"
+                                .json_rpc_client()
+                                .blocking_call_view_access_key_list(
+                                    &account_id.clone().into(),
+                                    near_primitives::types::Finality::Final.into(),
                                 )
-                            })?
-                            .access_key_list_view()?
-                            .keys
-                            .iter()
-                            .filter(
-                                |access_key_info| match access_key_info.access_key.permission {
-                                    near_primitives::views::AccessKeyPermissionView::FullAccess => true,
-                                    near_primitives::views::AccessKeyPermissionView::FunctionCall {
-                                        ..
-                                    } => false,
-                                },
-                            )
-                            .map(|access_key_info| {
-                                format!(
-                                    "{}.json",
-                                    access_key_info.public_key.to_string().replace(":", "_")
-                                )
-                                .into()
-                            })
-                            .collect::<std::collections::HashSet<std::ffi::OsString>>();
+                                .wrap_err_with(|| {
+                                    format!("Failed to fetch access KeyList for {account_id}")
+                                })?
+                                .access_key_list_view()?
+                                .keys
+                                .iter()
+                                .filter(|access_key_info| {
+                                    matches!(
+                                        access_key_info.access_key.permission,
+                                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                                    )
+                                })
+                                .map(|access_key_info| {
+                                    format!(
+                                        "{}.json",
+                                        access_key_info.public_key.to_string().replace(":", "_")
+                                    )
+                                    .into()
+                                })
+                                .collect::<std::collections::HashSet<std::ffi::OsString>>();
 
                             signer_keychain_folder
                             .read_dir()

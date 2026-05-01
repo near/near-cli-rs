@@ -210,7 +210,7 @@ fn sign_transaction_with_usb(
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via USB. Follow the instructions on the ledger ...");
 
     let network_config = previous_context.network_config.clone();
-    let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
+    let seed_phrase_hd_path_raw: near_slip10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
@@ -269,7 +269,7 @@ fn sign_transaction_with_usb(
             sender_id: unsigned_transaction.signer_id().clone(),
             receiver_id: unsigned_transaction.receiver_id().clone(),
             actions: vec![],
-            nonce: unsigned_transaction.nonce(),
+            nonce: unsigned_transaction.nonce().nonce(),
             max_block_height,
             public_key: unsigned_transaction.public_key().clone(),
         };
@@ -313,6 +313,9 @@ fn sign_transaction_with_usb(
                 .clone(),
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback
+                .clone(),
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback
                 .clone(),
         }));
     }
@@ -365,6 +368,9 @@ fn sign_transaction_with_usb(
             .clone(),
         on_after_sending_transaction_callback: previous_context
             .on_after_sending_transaction_callback
+            .clone(),
+        on_sending_delegate_action_callback: previous_context
+            .on_sending_delegate_action_callback
             .clone(),
     }))
 }
@@ -473,7 +479,7 @@ fn sign_transaction_with_ble(
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via Bluetooth. Follow the instructions on the ledger ...");
 
     let network_config = previous_context.network_config.clone();
-    let seed_phrase_hd_path_raw: slipped10::BIP32Path = seed_phrase_hd_path.clone().into();
+    let seed_phrase_hd_path_raw: near_slip10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
     let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
@@ -532,7 +538,7 @@ fn sign_transaction_with_ble(
             sender_id: unsigned_transaction.signer_id().clone(),
             receiver_id: unsigned_transaction.receiver_id().clone(),
             actions: vec![],
-            nonce: unsigned_transaction.nonce(),
+            nonce: unsigned_transaction.nonce().nonce(),
             max_block_height,
             public_key: unsigned_transaction.public_key().clone(),
         };
@@ -576,6 +582,9 @@ fn sign_transaction_with_ble(
                 .clone(),
             on_after_sending_transaction_callback: previous_context
                 .on_after_sending_transaction_callback
+                .clone(),
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback
                 .clone(),
         }));
     }
@@ -628,6 +637,9 @@ fn sign_transaction_with_ble(
             .clone(),
         on_after_sending_transaction_callback: previous_context
             .on_after_sending_transaction_callback
+            .clone(),
+        on_sending_delegate_action_callback: previous_context
+            .on_sending_delegate_action_callback
             .clone(),
     }))
 }

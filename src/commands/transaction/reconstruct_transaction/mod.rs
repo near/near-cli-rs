@@ -21,7 +21,9 @@ impl TransactionInfoContext {
         previous_context: crate::GlobalContext,
         scope: &<TransactionInfo as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        use super::construct_transaction::{CliConstructTransaction, add_action_1, skip_action};
+        use super::construct_transaction::{
+            CliConstructTransaction, CliDirectReceiver, CliReceiverMode, add_action_1, skip_action,
+        };
         use super::{CliTransactionActions, CliTransactionCommands};
 
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
@@ -78,10 +80,14 @@ impl TransactionInfoContext {
                                     sender_account_id: Some(
                                         prepopulated_transaction.signer_id.into(),
                                     ),
-                                    receiver_account_id: Some(
-                                        prepopulated_transaction.receiver_id.clone().into(),
-                                    ),
-                                    next_actions: None,
+                                    receiver: Some(CliReceiverMode::ReceiverId(
+                                        CliDirectReceiver {
+                                            receiver_account_id: Some(
+                                                prepopulated_transaction.receiver_id.clone().into(),
+                                            ),
+                                            next_actions: None,
+                                        },
+                                    )),
                                 },
                             )),
                         });
@@ -340,6 +346,10 @@ fn action_transformation(
             // TODO: impl
             Err(color_eyre::eyre::eyre!("Deterministic state init is not yet implemented"))
         }
+        Action::TransferToGasKey(_) | Action::WithdrawFromGasKey(_) => {
+            // TODO: impl
+            Err(color_eyre::eyre::eyre!("Gas key actions are not yet supported in transaction reconstruction"))
+        }
     }
 }
 
@@ -394,6 +404,13 @@ fn get_access_key_permission(
                 },
             ),
         )),
+        near_primitives::account::AccessKeyPermission::GasKeyFunctionCall(_, _)
+        | near_primitives::account::AccessKeyPermission::GasKeyFullAccess(_) => {
+            // TODO: impl
+            Err(color_eyre::eyre::eyre!(
+                "Gas key permissions are not yet supported in transaction reconstruction"
+            ))
+        }
     }
 }
 
