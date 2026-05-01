@@ -224,6 +224,7 @@ fn build_action_context(
                     network_config,
                     &receiver_account_id,
                     verbosity,
+                    previous_context.global_context.offline,
                 )? {
                     return Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),

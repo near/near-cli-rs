@@ -68,6 +68,7 @@ impl From<SendNftCommandContext> for crate::commands::ActionContext {
                         network_config,
                         &receiver_account_id,
                         verbosity,
+                        item.global_context.offline,
                     )? {
                         return Ok(crate::commands::PrepopulatedTransaction {
                             signer_id: signer_account_id.clone(),
