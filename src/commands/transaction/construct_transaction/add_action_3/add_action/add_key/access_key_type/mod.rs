@@ -5,10 +5,10 @@ use inquire::{CustomType, Select, Text};
 #[derive(Debug, Clone)]
 pub struct AccessKeyPermissionContext {
     pub global_context: crate::GlobalContext,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub receiver_account_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
-    pub access_key_permission: near_primitives::account::AccessKeyPermission,
+    pub signer_account_id: near_kit::AccountId,
+    pub receiver_account_id: near_kit::AccountId,
+    pub actions: Vec<near_kit::Action>,
+    pub access_key_permission: near_kit::AccessKeyPermission,
     pub sign_as_delegate_action: bool,
 }
 
@@ -33,7 +33,7 @@ impl FullAccessTypeContext {
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
             actions: previous_context.actions,
-            access_key_permission: near_primitives::account::AccessKeyPermission::FullAccess,
+            access_key_permission: near_kit::AccessKeyPermission::FullAccess,
             sign_as_delegate_action: previous_context.sign_as_delegate_action,
         }))
     }
@@ -70,13 +70,12 @@ impl FunctionCallTypeContext {
         previous_context: super::super::super::super::ConstructTransactionContext,
         scope: &<FunctionCallType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let access_key_permission = near_primitives::account::AccessKeyPermission::FunctionCall(
-            near_primitives::account::FunctionCallPermission {
+        let access_key_permission =
+            near_kit::AccessKeyPermission::FunctionCall(near_kit::FunctionCallPermission {
                 allowance: scope.allowance.optional_near_token().map(Into::into),
-                receiver_id: scope.contract_account_id.to_string(),
+                receiver_id: scope.contract_account_id.clone().into(),
                 method_names: scope.function_names.clone().into(),
-            },
-        );
+            });
         Ok(Self(AccessKeyPermissionContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,

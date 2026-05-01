@@ -55,17 +55,11 @@ pub enum TopLevelCommand {
 }
 
 pub type OnBeforeSigningCallback = std::sync::Arc<
-    dyn Fn(
-        &mut near_primitives::transaction::TransactionV0,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&mut near_kit::Transaction, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 pub type OnAfterSigningCallback = std::sync::Arc<
-    dyn Fn(
-        &mut near_primitives::transaction::SignedTransaction,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&mut near_kit::SignedTransaction, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 pub type GetPrepopulatedTransactionAfterGettingNetworkCallback = std::sync::Arc<
@@ -74,13 +68,13 @@ pub type GetPrepopulatedTransactionAfterGettingNetworkCallback = std::sync::Arc<
 
 #[derive(Debug, Clone)]
 pub struct PrepopulatedTransaction {
-    pub signer_id: near_primitives::types::AccountId,
-    pub receiver_id: near_primitives::types::AccountId,
-    pub actions: Vec<near_primitives::transaction::Action>,
+    pub signer_id: near_kit::AccountId,
+    pub receiver_id: near_kit::AccountId,
+    pub actions: Vec<near_kit::Action>,
 }
 
-impl From<near_primitives::transaction::TransactionV0> for PrepopulatedTransaction {
-    fn from(value: near_primitives::transaction::TransactionV0) -> Self {
+impl From<near_kit::Transaction> for PrepopulatedTransaction {
+    fn from(value: near_kit::Transaction) -> Self {
         Self {
             signer_id: value.signer_id,
             receiver_id: value.receiver_id,
@@ -89,20 +83,10 @@ impl From<near_primitives::transaction::TransactionV0> for PrepopulatedTransacti
     }
 }
 
-impl From<near_primitives::transaction::Transaction> for PrepopulatedTransaction {
-    fn from(value: near_primitives::transaction::Transaction) -> Self {
-        Self {
-            signer_id: value.signer_id().clone(),
-            receiver_id: value.receiver_id().clone(),
-            actions: value.take_actions(),
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct ActionContext {
     pub global_context: crate::GlobalContext,
-    pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
+    pub interacting_with_account_ids: Vec<near_kit::AccountId>,
     pub get_prepopulated_transaction_after_getting_network_callback:
         GetPrepopulatedTransactionAfterGettingNetworkCallback,
     pub on_before_signing_callback: OnBeforeSigningCallback,

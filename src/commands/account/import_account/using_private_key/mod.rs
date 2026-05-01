@@ -17,7 +17,7 @@ impl LoginFromPrivateKeyContext {
         previous_context: crate::GlobalContext,
         scope: &<LoginFromPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let private_key: near_crypto::SecretKey = scope.private_key.clone().into();
+        let private_key: near_kit::SecretKey = scope.private_key.clone().into();
         let public_key = private_key.public_key();
         let key_pair_properties = KeyPairProperties {
             public_key: public_key.clone(),
@@ -59,6 +59,6 @@ impl From<LoginFromPrivateKeyContext> for crate::network::NetworkContext {
 
 #[derive(Debug, serde::Serialize)]
 struct KeyPairProperties {
-    public_key: near_crypto::PublicKey,
-    private_key: near_crypto::SecretKey,
+    public_key: near_kit::PublicKey,
+    private_key: near_kit::SecretKey,
 }

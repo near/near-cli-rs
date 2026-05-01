@@ -1,7 +1,10 @@
+use base64::Engine as _;
 use color_eyre::{
     eyre::{Context, ContextCompat},
     owo_colors::OwoColorize,
 };
+
+use crate::common::RpcResultExt;
 
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
@@ -12,7 +15,6 @@ use near_verify_rs::types::{
     whitelist::{Whitelist, WhitelistEntry},
 };
 
-use crate::common::JsonRpcClientExt;
 use crate::types::contract_properties::ContractProperties;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -110,7 +112,7 @@ impl ContractAccountIdContext {
         scope: &<ContractAccountId as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
                 let contract_code_from_contract_account_id = get_contract_code_from_contract_account_id(&account_id, network_config, block_reference)?;
@@ -176,20 +178,16 @@ fn verify_contract(
     skip_all
 )]
 fn get_contract_properties_from_repository(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
 ) -> color_eyre::eyre::Result<ContractProperties> {
     tracing::info!(target: "near_teach_me", "Getting the contract properties from the repository ...");
-    let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
-        super::inspect::get_contract_source_metadata(
-            &network_config.json_rpc_client(),
-            block_reference,
-            account_id,
-        ),
+    let contract_source_metadata = crate::common::block_on(
+        super::inspect::get_contract_source_metadata(network_config, block_reference, account_id),
     )?;
 
     get_contract_properties_from_docker_build(
@@ -283,9 +281,9 @@ fn checkout_remote_repo(
 
 #[tracing::instrument(name = "Getting the contract code from", skip_all)]
 fn get_contract_code_from_contract_account_id(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
     tracing::info!(target: "near_teach_me", "Getting the contract code from {account_id} ...");
@@ -295,28 +293,36 @@ fn get_contract_code_from_contract_account_id(
             "I am making HTTP call to NEAR JSON RPC to get the contract code (Wasm binary) deployed to `{}` account, learn more https://docs.near.org/api/rpc/contracts#view-contract-code",
             account_id
     );
-    let view_code_response = network_config
-        .json_rpc_client()
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::ViewCode {
-                account_id: account_id.clone(),
-            },
-        })
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewCode for <{}> on network <{}>",
-                &account_id, network_config.network_name
-            )
-        })?;
+    let mut params = serde_json::json!({
+        "request_type": "view_code",
+        "account_id": account_id.to_string(),
+    });
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params()
+        && let serde_json::Value::Object(map) = &mut params
+    {
+        map.extend(block_params);
+    }
+    let view_code_json = crate::common::block_on(
+        network_config
+            .client()
+            .rpc()
+            .call::<_, serde_json::Value>("query", params),
+    )
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query ViewCode for <{}> on network <{}>",
+            &account_id, network_config.network_name
+        )
+    })?;
 
-    let contract_code_view =
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-            view_code_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg("Error call result".to_string()));
-        };
-    Ok(contract_code_view.code)
+    let code_base64 = view_code_json
+        .get("code_base64")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| {
+            color_eyre::Report::msg("Error: missing code_base64 in view_code response")
+        })?;
+    base64::engine::general_purpose::STANDARD
+        .decode(code_base64)
+        .map_err(|e| color_eyre::Report::msg(format!("Error decoding code_base64: {e}")))
 }

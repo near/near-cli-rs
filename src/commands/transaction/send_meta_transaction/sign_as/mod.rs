@@ -23,12 +23,12 @@ impl RelayerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let signer_id: near_primitives::types::AccountId =
+                let signer_id: near_kit::AccountId =
                     scope.relayer_account_id.clone().into();
                 let signed_delegate_action = previous_context.signed_delegate_action.clone();
 
                 move |_network_config| {
-                    let actions = vec![signed_delegate_action.clone().into()];
+                    let actions = vec![near_kit::Action::delegate(signed_delegate_action.clone())];
 
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_id.clone(),
@@ -41,10 +41,9 @@ impl RelayerAccountIdContext {
         let on_before_signing_callback: crate::commands::OnBeforeSigningCallback =
             std::sync::Arc::new({
                 move |prepopulated_unsigned_transaction, _network_config| {
-                    prepopulated_unsigned_transaction.actions =
-                        vec![near_primitives::transaction::Action::Delegate(Box::new(
-                            previous_context.signed_delegate_action.clone(),
-                        ))];
+                    prepopulated_unsigned_transaction.actions = vec![near_kit::Action::delegate(
+                        previous_context.signed_delegate_action.clone(),
+                    )];
                     Ok(())
                 }
             });

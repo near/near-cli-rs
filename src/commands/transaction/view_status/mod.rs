@@ -1,7 +1,4 @@
-use color_eyre::eyre::Context;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
-
-use crate::common::JsonRpcClientExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -24,7 +21,7 @@ impl TransactionInfoContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let tx_hash: near_primitives::hash::CryptoHash = scope.transaction_hash.into();
+                let tx_hash: near_kit::CryptoHash = scope.transaction_hash.into();
 
                 move |network_config| {
                     let query_view_transaction_status =
@@ -33,9 +30,13 @@ impl TransactionInfoContext {
                         previous_context.verbosity
                     {
                         eprintln!("Transaction status:");
-                        println!("{query_view_transaction_status:#?}");
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&query_view_transaction_status.json)
+                                .unwrap_or_default()
+                        );
                     } else {
-                        println!("{query_view_transaction_status:?}");
+                        println!("{}", query_view_transaction_status.json);
                     }
                     Ok(())
                 }
@@ -55,29 +56,58 @@ impl From<TransactionInfoContext> for crate::network::NetworkContext {
     }
 }
 
+/// Response from get_transaction_info, containing the raw JSON from EXPERIMENTAL_tx_status.
+///
+/// Callers that need structured access (reconstruct_transaction) should
+/// parse `final_execution_outcome` from the JSON.
+#[derive(Debug)]
+pub struct TransactionStatusResponse {
+    pub json: serde_json::Value,
+}
+
+impl TransactionStatusResponse {
+    /// Extract the final execution outcome.
+    pub fn final_execution_outcome(&self) -> Option<near_kit::FinalExecutionOutcome> {
+        self.json
+            .get("final_execution_outcome")
+            .and_then(|v| if v.is_null() { None } else { Some(v) })
+            .and_then(|v| serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok())
+    }
+}
+
+impl std::fmt::Display for TransactionStatusResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#}", self.json)
+    }
+}
+
 #[tracing::instrument(name = "Getting information about transaction", skip_all)]
 pub fn get_transaction_info(
     network_config: &crate::config::NetworkConfig,
-    tx_hash: near_primitives::hash::CryptoHash,
-) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::tx::RpcTransactionResponse> {
+    tx_hash: near_kit::CryptoHash,
+) -> color_eyre::eyre::Result<TransactionStatusResponse> {
     tracing::Span::current().pb_set_message(&format!("{tx_hash} ..."));
     tracing::info!(target: "near_teach_me", "Getting information about transaction {tx_hash} ...");
-    network_config
-        .json_rpc_client()
-        .blocking_call(
-            near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
-                transaction_info:
-                    near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
-                        tx_hash,
-                        sender_account_id: "near".parse::<near_primitives::types::AccountId>()?,
-                    },
-                wait_until: near_primitives::views::TxExecutionStatus::Final,
-            },
+
+    let params = serde_json::json!({
+        "tx_hash": tx_hash.to_string(),
+        "sender_account_id": "near",
+        "wait_until": near_kit::TxExecutionStatus::Final.as_str(),
+    });
+
+    let json: serde_json::Value = crate::common::block_on(
+        network_config
+            .client()
+            .rpc()
+            .call("EXPERIMENTAL_tx_status", params),
+    )
+    .map_err(|err| {
+        color_eyre::eyre::eyre!(
+            "Failed to fetch query for view transaction on network <{}>: {}",
+            network_config.network_name,
+            err
         )
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query for view transaction on network <{}>",
-                network_config.network_name
-            )
-        })
+    })?;
+
+    Ok(TransactionStatusResponse { json })
 }

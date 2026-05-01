@@ -1,7 +1,6 @@
 use color_eyre::eyre::Context;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -24,24 +23,23 @@ impl ViewListKeysContext {
         scope: &<ViewListKeys as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
-                let access_key_list = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_access_key_list(
+                let nk_list = block_on(
+                    network_config.client().rpc().view_access_key_list(
                         &account_id,
                         block_reference.clone(),
+                    ),
+                )
+                .into_eyre()
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to fetch query AccessKeyList for {}",
+                        &account_id
                     )
-                    .wrap_err_with(|| {
-                        format!(
-                            "Failed to fetch query AccessKeyList for {}",
-                            &account_id
-                        )
-                    })?
-                    .access_key_list_view()?;
-
-                crate::common::display_access_key_list(&access_key_list.keys);
+                })?;
+                crate::common::display_access_key_list(&nk_list.keys);
                 Ok(())
             }
         });

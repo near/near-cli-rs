@@ -52,12 +52,12 @@ impl ManuallyContext {
         previous_context: super::super::UpdateSocialProfileContext,
         scope: &<Manually as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let profile = near_socialdb_client::types::socialdb_types::Profile {
+        let profile = crate::types::socialdb::Profile {
             name: scope.name.clone(),
             image: if scope.image_url.is_none() && scope.image_ipfs_cid.is_none() {
                 None
             } else {
-                Some(near_socialdb_client::types::socialdb_types::ProfileImage {
+                Some(crate::types::socialdb::ProfileImage {
                     url: scope.image_url.clone().map(|url| url.into()),
                     ipfs_cid: scope.image_ipfs_cid.clone(),
                 })
@@ -67,7 +67,7 @@ impl ManuallyContext {
             {
                 None
             } else {
-                Some(near_socialdb_client::types::socialdb_types::ProfileImage {
+                Some(crate::types::socialdb::ProfileImage {
                     url: scope.background_image_url.clone().map(|url| url.into()),
                     ipfs_cid: scope.background_image_ipfs_cid.clone(),
                 })

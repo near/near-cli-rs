@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use futures::{StreamExt, TryStreamExt};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt};
+use crate::common::{CallResultExt, RpcResultExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -25,7 +25,7 @@ impl ViewAccountSummaryContext {
         scope: &<ViewAccountSummary as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.account_id.clone().into();
 
             move |network_config, block_reference| {
                 get_account_inquiry(&account_id, network_config, block_reference)
@@ -58,49 +58,40 @@ impl ViewAccountSummary {
 
 #[tracing::instrument(name = "Receiving an inquiry about your account ...", skip_all)]
 pub fn get_account_inquiry(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Receiving an inquiry about your account ...");
 
-    let json_rpc_client = network_config.json_rpc_client();
-
-    let rpc_query_response = json_rpc_client
-        .blocking_call_view_account(account_id, block_reference.clone())
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewAccount for account <{}> on network <{}>",
-                account_id, network_config.network_name
-            )
-        })?;
-    let account_view = rpc_query_response.account_view()?;
-
-    let access_key_list = network_config
-        .json_rpc_client()
-        .blocking_call_view_access_key_list(account_id, block_reference.clone())
-        .map_err(|err| {
-            tracing::warn!(
-                "Failed to fetch query ViewAccessKeyList for account <{}> on network <{}>: {:#}",
-                account_id,
-                network_config.network_name,
-                err
-            );
-        })
-        .ok()
-        .and_then(|query_response| {
-            query_response
-                .access_key_list_view()
-                .map_err(|err| {
-                    tracing::warn!(
-                        "Failed to parse ViewAccessKeyList for account <{}> on network <{}>: {:#}",
-                        account_id,
-                        network_config.network_name,
-                        err
-                    );
-                })
-                .ok()
-        });
+    let nk_account_view = crate::common::block_on(
+        network_config
+            .client()
+            .rpc()
+            .view_account(account_id, block_reference.clone()),
+    )
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query ViewAccount for account <{}> on network <{}>",
+            account_id, network_config.network_name
+        )
+    })?;
+    let access_key_list = crate::common::block_on(
+        network_config
+            .client()
+            .rpc()
+            .view_access_key_list(account_id, block_reference.clone()),
+    )
+    .map_err(|err| {
+        tracing::warn!(
+            "Failed to fetch query ViewAccessKeyList for account <{}> on network <{}>: {:#}",
+            account_id,
+            network_config.network_name,
+            err
+        );
+    })
+    .ok();
 
     let historically_delegated_validators =
         network_config
@@ -116,12 +107,16 @@ pub fn get_account_inquiry(
         &network_config.staking_pools_factory_account_id
     {
         crate::common::fetch_currently_active_staking_pools(
-            &json_rpc_client,
+            network_config,
             staking_pools_factory_account_id,
         )
     } else {
         Ok(Default::default())
     };
+
+    let client = network_config.client();
+    let rpc = client.rpc();
+    let nk_block_ref = block_reference.clone();
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -133,7 +128,7 @@ pub fn get_account_inquiry(
     let concurrency = 10; // Process 10 requests concurrently within each batch
 
     let delegated_stake: color_eyre::Result<
-        std::collections::BTreeMap<near_primitives::types::AccountId, near_token::NearToken>,
+        std::collections::BTreeMap<near_kit::AccountId, near_token::NearToken>,
     > = match pools_to_query {
         Ok(validators) => {
             let mut all_results = Ok(std::collections::BTreeMap::new());
@@ -156,8 +151,8 @@ pub fn get_account_inquiry(
                     futures::stream::iter(validator_batch)
                         .map(|validator_account_id| async {
                             let balance = get_delegated_staked_balance(
-                                &json_rpc_client,
-                                block_reference,
+                                rpc,
+                                &nk_block_ref,
                                 &validator_account_id,
                                 account_id,
                             )
@@ -197,11 +192,9 @@ pub fn get_account_inquiry(
         .flatten();
 
     crate::common::display_account_info(
-        &rpc_query_response.block_hash,
-        &rpc_query_response.block_height,
         account_id,
         delegated_stake,
-        &account_view,
+        &nk_account_view,
         access_key_list.as_ref(),
         optional_account_profile.as_ref(),
     );
@@ -214,72 +207,66 @@ pub fn get_account_inquiry(
     skip_all
 )]
 async fn get_delegated_staked_balance(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    block_reference: &near_primitives::types::BlockReference,
-    staking_pool_account_id: &near_primitives::types::AccountId,
-    account_id: &near_primitives::types::AccountId,
+    rpc: &near_kit::RpcClient,
+    block_reference: &near_kit::BlockReference,
+    staking_pool_account_id: &near_kit::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<near_token::NearToken> {
     tracing::Span::current().pb_set_message(staking_pool_account_id.as_str());
     tracing::info!(target: "near_teach_me", "Receiving the delegated staked balance from validator {staking_pool_account_id}");
-    let account_staked_balance_response = json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: staking_pool_account_id.clone(),
-                method_name: "get_account_staked_balance".to_string(),
-                args: near_primitives::types::FunctionArgs::from(serde_json::to_vec(
-                    &serde_json::json!({
-                        "account_id": account_id,
-                    }),
-                )?),
-            },
-        })
-        .await;
-    match account_staked_balance_response {
-        Ok(response) => Ok(near_token::NearToken::from_yoctonear(
-            response
-                .call_result()?
-                .parse_result_from_json::<String>()
+    let args = serde_json::to_vec(&serde_json::json!({
+        "account_id": account_id,
+    }))?;
+    match rpc
+        .view_function(
+            staking_pool_account_id,
+            "get_account_staked_balance",
+            &args,
+            block_reference.clone(),
+        )
+        .await
+    {
+        Ok(result) => Ok(near_token::NearToken::from_yoctonear(
+            result
+                .json::<String>()
                 .wrap_err("Failed to parse return value of view function call for String.")?
                 .parse::<u128>()?,
         )),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => Ok(near_token::NearToken::from_yoctonear(0)),
+        Err(
+            near_kit::RpcError::ContractNotDeployed(_)
+            | near_kit::RpcError::ContractExecution { .. },
+        ) => Ok(near_token::NearToken::from_yoctonear(0)),
         Err(err) => Err(err.into()),
     }
 }
 
 #[tracing::instrument(name = "Getting an account profile ...", skip_all)]
 fn get_account_profile(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
-) -> color_eyre::Result<Option<near_socialdb_client::types::socialdb_types::AccountProfile>> {
+    block_reference: &near_kit::BlockReference,
+) -> color_eyre::Result<Option<crate::types::socialdb::AccountProfile>> {
     tracing::info!(target: "near_teach_me", "Getting an account profile ...");
     if let Ok(contract_account_id) = network_config.get_near_social_account_id_from_network() {
-        let mut social_db = network_config
-            .json_rpc_client()
-            .blocking_call_view_function(
+        let result = crate::common::block_on(
+            network_config.client().rpc().view_function(
                 &contract_account_id,
                 "get",
-                serde_json::to_vec(&serde_json::json!({
+                &serde_json::to_vec(&serde_json::json!({
                     "keys": vec![format!("{account_id}/profile/**")],
                 }))?,
                 block_reference.clone(),
+            ),
+        )
+        .into_eyre()
+        .wrap_err_with(|| {
+            format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
+                contract_account_id,
+                network_config.network_name
             )
-            .wrap_err_with(|| {
-                format!("Failed to fetch query for view method: 'get {account_id}/profile/**' (contract <{}> on network <{}>)",
-                    contract_account_id,
-                    network_config.network_name
-                )
-            })?
-            .parse_result_from_json::<near_socialdb_client::types::socialdb_types::SocialDb>()
+        })?;
+        let mut social_db = result
+            .parse_result_from_json::<crate::types::socialdb::SocialDb>()
             .wrap_err_with(|| {
                 format!("Failed to parse view function call return value for {account_id}/profile.")
             })?;

@@ -1,4 +1,5 @@
 use crate::js_command_match::constants::{BLOCK_ID_ALIASES, NETWORK_ID_ALIASES};
+use base64::Engine as _;
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct ViewStateArgs {
@@ -28,7 +29,7 @@ impl ViewStateArgs {
         let output_format = if self.utf8 { "as-text" } else { "as-json" };
 
         if let Some(prefix) = &self.prefix {
-            let prefix_type = match near_primitives::serialize::from_base64(&prefix[..]) {
+            let prefix_type = match base64::engine::general_purpose::STANDARD.decode(&prefix[..]) {
                 Ok(_) => "keys-start-with-bytes-as-base64".to_string(),
                 Err(_) => "keys-start-with-string".to_string(),
             };

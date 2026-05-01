@@ -17,7 +17,7 @@ pub struct SignerAccountId {
 pub struct SignerAccountIdContext {
     global_context: crate::GlobalContext,
     account_properties: super::AccountProperties,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     on_before_sending_transaction_callback:
         crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
 }
@@ -61,23 +61,23 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     }
                     let (actions, receiver_id) = if new_account_id.is_sub_account_of(&signer_id) {
                         (vec![
-                                near_primitives::transaction::Action::CreateAccount(
-                                    near_primitives::transaction::CreateAccountAction {},
+                                near_kit::Action::CreateAccount(
+                                    near_kit::CreateAccountAction,
                                 ),
-                                near_primitives::transaction::Action::Transfer(
-                                    near_primitives::transaction::TransferAction {
+                                near_kit::Action::Transfer(
+                                    near_kit::TransferAction {
                                         deposit: item.account_properties.initial_balance.into(),
                                     },
                                 ),
-                                near_primitives::transaction::Action::AddKey(
-                                    Box::new(near_primitives::transaction::AddKeyAction {
-                                        public_key: item.account_properties.public_key.clone(),
-                                        access_key: near_primitives::account::AccessKey {
+                                near_kit::Action::AddKey(
+                                    near_kit::AddKeyAction {
+                                        public_key: crate::types::public_key::PublicKey::from(item.account_properties.public_key.clone()).0,
+                                        access_key: near_kit::AccessKey {
                                             nonce: 0,
                                             permission:
-                                                near_primitives::account::AccessKeyPermission::FullAccess,
+                                                near_kit::AccessKeyPermission::FullAccess,
                                         },
-                                    }),
+                                    },
                                 ),
                             ],
                         new_account_id.clone())
@@ -92,17 +92,15 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                                 || new_account_id.is_top_level()
                             {
                                 (
-                                    vec![near_primitives::transaction::Action::FunctionCall(
-                                        Box::new(
-                                            near_primitives::transaction::FunctionCallAction {
-                                                method_name: "create_account".to_string(),
-                                                args,
-                                                gas: near_primitives::gas::Gas::from_teragas(30),
-                                                deposit: item
-                                                    .account_properties
-                                                    .initial_balance.into(),
-                                            },
-                                        ),
+                                    vec![near_kit::Action::FunctionCall(
+                                        near_kit::FunctionCallAction {
+                                            method_name: "create_account".to_string(),
+                                            args,
+                                            gas: near_kit::Gas::from_tgas(30),
+                                            deposit: item
+                                                .account_properties
+                                                .initial_balance.into(),
+                                        },
                                     )],
                                     linkdrop_account_id.clone(),
                                 )
@@ -183,29 +181,22 @@ impl SignerAccountId {
 #[tracing::instrument(name = "Validation new account_id ...", skip_all)]
 fn validate_new_account_id(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Validation new account_id ...");
-    let account_state =
-        tokio::runtime::Runtime::new()
-            .unwrap()
-            .block_on(crate::common::get_account_state(
-                network_config,
-                account_id,
-                near_primitives::types::BlockReference::latest(),
-            ));
+    let account_state = crate::common::block_on(crate::common::get_account_state(
+        network_config,
+        account_id,
+        near_kit::BlockReference::optimistic(),
+    ));
     match account_state {
         Ok(_) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
             "\nAccount <{}> already exists in network <{}>. Therefore, it is not possible to create an account with this name.",
             account_id,
             network_config.network_name
         )),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-            ),
-        )) => Ok(()),
-        Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) => {
+        Err(crate::common::ViewAccountError::UnknownAccount { .. }) => Ok(()),
+        Err(crate::common::ViewAccountError::TransportError(_)) => {
             tracing::warn!(
                 parent: &tracing::Span::none(),
                 "{}{}",

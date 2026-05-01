@@ -74,8 +74,8 @@ impl StateInitWithContractRefByAccount {
 #[derive(Debug, Clone)]
 pub struct StateInitModeContext {
     pub global_context: crate::GlobalContext,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub code: near_primitives::action::GlobalContractIdentifier,
+    pub signer_account_id: near_kit::AccountId,
+    pub code: near_kit::GlobalContractIdentifier,
 }
 
 #[derive(Debug, Clone)]
@@ -89,7 +89,7 @@ impl StateInitWithContractHashRefContext {
         Ok(Self(StateInitModeContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
-            code: near_primitives::action::GlobalContractIdentifier::CodeHash(scope.hash.into()),
+            code: near_kit::GlobalContractIdentifier::CodeHash(scope.hash.into()),
         }))
     }
 }
@@ -117,9 +117,7 @@ impl StateInitWithContractRefByAccountContext {
         Ok(Self(StateInitModeContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
-            code: near_primitives::action::GlobalContractIdentifier::AccountId(
-                scope.account_id.clone().into(),
-            ),
+            code: near_kit::GlobalContractIdentifier::AccountId(scope.account_id.clone().into()),
         }))
     }
 }
@@ -144,8 +142,7 @@ impl StateInitFromBorshBase64Context {
     ) -> color_eyre::eyre::Result<Self> {
         let state_init =
             crate::common::parse_borsh_base64_state_init(scope.state_init_base64.as_bytes())?;
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        let receiver_account_id = state_init.derive_account_id();
         Ok(Self(StateInitDataContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
@@ -181,8 +178,7 @@ impl StateInitFromBorshFileContext {
     ) -> color_eyre::eyre::Result<Self> {
         let data = scope.file_path.read_bytes()?;
         let state_init = crate::common::parse_borsh_base64_state_init(&data)?;
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        let receiver_account_id = state_init.derive_account_id();
         Ok(Self(StateInitDataContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
@@ -216,13 +212,12 @@ impl StateInitFromJsonContext {
         previous_context: super::ConstructTransactionSenderContext,
         scope: &<StateInitFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let state_init = serde_json::from_str::<crate::common::DeterministicAccountStateInitView>(
-            &scope.state_init_json,
-        )
+        let state_init: near_kit::DeterministicAccountStateInit = serde_json::from_str::<
+            crate::common::DeterministicAccountStateInitView,
+        >(&scope.state_init_json)
         .map(Into::into)
         .wrap_err("Failed to parse JSON-serialized StateInit")?;
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        let receiver_account_id = state_init.derive_account_id();
         Ok(Self(StateInitDataContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
@@ -262,12 +257,11 @@ impl StateInitFromJsonFileContext {
                 scope.file_path.0.display()
             )
         })?;
-        let state_init =
+        let state_init: near_kit::DeterministicAccountStateInit =
             serde_json::from_str::<crate::common::DeterministicAccountStateInitView>(&json_str)
                 .map(Into::into)
                 .wrap_err("Failed to parse JSON-serialized StateInit")?;
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        let receiver_account_id = state_init.derive_account_id();
         Ok(Self(StateInitDataContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
@@ -346,27 +340,22 @@ impl DataFromJson {
 #[derive(Debug, Clone)]
 pub struct StateInitDataContext {
     pub global_context: crate::GlobalContext,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
-    pub receiver_account_id: near_primitives::types::AccountId,
+    pub signer_account_id: near_kit::AccountId,
+    pub state_init: near_kit::DeterministicAccountStateInit,
+    pub receiver_account_id: near_kit::AccountId,
 }
 
 impl StateInitDataContext {
     fn build(
-        code: near_primitives::action::GlobalContractIdentifier,
+        code: near_kit::GlobalContractIdentifier,
         global_context: crate::GlobalContext,
-        signer_account_id: near_primitives::types::AccountId,
+        signer_account_id: near_kit::AccountId,
         data: std::collections::BTreeMap<Vec<u8>, Vec<u8>>,
     ) -> color_eyre::eyre::Result<Self> {
-        let state_init =
-            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(
-                near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
-                    code,
-                    data,
-                },
-            );
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        let state_init = near_kit::DeterministicAccountStateInit::V1(
+            near_kit::DeterministicAccountStateInitV1 { code, data },
+        );
+        let receiver_account_id = state_init.derive_account_id();
         Ok(Self {
             global_context,
             signer_account_id,
@@ -465,14 +454,12 @@ impl DepositContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             receiver_account_id: previous_context.receiver_account_id,
-            actions: vec![
-                near_primitives::transaction::Action::DeterministicStateInit(Box::new(
-                    near_primitives::action::DeterministicStateInitAction {
-                        state_init: previous_context.state_init,
-                        deposit,
-                    },
-                )),
-            ],
+            actions: vec![near_kit::Action::DeterministicStateInit(
+                near_kit::DeterministicStateInitAction {
+                    state_init: previous_context.state_init,
+                    deposit,
+                },
+            )],
             sign_as_delegate_action: false,
         }))
     }

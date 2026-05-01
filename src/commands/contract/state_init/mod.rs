@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use color_eyre::eyre::Context;
 use serde_with::{base64::Base64, serde_as};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
@@ -75,7 +76,7 @@ impl StateInitWithContractRefByAccount {
 #[derive(Debug, Clone)]
 pub struct StateInitModeContext {
     pub global_context: crate::GlobalContext,
-    pub code: near_primitives::action::GlobalContractIdentifier,
+    pub code: near_kit::GlobalContractIdentifier,
 }
 
 #[derive(Debug, Clone)]
@@ -88,7 +89,7 @@ impl StateInitWithContractHashRefContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(StateInitModeContext {
             global_context: previous_context,
-            code: near_primitives::action::GlobalContractIdentifier::CodeHash(scope.hash.into()),
+            code: near_kit::GlobalContractIdentifier::CodeHash(scope.hash.into()),
         }))
     }
 }
@@ -115,9 +116,7 @@ impl StateInitWithContractRefByAccountContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(StateInitModeContext {
             global_context: previous_context,
-            code: near_primitives::action::GlobalContractIdentifier::AccountId(
-                scope.account_id.clone().into(),
-            ),
+            code: near_kit::GlobalContractIdentifier::AccountId(scope.account_id.clone().into()),
         }))
     }
 }
@@ -304,17 +303,16 @@ pub struct DataFromJson {
 #[derive(Debug, Clone)]
 pub struct StateInitDataContext {
     pub global_context: crate::GlobalContext,
-    pub state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
-    pub receiver_account_id: near_primitives::types::AccountId,
+    pub state_init: near_kit::DeterministicAccountStateInit,
+    pub receiver_account_id: near_kit::AccountId,
 }
 
 impl StateInitDataContext {
     fn new(
         global_context: crate::GlobalContext,
-        state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+        state_init: near_kit::DeterministicAccountStateInit,
     ) -> Self {
-        let receiver_account_id =
-            near_primitives::utils::derive_near_deterministic_account_id(&state_init);
+        let receiver_account_id = state_init.derive_account_id();
         Self {
             global_context,
             state_init,
@@ -344,13 +342,12 @@ impl DataFromFileContext {
             )
         })?;
         let data = crate::common::parse_base64_kv_map(&json_str)?;
-        let state_init =
-            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(
-                near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
-                    code: previous_context.code,
-                    data,
-                },
-            );
+        let state_init = near_kit::DeterministicAccountStateInit::V1(
+            near_kit::DeterministicAccountStateInitV1 {
+                code: previous_context.code,
+                data,
+            },
+        );
         Ok(Self(StateInitDataContext::new(
             previous_context.global_context,
             state_init,
@@ -373,13 +370,12 @@ impl DataFromJsonContext {
         scope: &<DataFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let data = crate::common::parse_base64_kv_map(&scope.data)?;
-        let state_init =
-            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(
-                near_primitives::deterministic_account_id::DeterministicAccountStateInitV1 {
-                    code: previous_context.code,
-                    data,
-                },
-            );
+        let state_init = near_kit::DeterministicAccountStateInit::V1(
+            near_kit::DeterministicAccountStateInitV1 {
+                code: previous_context.code,
+                data,
+            },
+        );
         Ok(Self(StateInitDataContext::new(
             previous_context.global_context,
             state_init,
@@ -482,7 +478,10 @@ impl InspectStateInitBorshContext {
     ) -> color_eyre::eyre::Result<Self> {
         let bytes = borsh::to_vec(&previous_context.state_init)
             .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-serialize state-init: {e}"))?;
-        println!("{}", near_primitives::serialize::to_base64(&bytes));
+        println!(
+            "{}",
+            base64::engine::general_purpose::STANDARD.encode(&bytes)
+        );
         Ok(Self)
     }
 }
@@ -525,9 +524,7 @@ impl InspectKvMapContext {
         _scope: &<InspectKvMap as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let data = match &previous_context.state_init {
-            near_primitives::deterministic_account_id::DeterministicAccountStateInit::V1(v1) => {
-                &v1.data
-            }
+            near_kit::DeterministicAccountStateInit::V1(v1) => &v1.data,
         };
 
         #[serde_as]
@@ -572,8 +569,8 @@ impl Deposit {
 #[derive(Debug, Clone)]
 pub struct DepositContext {
     pub global_context: crate::GlobalContext,
-    pub state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
-    pub receiver_account_id: near_primitives::types::AccountId,
+    pub state_init: near_kit::DeterministicAccountStateInit,
+    pub receiver_account_id: near_kit::AccountId,
     pub deposit: near_token::NearToken,
 }
 
@@ -617,10 +614,10 @@ impl SignerAccountId {
 #[derive(Debug, Clone)]
 pub struct SignerAccountIdContext {
     pub global_context: crate::GlobalContext,
-    pub state_init: near_primitives::deterministic_account_id::DeterministicAccountStateInit,
-    pub receiver_account_id: near_primitives::types::AccountId,
+    pub state_init: near_kit::DeterministicAccountStateInit,
+    pub receiver_account_id: near_kit::AccountId,
     pub deposit: near_token::NearToken,
-    pub signer_account_id: near_primitives::types::AccountId,
+    pub signer_account_id: near_kit::AccountId,
 }
 
 impl SignerAccountIdContext {
@@ -646,14 +643,16 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |network_config| {
-                    use crate::common::JsonRpcClientExt as _;
                     let receiver_id = &item.receiver_account_id;
-                    let result = network_config
-                        .json_rpc_client()
-                        .blocking_call_view_account(
-                            receiver_id,
-                            near_primitives::types::Finality::Final.into(),
-                        );
+                    let result = crate::common::block_on(
+                        network_config
+                            .client()
+                            .rpc()
+                            .view_account(
+                                receiver_id,
+                                near_kit::Finality::Final.into(),
+                            ),
+                    );
                     // Best-effort check — only cancel if we positively confirm account exists.
                     // All errors (UnknownAccount, network timeout, connection refused, etc.)
                     // are treated as "proceed" to support the sign-later offline signing flow,
@@ -674,12 +673,11 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                         signer_id: item.signer_account_id.clone(),
                         receiver_id: item.receiver_account_id.clone(),
                         actions: vec![
-                            near_primitives::transaction::Action::DeterministicStateInit(Box::new(
-                                near_primitives::action::DeterministicStateInitAction {
+                            near_kit::Action::DeterministicStateInit(near_kit::DeterministicStateInitAction {
                                     state_init: item.state_init.clone(),
                                     deposit: item.deposit,
                                 },
-                            )),
+                            ),
                         ],
                     })
                 }

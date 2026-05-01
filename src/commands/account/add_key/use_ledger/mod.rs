@@ -14,8 +14,8 @@ pub struct AddLedgerKeyAction {
 #[derive(Debug, Clone)]
 pub struct AddLedgerKeyActionContext {
     pub global_context: crate::GlobalContext,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub permission: near_primitives::account::AccessKeyPermission,
+    pub signer_account_id: near_kit::AccountId,
+    pub permission: near_kit::AccessKeyPermission,
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
 }
 
@@ -59,8 +59,8 @@ pub struct UsbAddLedgerKeyAction {
 #[derive(Debug, Clone)]
 pub struct UsbAddLedgerKeyContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    signer_account_id: near_kit::AccountId,
+    permission: near_kit::AccessKeyPermission,
     public_key: crate::types::public_key::PublicKey,
 }
 
@@ -87,9 +87,7 @@ impl UsbAddLedgerKeyContext {
                 ))
             },
         )?;
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-            public_key.to_bytes(),
-        ));
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes());
 
         Ok(Self {
             global_context: previous_context.global_context,
@@ -110,15 +108,15 @@ impl From<UsbAddLedgerKeyContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
-                            near_primitives::transaction::AddKeyAction {
-                                public_key: item.public_key.clone().into(),
-                                access_key: near_primitives::account::AccessKey {
+                        actions: vec![near_kit::Action::AddKey(
+                            near_kit::AddKeyAction {
+                                public_key: item.public_key.clone().0,
+                                access_key: near_kit::AccessKey {
                                     nonce: 0,
                                     permission: item.permission.clone(),
                                 },
                             },
-                        ))],
+                        )],
                     })
                 }
             });
@@ -156,8 +154,8 @@ pub struct BluetoothAddLedgerKeyAction {
 #[derive(Debug, Clone)]
 pub struct BleAddLedgerKeyContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    signer_account_id: near_kit::AccountId,
+    permission: near_kit::AccessKeyPermission,
     public_key: crate::types::public_key::PublicKey,
 }
 
@@ -170,9 +168,7 @@ impl BleAddLedgerKeyContext {
         let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
 
         let public_key = crate::transaction_signature_options::sign_with_ledger::ble_helpers::ble_connect_and_get_public_key(seed_phrase_hd_path.into())?;
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-            public_key.to_bytes(),
-        ));
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes());
 
         Ok(Self {
             global_context: previous_context.global_context,
@@ -194,15 +190,15 @@ impl From<BleAddLedgerKeyContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
-                            near_primitives::transaction::AddKeyAction {
-                                public_key: item.public_key.clone().into(),
-                                access_key: near_primitives::account::AccessKey {
+                        actions: vec![near_kit::Action::AddKey(
+                            near_kit::AddKeyAction {
+                                public_key: item.public_key.clone().0,
+                                access_key: near_kit::AccessKey {
                                     nonce: 0,
                                     permission: item.permission.clone(),
                                 },
                             },
-                        ))],
+                        )],
                     })
                 }
             });

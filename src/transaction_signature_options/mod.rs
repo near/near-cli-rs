@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -94,8 +95,8 @@ pub enum Submit {
 
 #[derive(Debug, Deserialize)]
 pub struct AccountKeyPair {
-    pub public_key: near_crypto::PublicKey,
-    pub private_key: near_crypto::SecretKey,
+    pub public_key: near_kit::PublicKey,
+    pub private_key: near_kit::SecretKey,
 }
 
 pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
@@ -106,17 +107,11 @@ pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
 >;
 
 pub type OnAfterSendingTransactionCallback = std::sync::Arc<
-    dyn Fn(
-        &near_primitives::views::FinalExecutionOutcomeView,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&near_kit::FinalExecutionOutcome, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 pub type OnSendingDelegateActionCallback = std::sync::Arc<
-    dyn Fn(
-        near_primitives::action::delegate::SignedDelegateAction,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(near_kit::SignedDelegateAction, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 #[derive(Clone)]
@@ -129,61 +124,220 @@ pub struct SubmitContext {
     pub on_sending_delegate_action_callback: Option<OnSendingDelegateActionCallback>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
 pub enum SignedTransactionOrSignedDelegateAction {
-    SignedTransaction(near_primitives::transaction::SignedTransaction),
-    SignedDelegateAction(near_primitives::action::delegate::SignedDelegateAction),
+    SignedTransaction(near_kit::SignedTransaction),
+    SignedDelegateAction(near_kit::SignedDelegateAction),
 }
 
-impl From<near_primitives::transaction::SignedTransaction>
-    for SignedTransactionOrSignedDelegateAction
-{
-    fn from(signed_transaction: near_primitives::transaction::SignedTransaction) -> Self {
+impl serde::Serialize for SignedTransactionOrSignedDelegateAction {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(1))?;
+        match self {
+            Self::SignedTransaction(tx) => {
+                map.serialize_entry("SignedTransaction", &tx.to_base64())?;
+            }
+            Self::SignedDelegateAction(da) => {
+                let b64 = base64::engine::general_purpose::STANDARD
+                    .encode(borsh::to_vec(da).expect("borsh serialization should not fail"));
+                map.serialize_entry("SignedDelegateAction", &b64)?;
+            }
+        }
+        map.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for SignedTransactionOrSignedDelegateAction {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let map: std::collections::HashMap<String, String> =
+            serde::Deserialize::deserialize(deserializer)?;
+        if let Some(b64) = map.get("SignedTransaction") {
+            let tx =
+                near_kit::SignedTransaction::from_base64(b64).map_err(serde::de::Error::custom)?;
+            Ok(Self::SignedTransaction(tx))
+        } else if let Some(b64) = map.get("SignedDelegateAction") {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(b64)
+                .map_err(serde::de::Error::custom)?;
+            let da: near_kit::SignedDelegateAction =
+                borsh::from_slice(&bytes).map_err(serde::de::Error::custom)?;
+            Ok(Self::SignedDelegateAction(da))
+        } else {
+            Err(serde::de::Error::custom(
+                "expected SignedTransaction or SignedDelegateAction key",
+            ))
+        }
+    }
+}
+
+impl From<near_kit::SignedTransaction> for SignedTransactionOrSignedDelegateAction {
+    fn from(signed_transaction: near_kit::SignedTransaction) -> Self {
         Self::SignedTransaction(signed_transaction)
     }
 }
 
-impl From<near_primitives::action::delegate::SignedDelegateAction>
-    for SignedTransactionOrSignedDelegateAction
-{
-    fn from(
-        signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
-    ) -> Self {
+impl From<near_kit::SignedDelegateAction> for SignedTransactionOrSignedDelegateAction {
+    fn from(signed_delegate_action: near_kit::SignedDelegateAction) -> Self {
         Self::SignedDelegateAction(signed_delegate_action)
     }
 }
 
-pub fn get_signed_delegate_action(
-    unsigned_transaction: near_primitives::transaction::Transaction,
-    public_key: &near_crypto::PublicKey,
-    private_key: near_crypto::SecretKey,
-    max_block_height: u64,
-) -> near_primitives::action::delegate::SignedDelegateAction {
-    use near_primitives::signable_message::{SignableMessage, SignableMessageType};
+/// Shared signing logic for all simple (secret-key-based) signers.
+///
+/// Given a secret key, the `TransactionContext` (which carries the prepopulated transaction,
+/// callbacks, and delegate-action flag), nonce/block_hash/block_height, and
+/// meta_transaction_valid_for, this function builds the unsigned transaction, fires the
+/// before-signing callback, and either signs as a delegate action or a regular transaction.
+///
+/// Returns a `SubmitContext` ready for the Submit subcommand.
+pub fn sign_transaction_with_secret_key(
+    nk_public_key: near_kit::PublicKey,
+    nk_secret_key: near_kit::SecretKey,
+    previous_context: crate::commands::TransactionContext,
+    nonce: u64,
+    block_hash: near_kit::CryptoHash,
+    block_height: u64,
+    meta_transaction_valid_for: Option<u64>,
+) -> color_eyre::eyre::Result<SubmitContext> {
+    let network_config = previous_context.network_config.clone();
 
-    let mut delegate_action = near_primitives::action::delegate::DelegateAction {
-        sender_id: unsigned_transaction.signer_id().clone(),
-        receiver_id: unsigned_transaction.receiver_id().clone(),
-        actions: vec![],
-        nonce: unsigned_transaction.nonce().nonce(),
-        max_block_height,
-        public_key: unsigned_transaction.public_key().clone(),
+    let mut unsigned_transaction = near_kit::Transaction {
+        public_key: nk_public_key.clone(),
+        block_hash,
+        nonce,
+        signer_id: previous_context.prepopulated_transaction.signer_id,
+        receiver_id: previous_context.prepopulated_transaction.receiver_id,
+        actions: previous_context.prepopulated_transaction.actions,
     };
 
-    delegate_action.actions = unsigned_transaction
-        .take_actions()
-        .into_iter()
-        .map(near_primitives::action::delegate::NonDelegateAction::try_from)
-        .collect::<Result<_, _>>()
-        .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
+    (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-    // create a new signature here signing the delegate action + discriminant
-    let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-    let signer = near_crypto::InMemorySigner::from_secret_key(
-        delegate_action.sender_id.clone(),
-        private_key,
+    if previous_context.sign_as_delegate_action {
+        let max_block_height =
+            block_height + meta_transaction_valid_for.unwrap_or(META_TRANSACTION_VALID_FOR_DEFAULT);
+
+        let signed_delegate_action = get_signed_delegate_action(
+            unsigned_transaction,
+            &nk_public_key,
+            nk_secret_key,
+            max_block_height,
+        );
+
+        return Ok(SubmitContext {
+            network_config: previous_context.network_config,
+            global_context: previous_context.global_context,
+            signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
+            on_before_sending_transaction_callback: previous_context
+                .on_before_sending_transaction_callback,
+            on_after_sending_transaction_callback: previous_context
+                .on_after_sending_transaction_callback,
+            on_sending_delegate_action_callback: previous_context
+                .on_sending_delegate_action_callback,
+        });
+    }
+
+    let mut signed_transaction = unsigned_transaction.sign(&nk_secret_key);
+
+    tracing::info!(
+        parent: &tracing::Span::none(),
+        "Your transaction was signed successfully.{}",
+        crate::common::indent_payload(&format!(
+            "\nPublic key: {}\nSignature:  {}\n ",
+            nk_public_key,
+            signed_transaction.signature
+        ))
     );
-    let signature = signable.sign(&signer);
+
+    (previous_context.on_after_signing_callback)(
+        &mut signed_transaction,
+        &previous_context.network_config,
+    )?;
+
+    Ok(SubmitContext {
+        network_config: previous_context.network_config,
+        global_context: previous_context.global_context,
+        signed_transaction_or_signed_delegate_action: signed_transaction.into(),
+        on_before_sending_transaction_callback: previous_context
+            .on_before_sending_transaction_callback,
+        on_after_sending_transaction_callback: previous_context
+            .on_after_sending_transaction_callback,
+        on_sending_delegate_action_callback: previous_context.on_sending_delegate_action_callback,
+    })
+}
+
+/// Shared helper to fetch nonce, block_hash, and block_height from the network,
+/// or use the provided offline values.
+pub fn resolve_nonce_and_block(
+    network_config: &crate::config::NetworkConfig,
+    signer_id: &near_kit::AccountId,
+    public_key: &near_kit::PublicKey,
+    offline: bool,
+    nonce: Option<u64>,
+    block_hash: Option<crate::types::crypto_hash::CryptoHash>,
+    block_height: Option<u64>,
+) -> color_eyre::eyre::Result<(u64, near_kit::CryptoHash, u64)> {
+    use crate::common::{RpcResultExt, block_on};
+    use color_eyre::eyre::{ContextCompat, WrapErr};
+
+    if offline {
+        Ok((
+            nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
+            block_hash
+                .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                .0,
+            block_height
+                .wrap_err("Block Height is required to sign a transaction in offline mode")?,
+        ))
+    } else {
+        let access_key_view = block_on(
+                network_config.client().rpc().view_access_key(
+                    signer_id,
+                    public_key,
+                    near_kit::BlockReference::optimistic(),
+                ),
+            )
+            .into_eyre()
+            .wrap_err_with(||
+                format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
+            )?;
+
+        Ok((
+            access_key_view.nonce + 1,
+            access_key_view.block_hash,
+            access_key_view.block_height,
+        ))
+    }
+}
+
+pub fn get_signed_delegate_action(
+    unsigned_transaction: near_kit::Transaction,
+    public_key: &near_kit::PublicKey,
+    private_key: near_kit::SecretKey,
+    max_block_height: u64,
+) -> near_kit::SignedDelegateAction {
+    let delegate_action = near_kit::DelegateAction {
+        sender_id: unsigned_transaction.signer_id.clone(),
+        receiver_id: unsigned_transaction.receiver_id.clone(),
+        actions: unsigned_transaction
+            .actions
+            .into_iter()
+            .map(near_kit::NonDelegateAction::try_from)
+            .collect::<Result<_, _>>()
+            .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again)."),
+        nonce: unsigned_transaction.nonce,
+        max_block_height,
+        public_key: unsigned_transaction.public_key.clone(),
+    };
+
+    let hash = delegate_action.get_hash();
+    let signature = private_key.sign(hash.as_bytes());
 
     tracing::info!(
         parent: &tracing::Span::none(),
@@ -193,8 +347,5 @@ pub fn get_signed_delegate_action(
         ))
     );
 
-    near_primitives::action::delegate::SignedDelegateAction {
-        delegate_action,
-        signature,
-    }
+    delegate_action.sign(signature)
 }

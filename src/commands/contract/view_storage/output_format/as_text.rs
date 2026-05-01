@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use color_eyre::{eyre::Context, owo_colors::OwoColorize};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -22,23 +23,19 @@ impl AsTextContext {
             let prefix = previous_context.prefix;
 
             move |network_config, block_reference| {
-                let query_view_method_response =
+                let result =
                     super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
 
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-                    query_view_method_response.kind
-                {
-                    let mut info_str = String::new();
-                    for value in &result.values {
-                        info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&value.key)?.green()));
-                        info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&value.value)?.yellow()));
-                        info_str.push_str("\n\t--------------------------------");
-                    }
-                    println!("Contract state (values):{info_str}\n");
-                    println!("Contract state (proof):\n{:#?}\n", result.proof);
-                } else {
-                    return Err(color_eyre::Report::msg("Error call result".to_string()));
-                };
+                let mut info_str = String::new();
+                for value in &result.values {
+                    let key_bytes = base64::engine::general_purpose::STANDARD.decode(&value.key).unwrap_or_default();
+                    let val_bytes = base64::engine::general_purpose::STANDARD.decode(&value.value).unwrap_or_default();
+                    info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&key_bytes)?.green()));
+                    info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&val_bytes)?.yellow()));
+                    info_str.push_str("\n\t--------------------------------");
+                }
+                println!("Contract state (values):{info_str}\n");
+                println!("Contract state (proof):\n{:#?}\n", result.proof);
                 Ok(())
             }
         });
