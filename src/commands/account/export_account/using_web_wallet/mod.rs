@@ -60,8 +60,8 @@ impl From<ExportAccountFromWebWalletContext> for crate::network::NetworkContext 
 
 fn auto_import_secret_key(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
-    private_key: &near_crypto::SecretKey,
+    account_id: &near_kit::AccountId,
+    private_key: &near_kit::SecretKey,
 ) -> crate::CliResult {
     let mut url: url::Url = network_config.wallet_url.join("auto-import-secret-key")?;
     let fragment = format!("{account_id}/{private_key}");

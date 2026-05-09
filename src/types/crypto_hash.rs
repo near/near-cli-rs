@@ -1,7 +1,7 @@
 #[derive(Debug, Copy, Clone)]
-pub struct CryptoHash(pub near_primitives::hash::CryptoHash);
+pub struct CryptoHash(pub near_kit::CryptoHash);
 
-impl From<CryptoHash> for near_primitives::hash::CryptoHash {
+impl From<CryptoHash> for near_kit::CryptoHash {
     fn from(item: CryptoHash) -> Self {
         item.0
     }
@@ -17,8 +17,8 @@ impl std::str::FromStr for CryptoHash {
     type Err = color_eyre::eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let crypto_hash = near_primitives::hash::CryptoHash::from_str(s)
-            .map_err(color_eyre::eyre::Report::msg)?;
+        let crypto_hash =
+            near_kit::CryptoHash::from_str(s).map_err(color_eyre::eyre::Report::msg)?;
         Ok(Self(crypto_hash))
     }
 }

@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use std::fmt::Write;
 
 use color_eyre::{
@@ -7,10 +8,10 @@ use color_eyre::{
 use thiserror::Error;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use near_primitives::types::BlockReference;
+use near_kit::BlockReference;
 
 use super::FetchAbiError;
-use crate::common::{CallResultExt, RpcQueryResponseExt, sleep_after_error};
+use crate::common::{CallResultExt, RpcResultExt, sleep_after_error};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -44,12 +45,10 @@ impl ContractContext {
         scope: &<Contract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
-            let account_id: near_primitives::types::AccountId = scope.contract_account_id.clone().into();
+            let account_id: near_kit::AccountId = scope.contract_account_id.clone().into();
 
             move |network_config, block_reference| {
-                tokio::runtime::Runtime::new()
-                    .unwrap()
-                    .block_on(display_inspect_contract(
+                crate::common::block_on(display_inspect_contract(
                         &account_id,
                         network_config,
                         block_reference,
@@ -71,50 +70,63 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
 }
 
 #[tracing::instrument(name = "Obtaining the contract code ...", skip_all)]
-async fn get_contract_code(
-    account_id: &near_primitives::types::AccountId,
+fn get_contract_code(
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::query::RpcQueryResponse> {
+    block_reference: &near_kit::BlockReference,
+) -> color_eyre::eyre::Result<serde_json::Value> {
     tracing::info!(target: "near_teach_me", "Obtaining the contract code ...");
-    network_config
-        .json_rpc_client()
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::ViewCode {
-                account_id: account_id.clone(),
-            },
-        })
-        .await
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewCode for <{}> on network <{}>",
-                &account_id, network_config.network_name
-            )
-        })
+    let mut params = serde_json::json!({
+        "request_type": "view_code",
+        "account_id": account_id.to_string(),
+    });
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params()
+        && let serde_json::Value::Object(map) = &mut params
+    {
+        map.extend(block_params);
+    }
+    crate::common::block_on(
+        network_config
+            .client()
+            .rpc()
+            .call::<_, serde_json::Value>("query", params),
+    )
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query ViewCode for <{}> on network <{}>",
+            &account_id, network_config.network_name
+        )
+    })
 }
 
 #[tracing::instrument(name = "Contract inspection ...", skip_all)]
 async fn display_inspect_contract(
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Contract inspection ...");
-    let json_rpc_client = network_config.json_rpc_client();
-    let view_code_response = get_contract_code(account_id, network_config, block_reference).await?;
-    let contract_code_view =
-        if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(result) =
-            view_code_response.kind
-        {
-            result
-        } else {
-            return Err(color_eyre::Report::msg("Error call result".to_string()));
-        };
+    let view_code_json = get_contract_code(account_id, network_config, block_reference)?;
+    let code_base64 = view_code_json
+        .get("code_base64")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let code_bytes = base64::engine::general_purpose::STANDARD
+        .decode(code_base64)
+        .unwrap_or_default();
+    let block_height = view_code_json
+        .get("block_height")
+        .and_then(|v| v.as_u64())
+        .unwrap_or_default();
+    let block_hash_str = view_code_json
+        .get("block_hash")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let account_view = get_account_view(
         &network_config.network_name,
-        &json_rpc_client,
+        network_config,
         block_reference,
         account_id,
     )
@@ -122,7 +134,7 @@ async fn display_inspect_contract(
 
     let access_keys = get_access_keys(
         &network_config.network_name,
-        &json_rpc_client,
+        network_config,
         block_reference,
         account_id,
     )
@@ -133,7 +145,7 @@ async fn display_inspect_contract(
 
     table.add_row(prettytable::row![
         Fg->account_id,
-        format!("At block #{}\n({})", view_code_response.block_height, view_code_response.block_hash)
+        format!("At block #{}\n({})", block_height, block_hash_str)
     ]);
 
     let (contract_type, contract_status, checksum_hex, checksum_base58, storage_used) = match (
@@ -163,11 +175,11 @@ async fn display_inspect_contract(
             format!(
                 "{} ({} Wasm + {} data)",
                 bytesize::ByteSize(account_view.storage_usage),
-                bytesize::ByteSize(u64::try_from(contract_code_view.code.len())?),
+                bytesize::ByteSize(u64::try_from(code_bytes.len())?),
                 bytesize::ByteSize(
                     account_view
                         .storage_usage
-                        .checked_sub(u64::try_from(contract_code_view.code.len())?)
+                        .checked_sub(u64::try_from(code_bytes.len())?)
                         .expect("Unexpected error")
                 )
             ),
@@ -211,7 +223,7 @@ async fn display_inspect_contract(
             .filter(|access_key| {
                 matches!(
                     access_key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                    near_kit::AccessKeyPermissionView::FullAccess
                 )
             })
             .count();
@@ -226,7 +238,7 @@ async fn display_inspect_contract(
         access_keys_summary
     ]);
 
-    match get_contract_source_metadata(&json_rpc_client, block_reference, account_id).await {
+    match get_contract_source_metadata(network_config, block_reference, account_id).await {
         Ok(contract_source_metadata) => {
             table.add_row(prettytable::row![
                 Fy->"Contract version",
@@ -278,7 +290,7 @@ async fn display_inspect_contract(
         }
     }
 
-    match super::get_contract_abi(&json_rpc_client, block_reference, account_id).await {
+    match super::get_contract_abi(network_config, block_reference, account_id).await {
         Ok(abi_root) => {
             table.add_row(prettytable::row![
                 Fy->"NEAR ABI version",
@@ -380,7 +392,7 @@ async fn display_inspect_contract(
             );
 
             let parser = wasmparser::Parser::new(0);
-            for payload in parser.parse_all(&contract_code_view.code) {
+            for payload in parser.parse_all(&code_bytes) {
                 if let wasmparser::Payload::ExportSection(export_section) =
                     payload.wrap_err_with(|| {
                         format!(
@@ -411,37 +423,34 @@ async fn display_inspect_contract(
 #[tracing::instrument(name = "Getting information about", skip_all)]
 async fn get_account_view(
     network_name: &str,
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<near_primitives::views::AccountView> {
+    account_id: &near_kit::AccountId,
+) -> color_eyre::eyre::Result<near_kit::AccountView> {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
     tracing::info!(target: "near_teach_me", "Getting information about {account_id} ...");
     for _ in 0..5 {
-        let account_view_response = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::ViewAccount {
-                    account_id: account_id.clone(),
-                },
-            })
+        let result = network_config
+            .client()
+            .rpc()
+            .view_account(account_id, block_reference.clone())
             .await;
 
-        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
-            &account_view_response
-        {
-            eprintln!(
-                "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
-            );
-            std::thread::sleep(std::time::Duration::from_millis(100))
-        } else {
-            return account_view_response
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch query ViewAccount for contract <{account_id}> on network <{network_name}>" 
-                    )
-                })?
-                .account_view();
+        match result {
+            Ok(account_view) => {
+                return Ok(account_view);
+            }
+            Err(ref err) if err.is_retryable() => {
+                eprintln!(
+                    "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
+                );
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+            Err(err) => {
+                return Err(color_eyre::eyre::eyre!(
+                    "Failed to fetch query ViewAccount for contract <{account_id}> on network <{network_name}>: {err}"
+                ));
+            }
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
@@ -452,38 +461,34 @@ async fn get_account_view(
 #[tracing::instrument(name = "Getting a list of", skip_all)]
 async fn get_access_keys(
     network_name: &str,
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
+    account_id: &near_kit::AccountId,
+) -> color_eyre::eyre::Result<Vec<near_kit::AccessKeyInfoView>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
     for _ in 0..5 {
-        let access_keys_response = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                    account_id: account_id.clone(),
-                },
-            })
+        let result = network_config
+            .client()
+            .rpc()
+            .view_access_key_list(account_id, block_reference.clone())
             .await;
 
-        if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
-            &access_keys_response
-        {
-            eprintln!(
-                "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
-            );
-            std::thread::sleep(std::time::Duration::from_millis(100))
-        } else {
-            return Ok(access_keys_response
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch ViewAccessKeyList for contract <{account_id}> on network <{network_name}>"
-                    )
-                })?
-                .access_key_list_view()?
-                .keys);
+        match result {
+            Ok(access_key_list) => {
+                return Ok(access_key_list.keys);
+            }
+            Err(ref err) if err.is_retryable() => {
+                eprintln!(
+                    "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
+                );
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+            Err(err) => {
+                return Err(color_eyre::eyre::eyre!(
+                    "Failed to fetch ViewAccessKeyList for contract <{account_id}> on network <{network_name}>: {err}"
+                ));
+            }
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
@@ -500,11 +505,7 @@ pub enum FetchContractSourceMetadataError {
     #[error(
         "'contract_source_metadata' function call failed due to RPC error, so there is no way to get Contract Source Metadata. See more details about the error:\n\n{0}"
     )]
-    RpcError(
-        near_jsonrpc_client::errors::JsonRpcError<
-            near_jsonrpc_primitives::types::query::RpcQueryError,
-        >,
-    ),
+    RpcError(String),
     #[error(
         "The contract source metadata format is unknown (https://nomicon.io/Standards/SourceMetadata), so there is no way to get detailed information. See more details about the error:\n\n{0}"
     )]
@@ -513,9 +514,9 @@ pub enum FetchContractSourceMetadataError {
 
 #[tracing::instrument(name = "Getting contract source metadata for account", skip_all)]
 pub async fn get_contract_source_metadata(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    network_config: &crate::config::NetworkConfig,
     block_reference: &BlockReference,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> Result<
     near_verify_rs::types::contract_source_metadata::ContractSourceMetadata,
     FetchContractSourceMetadataError,
@@ -531,21 +532,19 @@ pub async fn get_contract_source_metadata(
 
     let mut retries_left = (0..5).rev();
     loop {
-        let rpc_query_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: block_reference.clone(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: account_id.clone(),
-                method_name: "contract_source_metadata".to_owned(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        };
+        let result = network_config
+            .client()
+            .rpc()
+            .view_function(
+                account_id,
+                "contract_source_metadata",
+                &[],
+                block_reference.clone(),
+            )
+            .await;
 
-        crate::common::teach_me_request_payload(json_rpc_client, &rpc_query_request);
-
-        let contract_source_metadata_response = json_rpc_client.call(rpc_query_request).await;
-
-        match contract_source_metadata_response {
-            Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(err)) => {
+        match result {
+            Err(ref err) if err.is_retryable() => {
                 if let Some(retries_left) = retries_left.next() {
                     sleep_after_error(format!(
                         "(Previous attempt failed with error: `{}`. Will retry {} more times)",
@@ -554,59 +553,45 @@ pub async fn get_contract_source_metadata(
                     ))
                     .await;
                 } else {
-                    return Err(FetchContractSourceMetadataError::RpcError(
-                        near_jsonrpc_client::errors::JsonRpcError::TransportError(err),
-                    ));
+                    return Err(FetchContractSourceMetadataError::RpcError(err.to_string()));
                 }
             }
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::ContractExecutionError {
-                        vm_error,
-                        ..
-                    },
-                ),
-            )) if vm_error.contains("MethodNotFound") => {
+            Err(near_kit::RpcError::ContractExecution { message, .. })
+                if message.contains("MethodNotFound") =>
+            {
+                return Err(FetchContractSourceMetadataError::ContractSourceMetadataNotSupported);
+            }
+            Err(near_kit::RpcError::FunctionCall { panic, .. })
+                if panic.as_deref().unwrap_or("").contains("MethodNotFound") =>
+            {
                 return Err(FetchContractSourceMetadataError::ContractSourceMetadataNotSupported);
             }
             Err(err) => {
-                return Err(FetchContractSourceMetadataError::RpcError(err));
+                return Err(FetchContractSourceMetadataError::RpcError(err.to_string()));
             }
-            Ok(contract_source_metadata_response) => {
-                return contract_source_metadata_response
-                    .call_result()
-                    .inspect(|call_result| {
-                        tracing::info!(
-                            target: "near_teach_me",
-                            parent: &tracing::Span::none(),
-                            "JSON RPC Response:\n{}",
-                            crate::common::indent_payload(&format!(
-                                "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
-                                contract_source_metadata_response.block_hash,
-                                contract_source_metadata_response.block_height,
-                                call_result.logs,
-                                call_result.result
-                            ))
-                        );
-                        tracing::info!(
-                            target: "near_teach_me",
-                            parent: &tracing::Span::none(),
-                            "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
-                            crate::common::indent_payload(&format!("{}\n ",
-                                &String::from_utf8(call_result.result.clone())
-                                    .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
-                            ))
-                        );
-                    })
-                    .inspect_err(|err| {
-                        tracing::info!(
-                            target: "near_teach_me",
-                            parent: &tracing::Span::none(),
-                            "JSON RPC Response:\n{}",
-                            crate::common::indent_payload(&err.to_string())
-                        );
-                    })
-                    .map_err(FetchContractSourceMetadataError::ContractSourceMetadataUnknownFormat)?
+            Ok(view_function_result) => {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "JSON RPC Response:\n{}",
+                    crate::common::indent_payload(&format!(
+                        "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                        view_function_result.block_hash,
+                        view_function_result.block_height,
+                        view_function_result.logs,
+                        view_function_result.result
+                    ))
+                );
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
+                    crate::common::indent_payload(&format!("{}\n ",
+                        &String::from_utf8(view_function_result.result.clone())
+                            .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
+                    ))
+                );
+                return view_function_result
                     .parse_result_from_json::<near_verify_rs::types::contract_source_metadata::ContractSourceMetadata>()
                     .wrap_err("Failed to parse contract source metadata")
                     .map_err(

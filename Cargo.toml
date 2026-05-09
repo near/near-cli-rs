@@ -28,8 +28,7 @@ fast_clap = { version = "4.5.57", features = ["derive", "unstable-v5"] }
 inquire = "0.9.3"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
-smart-default = "0.7.1"
-derive_more = "2"
+derive_more = { version = "2", features = ["as_ref", "display", "from", "from_str", "into"] }
 easy-ext = "1"
 
 reqwest = { version = "0.12", features = ["blocking", "json"] }
@@ -43,6 +42,7 @@ openssl = { version = "0.10", features = ["vendored"] }
 
 bip39 = { version = "2.0.0", features = ["rand"] }
 bs58 = "0.5"
+base64 = "0.22"
 borsh = "1.5.7"
 ed25519-dalek = { version = "2", default-features = false }
 hex = { version = "0.4.2", features = ["serde"] }
@@ -78,12 +78,6 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "0.35"
-near-primitives = "0.35"
-near-jsonrpc-client = { version = "0.21", features = ["any"] }
-near-jsonrpc-primitives = "0.35"
-near-parameters = "0.35"
-near-socialdb-client = "0.15"
 
 near-ledger = { version = "0.9.4", optional = true }
 
@@ -98,6 +92,7 @@ near-token = { version = "0.3", features = [
     "interactive-clap",
 ] }
 
+near-kit = { version = "0.9.0", features = ["interactive-clap"] }
 near-abi = "0.4.2"
 
 zstd = "0.13"
@@ -121,7 +116,7 @@ git2 = { version = "0.19", optional = true }
 tempfile = { version = "3.10.1", optional = true }
 
 [dev-dependencies]
-near-sandbox = "0.3"
+near-sandbox = "0.3.9"
 tokio-test = "0.4"
 tempfile = "3.10.1"
 insta = "1.40"

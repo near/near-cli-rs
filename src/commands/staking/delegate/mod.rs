@@ -23,7 +23,7 @@ pub struct StakeDelegation {
 #[derive(Debug, Clone)]
 pub struct StakeDelegationContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
 }
 
 impl StakeDelegationContext {

@@ -151,7 +151,7 @@ fn save_implicit_account(
     verbosity: &crate::Verbosity,
 ) -> crate::CliResult {
     let public_key_str = format!("ed25519:{}", bs58::encode(&public_key).into_string());
-    let implicit_account_id = near_primitives::types::AccountId::try_from(hex::encode(public_key))?;
+    let implicit_account_id = near_kit::AccountId::try_from(hex::encode(public_key))?;
     let buf = serde_json::json!({
         "seed_phrase_hd_path": seed_phrase_hd_path.to_string(),
         "implicit_account_id": implicit_account_id.to_string(),

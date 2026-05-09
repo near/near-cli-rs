@@ -1,4 +1,3 @@
-use near_primitives::transaction::TransactionV0;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod display;
@@ -23,8 +22,8 @@ pub struct SignLater {
 
 #[derive(Debug, Clone)]
 pub struct SignLaterContext {
-    global_context: crate::GlobalContext,
-    unsigned_transaction: near_primitives::transaction::Transaction,
+    pub global_context: crate::GlobalContext,
+    pub unsigned_transaction: near_kit::Transaction,
 }
 
 impl SignLaterContext {
@@ -32,14 +31,18 @@ impl SignLaterContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLater as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let unsigned_transaction = near_primitives::transaction::Transaction::V0(TransactionV0 {
+        let nk_public_key: near_kit::PublicKey = {
+            let nc_pk: near_kit::PublicKey = scope.signer_public_key.clone().into();
+            nc_pk
+        };
+        let unsigned_transaction = near_kit::Transaction {
             signer_id: previous_context.prepopulated_transaction.signer_id,
-            public_key: scope.signer_public_key.clone().into(),
+            public_key: nk_public_key,
             nonce: scope.nonce,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            block_hash: scope.block_hash.into(),
+            block_hash: scope.block_hash.0,
             actions: previous_context.prepopulated_transaction.actions,
-        });
+        };
         Ok(Self {
             global_context: previous_context.global_context,
             unsigned_transaction,

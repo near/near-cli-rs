@@ -3,13 +3,12 @@ use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{RpcResultExt, block_on};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
+/// CLI-specific enum for interactive_clap: either an exact FT amount or "all".
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FungibleTokenTransferAmount {
-    /// Transfer of the specified amount of fungible tokens (wNearAmount (10 wNEAR))
     ExactAmount(FungibleToken),
-    /// Transfer the entire amount of fungible tokens from your account ID
     MaxAmount,
 }
 
@@ -48,7 +47,11 @@ impl std::str::FromStr for FungibleTokenTransferAmount {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
+/// Thin CLI wrapper for parsing user-input like "10.5 wNEAR" where the token's
+/// actual decimals are not yet known. Call `normalize()` once metadata is
+/// available to scale to the real decimals; then use `to_ft_amount()` to obtain
+/// a `near_kit::FtAmount`. Display delegates to `near_kit::FtAmount`.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct FungibleToken {
     amount: u128,
     decimals: u8,
@@ -95,40 +98,22 @@ impl FungibleToken {
     pub fn amount(&self) -> u128 {
         self.amount
     }
-
     pub fn decimals(&self) -> u8 {
         self.decimals
     }
-
     pub fn symbol(&self) -> &str {
         &self.symbol
+    }
+
+    /// Convert into a `near_kit::FtAmount` (only meaningful after normalization).
+    pub fn to_ft_amount(&self) -> near_kit::FtAmount {
+        near_kit::FtAmount::new(self.amount, self.decimals, &self.symbol)
     }
 }
 
 impl std::fmt::Display for FungibleToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let one_ft: u128 = 10u128
-            .checked_pow(self.decimals.into())
-            .wrap_err("Overflow in FungibleToken normalization")
-            .unwrap();
-        if self.amount == 0 {
-            write!(f, "0 {}", self.symbol)
-        } else if self.amount.is_multiple_of(one_ft) {
-            write!(f, "{} {}", self.amount / one_ft, self.symbol)
-        } else {
-            write!(
-                f,
-                "{}.{} {}",
-                self.amount / one_ft,
-                format!(
-                    "{:0>decimals$}",
-                    (self.amount % one_ft),
-                    decimals = self.decimals.into()
-                )
-                .trim_end_matches('0'),
-                self.symbol
-            )
-        }
+        self.to_ft_amount().fmt(f)
     }
 }
 
@@ -190,6 +175,8 @@ impl interactive_clap::ToCli for FungibleToken {
     type CliVariant = FungibleToken;
 }
 
+/// Slim CLI-local metadata (symbol + decimals only) for ft_contracts.json
+/// persistence. For full metadata, use `near_kit::FtMetadata`.
 #[derive(
     Debug, Clone, Default, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize,
 )]
@@ -198,51 +185,71 @@ pub struct FtMetadata {
     pub decimals: u8,
 }
 
+impl From<near_kit::FtMetadata> for FtMetadata {
+    fn from(m: near_kit::FtMetadata) -> Self {
+        Self {
+            symbol: m.symbol,
+            decimals: m.decimals,
+        }
+    }
+}
+
+impl From<&near_kit::FtMetadata> for FtMetadata {
+    fn from(m: &near_kit::FtMetadata) -> Self {
+        Self {
+            symbol: m.symbol.clone(),
+            decimals: m.decimals,
+        }
+    }
+}
+
 #[tracing::instrument(name = "Getting FT metadata ...", skip_all, parent = None)]
 pub fn params_ft_metadata(
-    ft_contract_account_id: near_primitives::types::AccountId,
+    ft_contract_account_id: near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
     tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
-    let ft_metadata: FtMetadata = network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
-            &ft_contract_account_id,
-            "ft_metadata",
-            vec![],
-            block_reference,
+    let result = block_on(network_config.client().rpc().view_function(
+        &ft_contract_account_id,
+        "ft_metadata",
+        &[],
+        block_reference,
+    ))
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
+            ft_contract_account_id, network_config.network_name
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
-                ft_contract_account_id,
-                network_config.network_name
-            )
-        })?
-        .parse_result_from_json()?;
+    })?;
+    let ft_metadata: FtMetadata = result.parse_result_from_json()?;
     Ok(ft_metadata)
 }
 
+/// Serde-compatible entry for ft_contracts.json persistence.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FtContract {
     #[serde(flatten)]
     pub ft_metadata: FtMetadata,
     #[serde(rename = "contract")]
-    pub ft_contract_account_id: near_primitives::types::AccountId,
+    pub ft_contract_account_id: near_kit::AccountId,
 }
 
+/// Serde struct for ft_transfer JSON args (amount serialized as string).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransfer {
-    pub receiver_id: near_primitives::types::AccountId,
+    pub receiver_id: near_kit::AccountId,
     #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
     pub amount: u128,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memo: Option<String>,
 }
 
+/// Serde struct for ft_transfer_call JSON args (amount serialized as string).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransferCall {
-    pub receiver_id: near_primitives::types::AccountId,
+    pub receiver_id: near_kit::AccountId,
     #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
     pub amount: u128,
     #[serde(skip_serializing_if = "Option::is_none")]

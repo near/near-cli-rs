@@ -2,7 +2,7 @@ use color_eyre::eyre::{Context, ContextCompat};
 use serde_json::{Value, json};
 
 use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{RpcResultExt, block_on};
 
 use super::send_ft::input_ft_contract_account_id;
 
@@ -23,7 +23,7 @@ pub struct FtContract {
 #[derive(Debug, Clone)]
 pub struct FtContractContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     ft_contract: crate::types::ft_properties::FtContract,
 }
 
@@ -32,7 +32,7 @@ impl FtContractContext {
         previous_context: super::TokensCommandsContext,
         scope: &<FtContract as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let ft_contract_account_id: near_primitives::types::AccountId =
+        let ft_contract_account_id: near_kit::AccountId =
             scope.ft_contract_account_id.clone().into();
 
         let ft_metadata = {
@@ -50,7 +50,7 @@ impl FtContractContext {
             crate::types::ft_properties::params_ft_metadata(
                 ft_contract_account_id.clone(),
                 &network_config,
-                near_primitives::types::Finality::Final.into(),
+                near_kit::Finality::Final.into(),
             )?
         };
 
@@ -95,9 +95,9 @@ pub struct SendFtCallCommand {
 #[derive(Debug, Clone)]
 pub struct SendFtCallCommandContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     ft_contract: crate::types::ft_properties::FtContract,
-    receiver_account_id: near_primitives::types::AccountId,
+    receiver_account_id: near_kit::AccountId,
 }
 
 impl SendFtCallCommandContext {
@@ -132,10 +132,10 @@ impl SendFtCallCommand {
 )]
 pub fn get_prepopulated_transaction(
     network_config: &crate::config::NetworkConfig,
-    ft_contract_account_id: &near_primitives::types::AccountId,
-    receiver_account_id: &near_primitives::types::AccountId,
-    signer_id: &near_primitives::types::AccountId,
-    amount_ft: &crate::types::ft_properties::FungibleToken,
+    ft_contract_account_id: &near_kit::AccountId,
+    receiver_account_id: &near_kit::AccountId,
+    signer_id: &near_kit::AccountId,
+    amount_ft: &near_kit::FtAmount,
     memo: &str,
     msg: &str,
     deposit: crate::types::near_token::NearToken,
@@ -144,7 +144,7 @@ pub fn get_prepopulated_transaction(
     tracing::info!(target: "near_teach_me", "Creating a pre-populated transaction for signature ...");
     let args_ft_transfer_call = serde_json::to_vec(&crate::types::ft_properties::FtTransferCall {
         receiver_id: receiver_account_id.clone(),
-        amount: amount_ft.amount(),
+        amount: amount_ft.raw(),
         memo: if memo.is_empty() {
             None
         } else {
@@ -153,25 +153,24 @@ pub fn get_prepopulated_transaction(
         msg: msg.to_string(),
     })?;
 
-    let action_ft_transfer_call = near_primitives::transaction::Action::FunctionCall(Box::new(
-        near_primitives::transaction::FunctionCallAction {
-            method_name: "ft_transfer_call".to_string(),
-            args: args_ft_transfer_call,
-            gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
-            deposit: deposit.into(),
-        },
-    ));
+    let action_ft_transfer_call = near_kit::Action::FunctionCall(near_kit::FunctionCallAction {
+        method_name: "ft_transfer_call".to_string(),
+        args: args_ft_transfer_call,
+        gas: near_kit::Gas::from_gas(gas.as_gas()),
+        deposit: deposit.into(),
+    });
 
     let args = serde_json::to_vec(&json!({"account_id": receiver_account_id}))?;
 
-    let call_result = network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
-            ft_contract_account_id,
-            "storage_balance_of",
-            args.clone(),
-            near_primitives::types::Finality::Final.into(),
+    let call_result = block_on(
+            network_config.client().rpc().view_function(
+                ft_contract_account_id,
+                "storage_balance_of",
+                &args,
+                near_kit::Finality::Final.into(),
+            ),
         )
+        .into_eyre()
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query for view method: 'storage_balance_of' (contract <{}> on network <{}>)",
@@ -180,14 +179,12 @@ pub fn get_prepopulated_transaction(
         })?;
 
     if call_result.parse_result_from_json::<Value>()?.is_null() {
-        let action_storage_deposit = near_primitives::transaction::Action::FunctionCall(Box::new(
-            near_primitives::transaction::FunctionCallAction {
-                method_name: "storage_deposit".to_string(),
-                args,
-                gas: near_primitives::gas::Gas::from_gas(gas.as_gas()),
-                deposit: near_token::NearToken::from_millinear(100),
-            },
-        ));
+        let action_storage_deposit = near_kit::Action::FunctionCall(near_kit::FunctionCallAction {
+            method_name: "storage_deposit".to_string(),
+            args,
+            gas: near_kit::Gas::from_gas(gas.as_gas()),
+            deposit: near_token::NearToken::from_millinear(100),
+        });
         return Ok(crate::commands::PrepopulatedTransaction {
             signer_id: signer_id.clone(),
             receiver_id: ft_contract_account_id.clone(),

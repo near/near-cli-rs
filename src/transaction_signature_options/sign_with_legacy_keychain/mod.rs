@@ -4,11 +4,8 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select};
-use near_primitives::transaction::Transaction;
-use near_primitives::transaction::TransactionV0;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -25,7 +22,7 @@ pub struct SignLegacyKeychain {
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_height: Option<near_primitives::types::BlockHeight>,
+    pub block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
@@ -34,18 +31,7 @@ pub struct SignLegacyKeychain {
 }
 
 #[derive(Clone)]
-pub struct SignLegacyKeychainContext {
-    pub(crate) network_config: crate::config::NetworkConfig,
-    pub(crate) global_context: crate::GlobalContext,
-    pub(crate) signed_transaction_or_signed_delegate_action:
-        super::SignedTransactionOrSignedDelegateAction,
-    pub(crate) on_before_sending_transaction_callback:
-        crate::transaction_signature_options::OnBeforeSendingTransactionCallback,
-    pub(crate) on_after_sending_transaction_callback:
-        crate::transaction_signature_options::OnAfterSendingTransactionCallback,
-    pub(crate) on_sending_delegate_action_callback:
-        Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
-}
+pub struct SignLegacyKeychainContext(super::SubmitContext);
 
 impl SignLegacyKeychainContext {
     #[tracing::instrument(
@@ -81,25 +67,24 @@ impl SignLegacyKeychainContext {
                         .replace(':', "_")
                 ))
             } else if signer_keychain_folder.exists() {
-                let full_access_key_filenames = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_access_key_list(
+                let full_access_key_filenames =
+                    block_on(network_config.client().rpc().view_access_key_list(
                         &previous_context.prepopulated_transaction.signer_id,
-                        near_primitives::types::Finality::Final.into(),
-                    )
+                        near_kit::Finality::Final.into(),
+                    ))
+                    .into_eyre()
                     .wrap_err_with(|| {
                         format!(
                             "Failed to fetch access KeyList for {}",
                             previous_context.prepopulated_transaction.signer_id
                         )
                     })?
-                    .access_key_list_view()?
                     .keys
                     .iter()
                     .filter(|access_key_info| {
                         matches!(
                             access_key_info.access_key.permission,
-                            near_primitives::views::AccessKeyPermissionView::FullAccess
+                            near_kit::AccessKeyPermissionView::FullAccess
                         )
                     })
                     .map(|access_key_info| {
@@ -144,129 +129,34 @@ impl SignLegacyKeychainContext {
                 )
             })?;
 
-        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
-            (
-                scope
-                    .nonce
-                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
-                scope
-                    .block_hash
-                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
-                    .0,
-                scope
-                    .block_height
-                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
-            )
-        } else {
-            let rpc_query_response = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key(
-                    &previous_context.prepopulated_transaction.signer_id,
-                    &signer_access_key.public_key,
-                    near_primitives::types::BlockReference::latest()
-                )
-                .wrap_err(
-                    "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-                )?;
-            (
-                rpc_query_response
-                    .access_key_view()
-                    .wrap_err("Error current_nonce")?
-                    .nonce
-                    + 1,
-                rpc_query_response.block_hash,
-                rpc_query_response.block_height,
-            )
-        };
+        let nk_public_key = signer_access_key.public_key.clone();
+        let nk_secret_key = signer_access_key.private_key.clone();
 
-        let mut unsigned_transaction = TransactionV0 {
-            public_key: signer_access_key.public_key.clone(),
-            block_hash,
-            nonce,
-            signer_id: previous_context.prepopulated_transaction.signer_id,
-            receiver_id: previous_context.prepopulated_transaction.receiver_id,
-            actions: previous_context.prepopulated_transaction.actions,
-        };
-
-        (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
-        let unsigned_transaction = Transaction::V0(unsigned_transaction);
-
-        if previous_context.sign_as_delegate_action {
-            let max_block_height = block_height
-                + scope
-                    .meta_transaction_valid_for
-                    .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
-
-            let signed_delegate_action = super::get_signed_delegate_action(
-                unsigned_transaction,
-                &signer_access_key.public_key,
-                signer_access_key.private_key,
-                max_block_height,
-            );
-
-            return Ok(Self {
-                network_config: previous_context.network_config,
-                global_context: previous_context.global_context,
-                signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
-                on_before_sending_transaction_callback: previous_context
-                    .on_before_sending_transaction_callback,
-                on_after_sending_transaction_callback: previous_context
-                    .on_after_sending_transaction_callback,
-                on_sending_delegate_action_callback: previous_context
-                    .on_sending_delegate_action_callback,
-            });
-        }
-
-        let signature = signer_access_key
-            .private_key
-            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
-
-        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-            signature.clone(),
-            unsigned_transaction,
-        );
-
-        tracing::info!(
-            parent: &tracing::Span::none(),
-            "Your transaction was signed successfully.{}",
-            crate::common::indent_payload(&format!(
-                "\nPublic key: {}\nSignature:  {}\n ",
-                signer_access_key.public_key,
-                signature
-            ))
-        );
-
-        (previous_context.on_after_signing_callback)(
-            &mut signed_transaction,
+        let (nonce, block_hash, block_height) = super::resolve_nonce_and_block(
             &previous_context.network_config,
+            &previous_context.prepopulated_transaction.signer_id,
+            &nk_public_key,
+            previous_context.global_context.offline,
+            scope.nonce,
+            scope.block_hash,
+            scope.block_height,
         )?;
 
-        Ok(Self {
-            network_config: previous_context.network_config,
-            global_context: previous_context.global_context,
-            signed_transaction_or_signed_delegate_action: signed_transaction.into(),
-            on_before_sending_transaction_callback: previous_context
-                .on_before_sending_transaction_callback,
-            on_after_sending_transaction_callback: previous_context
-                .on_after_sending_transaction_callback,
-            on_sending_delegate_action_callback: previous_context
-                .on_sending_delegate_action_callback,
-        })
+        Ok(Self(super::sign_transaction_with_secret_key(
+            nk_public_key,
+            nk_secret_key,
+            previous_context,
+            nonce,
+            block_hash,
+            block_height,
+            scope.meta_transaction_valid_for,
+        )?))
     }
 }
 
 impl From<SignLegacyKeychainContext> for super::SubmitContext {
     fn from(item: SignLegacyKeychainContext) -> Self {
-        Self {
-            network_config: item.network_config,
-            global_context: item.global_context,
-            signed_transaction_or_signed_delegate_action: item
-                .signed_transaction_or_signed_delegate_action,
-            on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
-            on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
-            on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
-        }
+        item.0
     }
 }
 
@@ -330,13 +220,10 @@ impl SignLegacyKeychain {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)

@@ -83,9 +83,7 @@ impl UsbAddAccessContext {
                 ))
             },
         )?;
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-            public_key.to_bytes(),
-        ));
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes());
 
         Ok(Self(super::super::SponsorServiceContext {
             config: previous_context.config,
@@ -129,9 +127,7 @@ impl BleAddAccessContext {
         let seed_phrase_hd_path = previous_context.seed_phrase_hd_path.clone();
 
         let public_key = crate::transaction_signature_options::sign_with_ledger::ble_helpers::ble_connect_and_get_public_key(seed_phrase_hd_path.into())?;
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-            public_key.to_bytes(),
-        ));
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(public_key.to_bytes());
 
         Ok(Self(super::super::SponsorServiceContext {
             config: previous_context.config,

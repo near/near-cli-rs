@@ -16,7 +16,7 @@ pub struct DeleteAccount {
 #[derive(Debug, Clone)]
 pub struct DeleteAccountContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
 }
 
 impl DeleteAccountContext {
@@ -57,8 +57,8 @@ pub struct BeneficiaryAccount {
 #[derive(Debug, Clone)]
 pub struct BeneficiaryAccountContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
-    beneficiary_account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
+    beneficiary_account_id: near_kit::AccountId,
 }
 
 impl BeneficiaryAccountContext {
@@ -84,8 +84,8 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: account_id.clone(),
                         receiver_id: account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::DeleteAccount(
-                            near_primitives::transaction::DeleteAccountAction {
+                        actions: vec![near_kit::Action::DeleteAccount(
+                            near_kit::DeleteAccountAction {
                                 beneficiary_id: item.beneficiary_account_id.clone(),
                             },
                         )],

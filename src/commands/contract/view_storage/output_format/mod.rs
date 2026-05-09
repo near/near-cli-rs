@@ -1,7 +1,8 @@
+use base64::Engine as _;
 use color_eyre::eyre::Context;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::JsonRpcClientExt;
+use crate::common::RpcResultExt;
 
 mod as_json;
 mod as_text;
@@ -21,28 +22,52 @@ pub enum OutputFormat {
     AsText(self::as_text::AsText),
 }
 
+/// Local ViewStateResult type to deserialize the RPC response.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ViewStateResult {
+    pub values: Vec<StateItem>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub proof: Vec<String>,
+}
+
+/// A key-value pair in contract state.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct StateItem {
+    pub key: String,
+    pub value: String,
+}
+
 #[tracing::instrument(name = "Obtaining the state of the contract ...", skip_all)]
 pub fn get_contract_state(
-    contract_account_id: &near_primitives::types::AccountId,
-    prefix: near_primitives::types::StoreKey,
+    contract_account_id: &near_kit::AccountId,
+    prefix: Vec<u8>,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::query::RpcQueryResponse> {
+    block_reference: near_kit::BlockReference,
+) -> color_eyre::eyre::Result<ViewStateResult> {
     tracing::info!(target: "near_teach_me", "Obtaining the state of the contract ...");
-    network_config
-        .json_rpc_client()
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewState {
-                account_id: contract_account_id.clone(),
-                prefix,
-                include_proof: false,
-            },
-        })
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewState for <{contract_account_id}> on network <{}>",
-                network_config.network_name
-            )
-        })
+    let mut params = serde_json::json!({
+        "request_type": "view_state",
+        "account_id": contract_account_id.to_string(),
+        "prefix_base64": base64::engine::general_purpose::STANDARD.encode(&prefix),
+        "include_proof": false,
+    });
+    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params()
+        && let serde_json::Value::Object(map) = &mut params
+    {
+        map.extend(block_params);
+    }
+    let json_value = crate::common::block_on(
+        network_config
+            .client()
+            .rpc()
+            .call::<_, serde_json::Value>("query", params),
+    )
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query ViewState for <{contract_account_id}> on network <{}>",
+            network_config.network_name
+        )
+    })?;
+    serde_json::from_value(json_value).wrap_err("Failed to parse ViewState response")
 }

@@ -1,8 +1,6 @@
 use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::JsonRpcClientExt;
-
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::SubmitContext)]
 #[interactive_clap(output_context = SendContext)]
@@ -24,12 +22,12 @@ impl SendContext {
     ) -> color_eyre::eyre::Result<Self> {
         tracing::info!(target: "near_teach_me", "Sending transaction ...");
 
-        let wait_until: near_primitives::views::TxExecutionStatus = scope
+        let wait_until: near_kit::TxExecutionStatus = scope
             .wait_until
             .clone()
             .or_else(|| previous_context.network_config.tx_wait_until.clone())
             .map(|s| s.into())
-            .unwrap_or(near_primitives::views::TxExecutionStatus::Final);
+            .unwrap_or(near_kit::TxExecutionStatus::Final);
 
         let storage_message = (previous_context.on_before_sending_transaction_callback)(
             &previous_context.signed_transaction_or_signed_delegate_action,
@@ -44,7 +42,7 @@ impl SendContext {
                 match sending_signed_transaction(
                     &previous_context.network_config,
                     &signed_transaction,
-                    wait_until.clone(),
+                    wait_until,
                 )? {
                     Some(transaction_info) => {
                         crate::common::print_transaction_status(
@@ -129,51 +127,60 @@ impl SendContext {
 #[tracing::instrument(name = "Broadcasting transaction via RPC", skip_all)]
 pub fn sending_signed_transaction(
     network_config: &crate::config::NetworkConfig,
-    signed_transaction: &near_primitives::transaction::SignedTransaction,
-    wait_until: near_primitives::views::TxExecutionStatus,
-) -> color_eyre::Result<Option<near_primitives::views::FinalExecutionOutcomeView>> {
+    signed_transaction: &near_kit::SignedTransaction,
+    wait_until: near_kit::TxExecutionStatus,
+) -> color_eyre::Result<Option<near_kit::FinalExecutionOutcome>> {
     tracing::Span::current().pb_set_message(network_config.rpc_url.as_str());
     tracing::info!(target: "near_teach_me", "Broadcasting transaction via RPC {}", network_config.rpc_url.as_str());
+
+    let nk_wait_until = wait_until;
 
     let retries_number = 5;
     let mut retries = (1..=retries_number).rev();
     let transaction_info = loop {
-        let request = near_jsonrpc_client::methods::send_tx::RpcSendTransactionRequest {
-            signed_transaction: signed_transaction.clone(),
-            wait_until: wait_until.clone(),
-        };
-
         tracing::info!(
             target: "near_teach_me",
             parent: &tracing::Span::none(),
             "I am making HTTP call to NEAR JSON RPC to send a transaction, learn more https://docs.near.org/api/rpc/transactions#send-tx"
         );
 
-        let transaction_info_result = network_config
-            .json_rpc_client()
-            .blocking_call(request)
-            .inspect(crate::common::teach_me_call_response);
-        match transaction_info_result {
-            Ok(response) => {
-                break response
-                    .final_execution_outcome
-                    .map(|outcome| outcome.into_outcome());
+        let tx_base64 = signed_transaction.to_base64();
+
+        let params = serde_json::json!({
+            "signed_tx_base64": tx_base64,
+            "wait_until": nk_wait_until.as_str(),
+        });
+
+        let result: Result<serde_json::Value, near_kit::RpcError> =
+            crate::common::block_on(network_config.client().rpc().call("send_tx", params));
+        match result {
+            Ok(response_json) => {
+                // Try to extract the final_execution_outcome from the response.
+                let outcome = response_json.get("final_execution_outcome").and_then(|v| {
+                    if v.is_null() {
+                        None
+                    } else {
+                        serde_json::from_value::<near_kit::FinalExecutionOutcome>(v.clone()).ok()
+                    }
+                });
+                break outcome;
             }
-            Err(ref err) => match crate::common::rpc_transaction_error(err) {
-                Ok(message) => {
+            Err(ref err) => {
+                if err.is_retryable() {
                     if let Some(retries_left) = retries.next() {
                         sleep_after_error(format!(
                             "{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
                             network_config.rpc_url,
-                            message.red(),
+                            err.to_string().red(),
                             retries_left
                         ));
                     } else {
                         return Err(color_eyre::eyre::eyre!(err.to_string()));
                     }
+                } else {
+                    return Err(color_eyre::eyre::eyre!(err.to_string()));
                 }
-                Err(report) => return Err(color_eyre::Report::msg(report)),
-            },
+            }
         };
     };
 
@@ -192,7 +199,7 @@ pub fn sleep_after_error(additional_message_for_name: String) {
 
 #[tracing::instrument(name = "Broadcasting delegate action via a relayer url", skip_all)]
 fn sending_delegate_action(
-    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+    signed_delegate_action: near_kit::SignedDelegateAction,
     meta_transaction_relayer_url: url::Url,
 ) -> Result<reqwest::blocking::Response, reqwest::Error> {
     tracing::Span::current().pb_set_message(meta_transaction_relayer_url.as_str());

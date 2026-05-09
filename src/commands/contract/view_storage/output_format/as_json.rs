@@ -20,17 +20,11 @@ impl AsJsonContext {
             let prefix = previous_context.prefix;
 
             move |network_config, block_reference| {
-                let query_view_method_response =
+                let result =
                     super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
 
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-                    query_view_method_response.kind
-                {
-                    println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&result.values)?);
-                    println!("Contract state (proof):\n{:#?}\n", result.proof);
-                } else {
-                    return Err(color_eyre::Report::msg("Error call result".to_string()));
-                };
+                println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&result.values)?);
+                println!("Contract state (proof):\n{:#?}\n", result.proof);
                 Ok(())
             }
         });

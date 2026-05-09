@@ -43,13 +43,9 @@ impl UseHashActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<UseHashAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::UseGlobalContract(Box::new(
-            near_primitives::action::UseGlobalContractAction {
-                contract_identifier: near_primitives::action::GlobalContractIdentifier::CodeHash(
-                    scope.hash.into(),
-                ),
-            },
-        ));
+        let action = near_kit::Action::UseGlobalContract(near_kit::UseGlobalContractAction {
+            contract_identifier: near_kit::GlobalContractIdentifier::CodeHash(scope.hash.0),
+        });
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {
@@ -97,13 +93,11 @@ impl UseAccountIdActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<UseAccountIdAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::UseGlobalContract(Box::new(
-            near_primitives::action::UseGlobalContractAction {
-                contract_identifier: near_primitives::action::GlobalContractIdentifier::AccountId(
-                    scope.account_id.clone().into(),
-                ),
-            },
-        ));
+        let action = near_kit::Action::UseGlobalContract(near_kit::UseGlobalContractAction {
+            contract_identifier: near_kit::GlobalContractIdentifier::AccountId(
+                scope.account_id.clone().into(),
+            ),
+        });
         let mut actions = previous_context.actions;
         actions.push(action);
         Ok(Self(super::super::super::ConstructTransactionContext {

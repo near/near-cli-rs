@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{RpcResultExt, block_on};
 
 use super::send_ft::input_ft_contract_account_id;
 
@@ -28,7 +28,7 @@ impl ViewFtBalanceContext {
     ) -> color_eyre::eyre::Result<Self> {
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
             let owner_account_id = previous_context.owner_account_id.clone();
-            let ft_contract_account_id: near_primitives::types::AccountId =
+            let ft_contract_account_id: near_kit::AccountId =
                 scope.ft_contract_account_id.clone().into();
             let credentials_home_dir = previous_context.global_context.config.credentials_home_dir.clone();
 
@@ -55,10 +55,10 @@ impl ViewFtBalanceContext {
                 let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, block_reference.clone())?;
                 call_result.print_logs();
                 let amount: String = call_result.parse_result_from_json()?;
-                let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
+                let fungible_token = near_kit::FtAmount::new(
                     amount.parse::<u128>()?,
                     ft_metadata.decimals,
-                    ft_metadata.symbol
+                    ft_metadata.symbol,
                 );
 
                 println!("<{owner_account_id}> account has {fungible_token}  (FT-contract: {ft_contract_account_id})");
@@ -94,23 +94,25 @@ impl ViewFtBalance {
 #[tracing::instrument(name = "Getting FT balance ...", skip_all, parent = None)]
 pub fn get_ft_balance(
     network_config: &crate::config::NetworkConfig,
-    ft_contract_account_id: &near_primitives::types::AccountId,
+    ft_contract_account_id: &near_kit::AccountId,
     args: Vec<u8>,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    block_reference: near_kit::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
     tracing::info!(target: "near_teach_me", "Getting FT balance ...");
-    network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
-            ft_contract_account_id,
-            "ft_balance_of",
-            args,
-            block_reference,
+    let result = block_on(
+            network_config.client().rpc().view_function(
+                ft_contract_account_id,
+                "ft_balance_of",
+                &args,
+                block_reference,
+            ),
         )
+        .into_eyre()
         .wrap_err_with(||{
             format!("Failed to fetch query for view method: 'ft_balance_of' (contract <{}> on network <{}>)",
                 ft_contract_account_id,
                 network_config.network_name
             )
-        })
+        })?;
+    Ok(result)
 }
