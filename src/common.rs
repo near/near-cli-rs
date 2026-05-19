@@ -1728,57 +1728,80 @@ pub fn print_transaction_status(
     let mut return_value = String::new();
     let mut returned_value_bytes: Vec<u8> = Vec::new();
 
-    let result = match &transaction_info.status {
-        near_primitives::views::FinalExecutionStatus::NotStarted => {
-            if let crate::Verbosity::Quiet = verbosity {
-                return Ok(());
-            }
-            tracing::warn!(
-                parent: &tracing::Span::none(),
-                "The execution has not yet started."
-            );
-            Ok(())
-        }
-        near_primitives::views::FinalExecutionStatus::Started => {
-            if let crate::Verbosity::Quiet = verbosity {
-                return Ok(());
-            }
-            tracing::warn!(
-                parent: &tracing::Span::none(),
-                "The execution has started and still going."
-            );
-            Ok(())
-        }
-        near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-            match tx_execution_error {
-                near_primitives::errors::TxExecutionError::ActionError(action_error) => {
-                    convert_action_error_to_cli_result(action_error)
+    let retries_number = 5;
+    let mut retries = (1..=retries_number).rev();
+    let mut status = transaction_info.status.clone();
+    let result = loop {
+        match &status {
+            near_primitives::views::FinalExecutionStatus::NotStarted
+            | near_primitives::views::FinalExecutionStatus::Started => {
+                let message =
+                    if let near_primitives::views::FinalExecutionStatus::NotStarted = &status {
+                        "The execution has not yet started."
+                    } else {
+                        "The execution has started and still going."
+                    };
+
+                if let Some(retries_left) = retries.next() {
+                    crate::transaction_signature_options::send::sleep_before_checking_transaction_status(format!(
+                        "{} ({} Will retry {} more times)",
+                        network_config.rpc_url,
+                        message.red(),
+                        retries_left
+                    ));
+                } else if let crate::Verbosity::Quiet = verbosity {
+                    return Ok(());
+                } else {
+                    result_info = format!(
+                        "{} Please, check the transaction status later using the transaction ID: {}",
+                        message, transaction_info.transaction_outcome.id
+                    );
+                    break Ok(());
                 }
-                near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
-                    convert_invalid_tx_error_to_cli_result(invalid_tx_error)
+
+                let rpc_transaction_response =
+                    crate::commands::transaction::view_status::get_transaction_info(
+                        network_config,
+                        transaction_info.transaction_outcome.id,
+                    )?;
+
+                if let Some(final_execution_outcome) =
+                    &rpc_transaction_response.final_execution_outcome
+                {
+                    status = final_execution_outcome.clone().into_outcome().status;
                 }
             }
-        }
-        near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
-            if let crate::Verbosity::Quiet = verbosity {
-                std::io::stdout().write_all(bytes_result)?;
-                return Ok(());
-            };
-            returned_value_bytes.append(&mut bytes_result.clone());
-            return_value = if bytes_result.is_empty() {
-                "Empty return value".to_string()
-            } else if let Ok(json_result) =
-                serde_json::from_slice::<serde_json::Value>(bytes_result)
-            {
-                serde_json::to_string_pretty(&json_result)?
-            } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
-                string_result
-            } else {
-                "The returned value is not printable (binary data)".to_string()
-            };
-            result_info.push_str(&return_value);
-            Ok(())
-        }
+            near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
+                return match tx_execution_error {
+                    near_primitives::errors::TxExecutionError::ActionError(action_error) => {
+                        convert_action_error_to_cli_result(action_error)
+                    }
+                    near_primitives::errors::TxExecutionError::InvalidTxError(invalid_tx_error) => {
+                        convert_invalid_tx_error_to_cli_result(invalid_tx_error)
+                    }
+                };
+            }
+            near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
+                if let crate::Verbosity::Quiet = verbosity {
+                    std::io::stdout().write_all(bytes_result)?;
+                    return Ok(());
+                };
+                returned_value_bytes.append(&mut bytes_result.clone());
+                return_value = if bytes_result.is_empty() {
+                    "Empty return value".to_string()
+                } else if let Ok(json_result) =
+                    serde_json::from_slice::<serde_json::Value>(bytes_result)
+                {
+                    serde_json::to_string_pretty(&json_result)?
+                } else if let Ok(string_result) = String::from_utf8(bytes_result.clone()) {
+                    string_result
+                } else {
+                    "The returned value is not printable (binary data)".to_string()
+                };
+                result_info.push_str(&return_value);
+                break Ok(());
+            }
+        };
     };
 
     let mut transaction_execution_info = String::new();
