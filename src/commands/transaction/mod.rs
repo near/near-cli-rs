@@ -8,7 +8,7 @@ mod reconstruct_transaction;
 pub mod send_meta_transaction;
 pub mod send_signed_transaction;
 pub mod sign_transaction;
-mod view_status;
+pub mod view_status;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
