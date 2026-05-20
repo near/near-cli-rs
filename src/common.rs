@@ -3414,7 +3414,8 @@ fn get_used_ft_contract_account_list_path(
 }
 
 pub fn is_used_ft_contract_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
-    get_used_ft_contract_account_list_path(credentials_home_dir).exists()
+    let path = get_used_ft_contract_account_list_path(credentials_home_dir);
+    !get_used_ft_contract_account_list(&path).is_empty()
 }
 
 fn get_top_ft_tokens_from_nearblocks()
