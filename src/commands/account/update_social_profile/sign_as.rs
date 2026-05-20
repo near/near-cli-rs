@@ -202,7 +202,7 @@ fn get_prepopulated_transaction(
         Box::new(near_primitives::transaction::FunctionCallAction {
             method_name: "set".to_string(),
             args,
-            gas: near_primitives::gas::Gas::from_teragas(300),
+            gas: near_primitives::gas::Gas::from_teragas(1000),
             deposit,
         }),
     )];
