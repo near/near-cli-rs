@@ -2111,12 +2111,16 @@ pub fn get_used_delegated_validator_list(
 }
 
 pub fn input_staking_pool_validator_account_id(
-    config: &crate::config::Config,
+    context: &crate::GlobalContext,
 ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-    let used_delegated_validator_list = get_used_delegated_validator_list(config)?
-        .into_iter()
-        .map(String::from)
-        .collect::<Vec<_>>();
+    let used_delegated_validator_list = if !context.offline {
+        get_used_delegated_validator_list(&context.config)?
+            .into_iter()
+            .map(String::from)
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    };
     let validator_account_id_str = match Text::new("What is delegated validator account ID?")
         .with_autocomplete(move |val: &str| {
             Ok(used_delegated_validator_list
@@ -2145,7 +2149,7 @@ pub fn input_staking_pool_validator_account_id(
     let validator_account_id =
         crate::types::account_id::AccountId::from_str(&validator_account_id_str)?;
     update_used_account_list_as_non_signer(
-        &config.credentials_home_dir,
+        &context.config.credentials_home_dir,
         validator_account_id.as_ref(),
     );
     Ok(Some(validator_account_id))
