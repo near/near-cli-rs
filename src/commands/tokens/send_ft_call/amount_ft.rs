@@ -33,6 +33,12 @@ impl AmountFtContext {
                 scope.ft_transfer_amount
             {
                 crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount
+            } else if previous_context.global_context.offline
+                && previous_context.ft_contract.ft_metadata.symbol.is_empty()
+            {
+                return Err(color_eyre::Report::msg(
+                    "Cannot enter an exact FT amount to transfer in offline mode when FT metadata does not contain symbol information, because the prompt for entering FT amount will not contain token symbol information, and the amount of decimals in the entered amount will not be validated against the decimals specified in FT metadata.",
+                ));
             } else {
                 scope
                     .ft_transfer_amount
@@ -55,6 +61,13 @@ impl AmountFt {
     ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FungibleTokenTransferAmount>>
     {
         let ft_metadata = context.ft_contract.ft_metadata.clone();
+
+        if context.global_context.offline && ft_metadata.symbol.is_empty() {
+            return Err(color_eyre::Report::msg(format!(
+                "FT metadata for contract <{}> does not contain symbol information. Cannot enter an exact FT amount to transfer in offline mode when FT metadata does not contain symbol information, because the prompt for entering FT amount will not contain token symbol information, and the amount of decimals in the entered amount will not be validated against the decimals specified in FT metadata.",
+                context.ft_contract.ft_contract_account_id
+            )));
+        }
 
         Ok(Some(
             CustomType::<crate::types::ft_properties::FungibleTokenTransferAmount>::new(&format!(
@@ -236,6 +249,11 @@ fn build_action_context(
                 let amount_ft = if let crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(ft) = &ft_transfer_amount {
                     ft
                 } else {
+                    if previous_context.global_context.offline {
+                        return Err(color_eyre::Report::msg(
+                    "It is not possible to calculate the full amount of fungible tokens in your account offline."
+                        ));
+                    }
                     &crate::commands::tokens::send_ft::get_ft_balance_for_account(
                         network_config,
                         &signer_account_id,
@@ -245,6 +263,7 @@ fn build_action_context(
                 };
 
                 super::get_prepopulated_transaction(
+                    previous_context.global_context.offline,
                     network_config,
                     &ft_contract_account_id,
                     &receiver_account_id,

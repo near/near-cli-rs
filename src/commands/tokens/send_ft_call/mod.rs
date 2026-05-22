@@ -1,4 +1,5 @@
 use color_eyre::eyre::{Context, ContextCompat};
+use color_eyre::owo_colors::OwoColorize;
 use serde_json::{Value, json};
 
 use crate::common::CallResultExt;
@@ -34,6 +35,23 @@ impl FtContractContext {
     ) -> color_eyre::eyre::Result<Self> {
         let ft_contract_account_id: near_primitives::types::AccountId =
             scope.ft_contract_account_id.clone().into();
+
+        if previous_context.global_context.offline {
+            let ft_contract =
+                crate::common::get_used_ft_contract_account_list(&previous_context.global_context.config.credentials_home_dir)
+                    .into_iter()
+                    .find(|ft_contract| ft_contract.ft_contract_account_id == ft_contract_account_id)
+                    .wrap_err_with(|| {
+                        format!("Contract <{}> was not found in the list of ft-contract accounts used.\nYou are currently using offline mode.\nTherefore, connect to the internet in online mode and use this command again to add ft-contract account to the list of ft-contract accounts used.",
+                            ft_contract_account_id
+                        )
+                    })?;
+            return Ok(Self {
+                global_context: previous_context.global_context,
+                signer_account_id: previous_context.owner_account_id,
+                ft_contract,
+            });
+        }
 
         let ft_metadata = {
             let network_config = crate::common::find_network_where_account_exist(
@@ -131,6 +149,7 @@ impl SendFtCallCommand {
     skip_all
 )]
 pub fn get_prepopulated_transaction(
+    offline_mode: bool,
     network_config: &crate::config::NetworkConfig,
     ft_contract_account_id: &near_primitives::types::AccountId,
     receiver_account_id: &near_primitives::types::AccountId,
@@ -161,6 +180,25 @@ pub fn get_prepopulated_transaction(
             deposit: deposit.into(),
         },
     ));
+
+    if offline_mode {
+        tracing::warn!(
+            target: "near_teach_me",
+            "{}{}",
+            "Offline mode is enabled.".red(),
+            crate::common::indent_payload(&format!("\n{}",
+                format!("The transaction will be created with only the ft_transfer_call action\nwithout checking whether the ft-contrat account is registered on the <{}> network.\nMake sure that you have enough funds in your account to cover both the ft_transfer_call action and\nthe deposit if the recipient account is not registered on ft-contract <{}>.",
+                    network_config.network_name,
+                    ft_contract_account_id
+                ).yellow()
+            ))
+        );
+        return Ok(crate::commands::PrepopulatedTransaction {
+            signer_id: signer_id.clone(),
+            receiver_id: ft_contract_account_id.clone(),
+            actions: vec![action_ft_transfer_call.clone()],
+        });
+    };
 
     let args = serde_json::to_vec(&json!({"account_id": receiver_account_id}))?;
 
