@@ -79,8 +79,22 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let account_id = item.account_id.clone();
+                let beneficiary_account_id = item.beneficiary_account_id.clone();
 
-                move |_network_config| {
+                move |network_config| {
+                    if !crate::common::validate_receiver_account_id(
+                        network_config,
+                        &beneficiary_account_id,
+                        item.global_context.verbosity,
+                        item.global_context.offline,
+                    )? {
+                        return Ok(crate::commands::PrepopulatedTransaction {
+                            signer_id: account_id.clone(),
+                            receiver_id: account_id.clone(),
+                            actions: vec![],
+                        });
+                    }
+
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: account_id.clone(),
                         receiver_id: account_id.clone(),
