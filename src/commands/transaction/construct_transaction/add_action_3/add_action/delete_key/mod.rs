@@ -2,8 +2,9 @@
 #[interactive_clap(input_context = super::super::super::ConstructTransactionContext)]
 #[interactive_clap(output_context = DeleteKeyActionContext)]
 pub struct DeleteKeyAction {
-    /// Enter the public key You wish to delete:
-    public_key: crate::types::public_key::PublicKey,
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter the public keys you wish to delete (separated by comma):
+    public_keys: crate::types::public_key_list::PublicKeyList,
     #[interactive_clap(subcommand)]
     next_action: super::super::super::add_action_last::NextAction,
 }
@@ -16,13 +17,17 @@ impl DeleteKeyActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<DeleteKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let action = near_primitives::transaction::Action::DeleteKey(Box::new(
-            near_primitives::transaction::DeleteKeyAction {
-                public_key: scope.public_key.clone().into(),
-            },
-        ));
+        let public_keys: Vec<near_crypto::PublicKey> = scope.public_keys.clone().into();
+        let action: Vec<near_primitives::transaction::Action> = public_keys
+            .into_iter()
+            .map(|public_key| {
+                near_primitives::transaction::Action::DeleteKey(Box::new(
+                    near_primitives::transaction::DeleteKeyAction { public_key },
+                ))
+            })
+            .collect();
         let mut actions = previous_context.actions;
-        actions.push(action);
+        actions.extend(action);
         Ok(Self(super::super::super::ConstructTransactionContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
@@ -36,5 +41,15 @@ impl DeleteKeyActionContext {
 impl From<DeleteKeyActionContext> for super::super::super::ConstructTransactionContext {
     fn from(item: DeleteKeyActionContext) -> Self {
         item.0
+    }
+}
+
+impl DeleteKeyAction {
+    pub fn input_public_keys(
+        context: &super::super::super::ConstructTransactionContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key_list::PublicKeyList>> {
+        crate::commands::account::delete_key::public_keys_to_delete::PublicKeyList::input_public_keys(
+            &context.clone().into(),
+        )
     }
 }
