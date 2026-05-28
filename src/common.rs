@@ -2111,12 +2111,16 @@ pub fn get_used_delegated_validator_list(
 }
 
 pub fn input_staking_pool_validator_account_id(
-    config: &crate::config::Config,
+    context: &crate::GlobalContext,
 ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-    let used_delegated_validator_list = get_used_delegated_validator_list(config)?
-        .into_iter()
-        .map(String::from)
-        .collect::<Vec<_>>();
+    let used_delegated_validator_list = if !context.offline {
+        get_used_delegated_validator_list(&context.config)?
+            .into_iter()
+            .map(String::from)
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    };
     let validator_account_id_str = match Text::new("What is delegated validator account ID?")
         .with_autocomplete(move |val: &str| {
             Ok(used_delegated_validator_list
@@ -2145,7 +2149,7 @@ pub fn input_staking_pool_validator_account_id(
     let validator_account_id =
         crate::types::account_id::AccountId::from_str(&validator_account_id_str)?;
     update_used_account_list_as_non_signer(
-        &config.credentials_home_dir,
+        &context.config.credentials_home_dir,
         validator_account_id.as_ref(),
     );
     Ok(Some(validator_account_id))
@@ -3414,7 +3418,7 @@ fn get_used_ft_contract_account_list_path(
 }
 
 pub fn is_used_ft_contract_account_list_exist(credentials_home_dir: &std::path::Path) -> bool {
-    get_used_ft_contract_account_list_path(credentials_home_dir).exists()
+    !get_used_ft_contract_account_list(credentials_home_dir).is_empty()
 }
 
 fn get_top_ft_tokens_from_nearblocks()
@@ -3502,24 +3506,19 @@ pub fn get_used_ft_contract_account_list(
 
 pub fn update_used_ft_contract_account_list(
     credentials_home_dir: &std::path::Path,
-    new_ft_contract_account: &crate::types::ft_properties::FtContract,
+    new_ft_contract: &crate::types::ft_properties::FtContract,
 ) {
     let mut ft_contract_accounts_list = get_used_ft_contract_account_list(credentials_home_dir);
 
-    let used_ft_contract_account = if let Some(used_ft_contract_account) = ft_contract_accounts_list
+    let used_ft_contract = ft_contract_accounts_list
         .iter()
-        .position(|ft_contract_account| {
-            ft_contract_account.ft_contract_account_id
-                == new_ft_contract_account.ft_contract_account_id
+        .position(|ft_contract| {
+            ft_contract.ft_contract_account_id == new_ft_contract.ft_contract_account_id
         })
         .and_then(|position| ft_contract_accounts_list.remove(position))
-    {
-        used_ft_contract_account
-    } else {
-        new_ft_contract_account.clone()
-    };
+        .unwrap_or_else(|| new_ft_contract.clone());
 
-    ft_contract_accounts_list.push_front(used_ft_contract_account);
+    ft_contract_accounts_list.push_front(used_ft_contract);
 
     let ft_contract_account_list_path =
         get_used_ft_contract_account_list_path(credentials_home_dir);

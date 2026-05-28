@@ -86,6 +86,6 @@ impl UnstakeAll {
     pub fn input_validator_account_id(
         context: &super::StakeDelegationContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_staking_pool_validator_account_id(&context.global_context.config)
+        crate::common::input_staking_pool_validator_account_id(&context.global_context)
     }
 }
