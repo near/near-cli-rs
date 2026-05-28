@@ -3,7 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod add_key;
 pub mod create_account;
 mod delete_account;
-mod delete_key;
+pub mod delete_key;
 pub mod export_account;
 mod get_public_key;
 mod import_account;
