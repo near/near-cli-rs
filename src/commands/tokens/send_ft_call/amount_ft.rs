@@ -3,9 +3,12 @@ use inquire::CustomType;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::SendFtCallCommandContext)]
+#[interactive_clap(input_context = super::FtContractContext)]
 #[interactive_clap(output_context = AmountFtContext)]
 pub struct AmountFt {
+    #[interactive_clap(skip_default_input_arg)]
+    /// What is the receiver account ID?
+    receiver_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(skip_default_input_arg)]
     /// Enter an amount FT to transfer:
     ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
@@ -25,7 +28,7 @@ pub struct AmountFtContext {
 
 impl AmountFtContext {
     pub fn from_previous_context(
-        previous_context: super::SendFtCallCommandContext,
+        previous_context: super::FtContractContext,
         scope: &<AmountFt as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let ft_transfer_amount =
@@ -42,7 +45,7 @@ impl AmountFtContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
-            receiver_account_id: previous_context.receiver_account_id,
+            receiver_account_id: scope.receiver_account_id.clone().into(),
             ft_contract: previous_context.ft_contract,
             ft_transfer_amount,
         })
@@ -50,8 +53,17 @@ impl AmountFtContext {
 }
 
 impl AmountFt {
+    pub fn input_receiver_account_id(
+        context: &super::FtContractContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What is the receiver account ID?",
+        )
+    }
+
     fn input_ft_transfer_amount(
-        context: &super::SendFtCallCommandContext,
+        context: &super::FtContractContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::ft_properties::FungibleTokenTransferAmount>>
     {
         let ft_metadata = context.ft_contract.ft_metadata.clone();
