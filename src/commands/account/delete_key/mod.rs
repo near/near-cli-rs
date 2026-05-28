@@ -1,4 +1,4 @@
-mod public_keys_to_delete;
+pub mod public_keys_to_delete;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -14,8 +14,8 @@ pub struct DeleteKeysCommand {
 
 #[derive(Debug, Clone)]
 pub struct DeleteKeysCommandContext {
-    global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
+    pub global_context: crate::GlobalContext,
+    pub owner_account_id: near_primitives::types::AccountId,
 }
 
 impl DeleteKeysCommandContext {
