@@ -193,7 +193,7 @@ fn action_transformation(
         Action::DeleteKey(delete_key_action) => {
             Ok(Some(add_action::CliActionSubcommand::DeleteKey(
                 add_action::delete_key::CliDeleteKeyAction {
-                    public_key: Some(delete_key_action.public_key.into()),
+                    public_keys: Some(vec![delete_key_action.public_key].into()),
                     next_action: None
                 }
             )))
