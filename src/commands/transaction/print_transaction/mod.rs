@@ -24,6 +24,6 @@ pub enum PrintTransactionActions {
     #[strum_discriminants(strum(
         message = "signed           - Print all fields of previously prepared signed transaction without modification"
     ))]
-    /// Send a signed transaction
+    /// Print a signed transaction
     Signed(self::signed::PrintTransaction),
 }
