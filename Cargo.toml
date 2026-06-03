@@ -78,11 +78,11 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "0.36.0-rc.2"
-near-primitives = "0.36.0-rc.2"
+near-crypto = "0.36.0"
+near-primitives = "0.36.0"
 near-jsonrpc-client = { version = "0.21", features = ["any"] }
-near-jsonrpc-primitives = "0.36.0-rc.2"
-near-parameters = "0.36.0-rc.2"
+near-jsonrpc-primitives = "0.36.0"
+near-parameters = "0.36.0"
 near-socialdb-client = "0.15"
 
 near-ledger = { version = "0.9.4", optional = true }
@@ -120,9 +120,9 @@ camino = { version = "1.1.1", optional = true }
 git2 = { version = "0.19", optional = true }
 tempfile = { version = "3.10.1", optional = true }
 
-# 2.12 RC: pull in-flight sibling-stack patches until they publish their 2.12-compatible releases.
+# 2.12: pull in-flight sibling-stack patches until they publish their 2.12-compatible releases.
 # Published versions of both crates still depend on near-primitives 0.35; the branches below carry
-# the 0.36.0-rc.2 bump. Remove once they publish.
+# the 0.36.0 bump. Remove once they publish.
 # - near-jsonrpc-client: near/near-jsonrpc-client-rs#189
 # - near-socialdb-client: near/near-socialdb-client-rs#45
 [patch.crates-io]
