@@ -1630,6 +1630,9 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 near_primitives::errors::ActionsValidationError::GasKeyFunctionCallAllowanceNotAllowed => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Gas keys with FunctionCall permission cannot have an allowance set."))
                 },
+                near_primitives::errors::ActionsValidationError::TotalNumberOfDeployActionsExceeded { number_of_deploy_actions, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of DeployContract and DeployGlobalContract actions ({}) in one receipt exceeded the limit ({}).", number_of_deploy_actions, limit))
+                },
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
