@@ -9,7 +9,7 @@ async fn test_view_account_summary_with_localnet() -> Result<(), Box<dyn std::er
         .env("XDG_CONFIG_HOME", &ctx.config_home)
         .env("HOME", &ctx.config_home)
         .env("APPDATA", &ctx.config_home)
-        .args(&[
+        .args([
             "account",
             "view-account-summary",
             "test.near",
@@ -36,7 +36,7 @@ async fn test_view_account_summary_nonexistent() -> Result<(), Box<dyn std::erro
         .env("XDG_CONFIG_HOME", &ctx.config_home)
         .env("HOME", &ctx.config_home)
         .env("APPDATA", &ctx.config_home)
-        .args(&[
+        .args([
             "account",
             "view-account-summary",
             "nonexistent.near",
@@ -61,7 +61,7 @@ fn normalize_output(output: &str) -> String {
 
     // Replace block numbers (e.g., "At block #19" -> "At block #[BLOCK_NUM]")
     let block_regex = Regex::new(r"At block #\d+").unwrap();
-    let normalized = block_regex.replace_all(&normalized, "At block #[BLOCK_NUM]");
+    let normalized = block_regex.replace_all(normalized, "At block #[BLOCK_NUM]");
 
     // Replace block hashes (e.g., "(Gqo3Sym99tdtKm9Ha2aVFUvPPcqNVX8qfQ3dvpUk9B51)" -> "([BLOCK_HASH])")
     let hash_regex = Regex::new(r"\([A-Za-z0-9]{43,44}\)").unwrap();
