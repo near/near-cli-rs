@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.0](https://github.com/near/near-cli-rs/compare/v0.26.2...v0.27.0) - 2026-06-03
+
+### Added
+
+- Added the ability to select multiple keys to remove from the account ([#597](https://github.com/near/near-cli-rs/pull/597))
+
+### Fixed
+
+- Fixed offline mode ([#593](https://github.com/near/near-cli-rs/pull/593))
+- Fixed a bug in the command line parsing of the "send-ft" command. ([#592](https://github.com/near/near-cli-rs/pull/592))
+
+### Other
+
+- bump nearcore crates to 0.36 (2.12 / protocol 84) ([#599](https://github.com/near/near-cli-rs/pull/599))
+
 ## [0.26.2](https://github.com/near/near-cli-rs/compare/v0.26.1...v0.26.2) - 2026-05-08
 
 ### Added
