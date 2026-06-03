@@ -1,10 +1,10 @@
 [package]
 name = "near-cli-rs"
-version = "0.26.2"
+version = "0.27.0"
 authors = ["FroVolod <frol_off@meta.ua>", "Near Inc <hello@nearprotocol.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.93"
 homepage = "https://near.cli.rs"
 repository = "https://github.com/near/near-cli-rs"
 description = "human-friendly console utility that helps to interact with NEAR Protocol from command line."
@@ -78,11 +78,11 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "0.35"
-near-primitives = "0.35"
+near-crypto = "0.36.0"
+near-primitives = "0.36.0"
 near-jsonrpc-client = { version = "0.21", features = ["any"] }
-near-jsonrpc-primitives = "0.35"
-near-parameters = "0.35"
+near-jsonrpc-primitives = "0.36.0"
+near-parameters = "0.36.0"
 near-socialdb-client = "0.15"
 
 near-ledger = { version = "0.9.4", optional = true }

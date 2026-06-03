@@ -24,6 +24,12 @@ impl SendContext {
     ) -> color_eyre::eyre::Result<Self> {
         tracing::info!(target: "near_teach_me", "Sending transaction ...");
 
+        if previous_context.global_context.offline {
+            return Err(color_eyre::eyre::eyre!(
+                "Cannot send transaction in offline mode. Please use 'save-to-file' or 'display' instead."
+            ));
+        }
+
         let wait_until: near_primitives::views::TxExecutionStatus = scope
             .wait_until
             .clone()

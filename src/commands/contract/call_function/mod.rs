@@ -56,6 +56,9 @@ fn input_function_name(
     function_kind: near_abi::AbiFunctionKind,
     message: &str,
 ) -> color_eyre::eyre::Result<Option<String>> {
+    if global_context.offline {
+        return Ok(Some(Text::new(message).prompt()?));
+    }
     let mut function_names: Vec<String> = Vec::new();
 
     let network_config = crate::common::find_network_where_account_exist(
