@@ -25,24 +25,8 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
             std::sync::Arc::new({
                 let signer_account_id = item.0.signer_account_id.clone();
                 let receiver_account_id = item.0.receiver_account_id.clone();
-                let actions = item.0.actions.clone();
 
-                move |network_config| {
-                    for action in &actions {
-                        if let near_primitives::action::Action::DeleteAccount(near_primitives::transaction::DeleteAccountAction { beneficiary_id }) = action
-                            && !crate::common::validate_receiver_account_id(
-                                network_config,
-                                beneficiary_id,
-                                item.0.global_context.verbosity,
-                                item.0.global_context.offline,
-                            )? {
-                                return Ok(crate::commands::PrepopulatedTransaction {
-                                    signer_id: signer_account_id.clone(),
-                                    receiver_id: receiver_account_id.clone(),
-                                    actions: vec![],
-                                });
-                            }
-                    }
+                move |_network_config| {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
