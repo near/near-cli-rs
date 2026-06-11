@@ -18,10 +18,12 @@ impl DeleteAccountActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<DeleteAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let beneficiary_id = crate::commands::account::delete_account::validate_beneficiary(
-            &previous_context.clone().into(),
-            scope.beneficiary_id.clone().into(),
-        )?;
+        let beneficiary_id: near_primitives::types::AccountId = scope.beneficiary_id.clone().into();
+        if previous_context.signer_account_id == beneficiary_id {
+            return Err(color_eyre::eyre::eyre!(
+                "Invalid beneficiary account ID.\nThe beneficiary account ID cannot be the same as the account ID being deleted."
+            ));
+        }
         let action = near_primitives::transaction::Action::DeleteAccount(
             near_primitives::transaction::DeleteAccountAction { beneficiary_id },
         );

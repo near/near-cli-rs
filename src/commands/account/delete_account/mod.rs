@@ -1,5 +1,4 @@
 use color_eyre::owo_colors::OwoColorize;
-use inquire::Select;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -66,10 +65,15 @@ impl BeneficiaryAccountContext {
         previous_context: DeleteAccountContext,
         scope: &<BeneficiaryAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let beneficiary_account_id = validate_beneficiary(
-            &previous_context,
-            scope.beneficiary_account_id.clone().into(),
-        )?;
+        let beneficiary_account_id: near_primitives::types::AccountId =
+            scope.beneficiary_account_id.clone().into();
+
+        if previous_context.account_id == beneficiary_account_id {
+            return Err(color_eyre::eyre::eyre!(
+                "Invalid beneficiary account ID.\nThe beneficiary account ID cannot be the same as the account ID being deleted."
+            ));
+        }
+
         Ok(Self {
             global_context: previous_context.global_context,
             account_id: previous_context.account_id,
@@ -83,14 +87,16 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let account_id = item.account_id.clone();
+                let beneficiary_account_id = item.beneficiary_account_id.clone();
 
-                move |_network_config| {
+                move |network_config| {
+                    validate_beneficiary_in_network(network_config, &beneficiary_account_id, item.global_context.offline)?;
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: account_id.clone(),
                         receiver_id: account_id.clone(),
                         actions: vec![near_primitives::transaction::Action::DeleteAccount(
                             near_primitives::transaction::DeleteAccountAction {
-                                beneficiary_id: item.beneficiary_account_id.clone(),
+                                beneficiary_id: beneficiary_account_id.clone(),
                             },
                         )],
                     })
@@ -135,128 +141,49 @@ impl BeneficiaryAccount {
                 tracing::warn!("{}", "You have selected a beneficiary account ID that will now be deleted. This will result in the loss of your funds. So make your choice again.".red());
                 continue;
             }
-
-            if context.global_context.offline {
-                tracing::warn!("{}{}",
-                    format!(
-                        "Skipping verification of account <{}> as a beneficiary in offline mode.",
-                        &beneficiary_account_id,
-                    ).red(),
-                    crate::common::indent_payload(&format!("\n{}",
-                        "Make sure you specify an existing account as a beneficiary to avoid losing your funds.\nIt is currently possible to continue deleting an account offline.\nYou can sign and send the created transaction later.\n "
-                        .yellow()
-                    ))
-                );
-                if crate::common::ask_if_different_account_id_wanted()? {
-                    continue;
-                } else {
-                    return Ok(Some(beneficiary_account_id));
-                }
-            }
-
-            #[derive(derive_more::Display)]
-            enum ConfirmOptions {
-                #[display(
-                    "Yes, I want to check if account <{account_id}> exists. (It is free of charge, and only requires Internet access)"
-                )]
-                Yes {
-                    account_id: crate::types::account_id::AccountId,
-                },
-                #[display("No, I know this account exists and want to continue.")]
-                No,
-            }
-            let select_choose_input =
-                Select::new("Do you want to check the existence of the specified account so that you don't lose tokens?",
-                    vec![ConfirmOptions::Yes{account_id: beneficiary_account_id.clone()}, ConfirmOptions::No],
-                    )
-                    .prompt()?;
-            if let ConfirmOptions::Yes { account_id } = select_choose_input {
-                let network_where_beneficiary_account_exist =
-                    match crate::common::find_network_where_account_exist(
-                        &context.global_context,
-                        account_id.clone().into(),
-                    ) {
-                        Ok(network_config) => network_config,
-                        Err(err) => {
-                            tracing::warn!("{}{}", 
-                                "Cannot verify beneficiary. Proceeding may result in total loss of NEAR tokens of the deleting account.".red(),
-                                crate::common::indent_payload(&format!("\n{}{}",
-                                    format!("{err}").red(),
-                                    "\nIt is currently possible to continue deleting an account offline.\nYou can sign and send the created transaction later.\n "
-                                    .yellow()
-                                ))
-                            );
-                            return Ok(Some(account_id));
-                        }
-                    };
-
-                if let Some(network_config) = network_where_beneficiary_account_exist {
-                    if crate::common::is_receiver_on_wrong_network(
-                        network_config.linkdrop_account_id.as_ref(),
-                        &context.account_id,
-                    ) {
-                        tracing::warn!("{}", format!(
-                                "Heads up! You will lose remaining NEAR tokens on the account you delete if you specify the account <{}> as the beneficiary as it does not exist on the same network as the account you are deleting.",
-                                &beneficiary_account_id,
-                            ).red());
-                        continue;
-                    } else {
-                        return Ok(Some(beneficiary_account_id));
-                    }
-                } else {
-                    tracing::warn!("{}", format!("The account <{}> does not exist on [{}] networks. So, you can delete this account without specifying an existing account as a beneficiary, but you will lose your funds.",
-                        &beneficiary_account_id,
-                        context.global_context.config.network_names().join(", ")).red()
-                    );
-                    continue;
-                }
-            } else {
-                return Ok(Some(beneficiary_account_id));
-            };
+            return Ok(Some(beneficiary_account_id));
         }
     }
 }
 
-pub fn validate_beneficiary(
-    context: &DeleteAccountContext,
-    beneficiary_account_id: near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    if context.account_id == beneficiary_account_id {
-        return Err(color_eyre::eyre::eyre!(
-            "Invalid beneficiary account ID.\nThe beneficiary account ID cannot be the same as the account ID being deleted."
-        ));
-    }
-
-    if context.global_context.offline {
+pub fn validate_beneficiary_in_network(
+    network_config: &crate::config::NetworkConfig,
+    beneficiary_account_id: &near_primitives::types::AccountId,
+    offline_mode: bool,
+) -> crate::CliResult {
+    if offline_mode {
         tracing::warn!(
-                target: "near_teach_me",
-                "{}", format!(
-                "Skipping verification of account <{}> as a beneficiary in offline mode. Make sure you specify an existing account as a beneficiary to avoid losing your funds.",
+            target: "near_teach_me",
+            "{}{}",
+            format!(
+                "Skipping verification of account <{}> as a beneficiary in offline mode.",
                 &beneficiary_account_id,
-            ).red());
-        return Ok(beneficiary_account_id);
+            ).red(),
+            crate::common::indent_payload(&format!("\n{}",
+                "Make sure you specify an existing account as a beneficiary to avoid losing your funds.\nIt is currently possible to continue deleting an account offline.\nYou can sign and send the created transaction later.\n "
+                .yellow()
+            ))
+        );
+        return Ok(());
     }
 
-    let network_where_account_exist = crate::common::find_network_where_account_exist(
-        &context.global_context,
-        beneficiary_account_id.clone(),
-    )?;
-
-    if let Some(network_config) = network_where_account_exist {
-        if crate::common::is_receiver_on_wrong_network(
-            network_config.linkdrop_account_id.as_ref(),
-            &context.account_id,
-        ) {
-            Err(color_eyre::eyre::eyre!(
-                "Invalid beneficiary account ID.\nThe beneficiary account ID cannot be on a different network than the account being deleted."
-            ))
-        } else {
-            Ok(beneficiary_account_id)
-        }
-    } else {
-        Err(color_eyre::eyre::eyre!(
-            "Account <{}> does not exist on any of the networks. Please specify an existing account as a beneficiary to avoid losing your funds.",
-            &beneficiary_account_id
-        ))
+    match tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(crate::common::get_account_state(
+            network_config,
+            beneficiary_account_id,
+            near_primitives::types::BlockReference::latest(),
+        )) {
+        Ok(_) => Ok(()),
+        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+            ),
+        )) => Err(color_eyre::eyre::eyre!(
+            "Account <{}> does not exist on the {}. Please specify an existing account as a beneficiary to avoid losing your funds.",
+            &beneficiary_account_id,
+            &network_config.network_name
+        )),
+        Err(err) => Err(err.into()),
     }
 }
