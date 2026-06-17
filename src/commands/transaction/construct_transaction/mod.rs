@@ -115,3 +115,14 @@ impl From<ConstructTransactionContext>
         }
     }
 }
+
+impl From<ConstructTransactionContext>
+    for crate::commands::account::delete_account::DeleteAccountContext
+{
+    fn from(item: ConstructTransactionContext) -> Self {
+        Self {
+            global_context: item.global_context,
+            account_id: item.signer_account_id,
+        }
+    }
+}

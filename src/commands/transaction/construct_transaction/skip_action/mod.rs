@@ -25,8 +25,27 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
             std::sync::Arc::new({
                 let signer_account_id = item.0.signer_account_id.clone();
                 let receiver_account_id = item.0.receiver_account_id.clone();
+                let actions = item.0.actions.clone();
 
-                move |_network_config| {
+                move |network_config| {
+                    // The first found DeleteAccount action must be the last action in the transaction.
+                    if let Some((delete_account_idx, action)) = actions.iter().enumerate().find(|(_, action)| {
+                        matches!(action, near_primitives::action::Action::DeleteAccount(_))
+                    }) {
+                        if delete_account_idx != actions.len() - 1 {
+                            color_eyre::eyre::bail!("Delete account action should be the last action in the transaction");
+                        }
+                        if let near_primitives::action::Action::DeleteAccount(
+                            near_primitives::transaction::DeleteAccountAction { beneficiary_id },
+                        ) = action
+                        {
+                            crate::commands::account::delete_account::validate_beneficiary_in_network(
+                                network_config,
+                                beneficiary_id,
+                                item.0.global_context.offline,
+                            )?;
+                        }
+                    }
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
