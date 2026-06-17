@@ -1727,7 +1727,8 @@ pub fn print_transaction_status(
         .as_ref()
         .map(get_near_usd_exchange_rate);
 
-    let mut result_info = String::new();
+    let mut success_data = String::new();
+    #[allow(unused_assignments)]
     let mut return_value = String::new();
     let mut returned_value_bytes: Vec<u8> = Vec::new();
 
@@ -1746,7 +1747,7 @@ pub fn print_transaction_status(
                     };
 
                 if let Some(retries_left) = retries.next() {
-                    crate::transaction_signature_options::send::sleep_before_checking_transaction_status(format!(
+                    crate::transaction_signature_options::send::sleep_before_retry(format!(
                         "{} ({} Will retry {} more times)",
                         network_config.rpc_url,
                         message.red(),
@@ -1755,11 +1756,16 @@ pub fn print_transaction_status(
                 } else if let crate::Verbosity::Quiet = verbosity {
                     return Ok(());
                 } else {
-                    result_info = format!(
-                        "{} Please, check the transaction status later using the transaction ID: {}",
-                        message, transaction_info.transaction_outcome.id
+                    tracing::warn!(
+                        parent: &tracing::Span::none(),
+                        "{}{}",
+                        message.red(),
+                        indent_payload(&format!(
+                            "\nPlease, check the transaction status later using the transaction ID: {}",
+                            transaction_info.transaction_outcome.id
+                        )).yellow()
                     );
-                    break Ok(());
+                    return Ok(());
                 }
 
                 let rpc_transaction_response =
@@ -1801,7 +1807,7 @@ pub fn print_transaction_status(
                 } else {
                     "The returned value is not printable (binary data)".to_string()
                 };
-                result_info.push_str(&return_value);
+                success_data.push_str(&return_value);
                 break Ok(());
             }
         };
@@ -1832,7 +1838,7 @@ pub fn print_transaction_status(
         path=network_config.explorer_transaction_url
     ));
 
-    if result_info.is_empty() {
+    if success_data.is_empty() {
         tracing::error!(
             parent: &tracing::Span::none(),
             "Transaction failed{}",
@@ -1889,7 +1895,7 @@ pub fn print_transaction_status(
         }
     }
 
-    if !result_info.is_empty() {
+    if !success_data.is_empty() {
         suspend_tracing_indicatif(|| {
             eprintln!(
                 "{}",
