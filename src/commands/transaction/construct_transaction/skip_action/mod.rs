@@ -28,16 +28,23 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
                 let actions = item.0.actions.clone();
 
                 move |network_config| {
-                    for action in &actions {
-                        if let near_primitives::action::Action::DeleteAccount(near_primitives::transaction::DeleteAccountAction { beneficiary_id }) = action
-                            {
-                                crate::commands::account::delete_account::validate_beneficiary_in_network(network_config, beneficiary_id, item.0.global_context.offline)?;
-                                return Ok(crate::commands::PrepopulatedTransaction {
-                                    signer_id: signer_account_id.clone(),
-                                    receiver_id: receiver_account_id.clone(),
-                                    actions: item.0.actions.clone(),
-                                });
-                            }
+                    // The first found DeleteAccount action must be the last action in the transaction.
+                    if let Some((delete_account_idx, action)) = actions.iter().enumerate().find(|(_, action)| {
+                        matches!(action, near_primitives::action::Action::DeleteAccount(_))
+                    }) {
+                        if delete_account_idx != actions.len() - 1 {
+                            color_eyre::eyre::bail!("Delete account action should be the last action in the transaction");
+                        }
+                        if let near_primitives::action::Action::DeleteAccount(
+                            near_primitives::transaction::DeleteAccountAction { beneficiary_id },
+                        ) = action
+                        {
+                            crate::commands::account::delete_account::validate_beneficiary_in_network(
+                                network_config,
+                                beneficiary_id,
+                                item.0.global_context.offline,
+                            )?;
+                        }
                     }
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
