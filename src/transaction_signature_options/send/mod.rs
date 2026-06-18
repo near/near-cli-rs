@@ -168,7 +168,7 @@ pub fn sending_signed_transaction(
             Err(ref err) => match crate::common::rpc_transaction_error(err) {
                 Ok(message) => {
                     if let Some(retries_left) = retries.next() {
-                        sleep_after_error(format!(
+                        sleep_before_retry(format!(
                             "{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
                             network_config.rpc_url,
                             message.red(),
@@ -186,13 +186,10 @@ pub fn sending_signed_transaction(
     Ok(transaction_info)
 }
 
-#[tracing::instrument(
-    name = "Waiting 5 seconds before broadcasting transaction via RPC",
-    skip_all
-)]
-pub fn sleep_after_error(additional_message_for_name: String) {
-    tracing::Span::current().pb_set_message(&additional_message_for_name);
-    tracing::info!(target: "near_teach_me", "Waiting 5 seconds before broadcasting transaction via RPC {additional_message_for_name}");
+#[tracing::instrument(name = "Waiting 5 seconds before retrying", skip_all)]
+pub fn sleep_before_retry(context_message: String) {
+    tracing::Span::current().pb_set_message(&context_message);
+    tracing::info!(target: "near_teach_me", "Waiting 5 seconds before retrying {context_message}");
     std::thread::sleep(std::time::Duration::from_secs(5));
 }
 
