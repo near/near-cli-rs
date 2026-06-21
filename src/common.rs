@@ -1016,6 +1016,26 @@ pub fn print_unsigned_transaction(
                 };
                 info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
             }
+            near_primitives::transaction::Action::DelegateV2(versioned_signed_delegate_action) => {
+                let actions = versioned_signed_delegate_action
+                    .delegate_action
+                    .get_actions();
+                let (signer_id, receiver_id) =
+                    match &versioned_signed_delegate_action.delegate_action {
+                        near_primitives::action::delegate::VersionedDelegateActionPayload::V2(
+                            delegate_action,
+                        ) => (
+                            delegate_action.sender_id.clone(),
+                            delegate_action.receiver_id.clone(),
+                        ),
+                    };
+                let prepopulated_transaction = crate::commands::PrepopulatedTransaction {
+                    signer_id,
+                    receiver_id,
+                    actions,
+                };
+                info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
+            }
             near_primitives::transaction::Action::DeployGlobalContract(deploy) => {
                 let code_hash = CryptoHash::hash_bytes(&deploy.code);
                 let identifier = match deploy.deploy_mode {
@@ -1183,6 +1203,19 @@ fn print_value_successful_transaction(
                 info_str.push_str(&format!(
                     "Actions delegated for <{}> completed successfully.",
                     delegate_action.sender_id,
+                ));
+            }
+            near_primitives::views::ActionView::DelegateV2 {
+                delegate_action,
+                signature: _,
+            } => {
+                let sender_id = match delegate_action {
+                    near_primitives::action::delegate::VersionedDelegateActionPayload::V2(
+                        delegate_action,
+                    ) => delegate_action.sender_id,
+                };
+                info_str.push_str(&format!(
+                    "Actions delegated for <{sender_id}> completed successfully.",
                 ));
             }
             near_primitives::views::ActionView::DeployGlobalContract { code: _ }
@@ -1491,6 +1524,14 @@ pub fn convert_action_error_to_cli_result(
                 account_id
             ))
         }
+        near_primitives::errors::ActionErrorKind::DelegateActionInvalidNonceIndex {
+            nonce_index,
+            num_nonces,
+        } => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: Delegate action used gas-key nonce index {} but the key only has {} nonce(s).",
+            nonce_index,
+            num_nonces
+        )),
     }
 }
 
@@ -1522,6 +1563,12 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 },
                 near_primitives::errors::InvalidAccessKeyError::DepositWithFunctionCall => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Having a deposit with a function call action is not allowed with a function call access key."))
+                }
+                near_primitives::errors::InvalidAccessKeyError::DelegateActionRequiresNonGasKey => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A delegate action signed with a plain access-key nonce must not be signed by a gas key."))
+                }
+                near_primitives::errors::InvalidAccessKeyError::DelegateActionRequiresGasKey => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A delegate action signed with a gas-key nonce must be signed by a gas key."))
                 }
             }
         },
@@ -2273,6 +2320,8 @@ pub fn fetch_currently_active_staking_pools(
                 account_id: staking_pools_factory_account_id.clone(),
                 prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
                 include_proof: false,
+                after_key: None,
+                limit: None,
             },
         })
         .map_err(color_eyre::Report::msg)?;

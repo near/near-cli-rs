@@ -424,6 +424,11 @@ impl DepositContext {
                 near_crypto::KeyType::SECP256K1 => {
                     mpc_sign_request::MpcSignPayload::Ecdsa(hashed_payload)
                 }
+                near_crypto::KeyType::MLDSA65 => {
+                    return Err(color_eyre::eyre::eyre!(
+                        "MPC signing does not support post-quantum ML-DSA-65 keys."
+                    ));
+                }
             };
 
         let mpc_sign_request = mpc_sign_request::MpcSignRequest {
@@ -636,6 +641,11 @@ pub fn near_key_type_to_mpc_domain_id(key_type: near_crypto::KeyType) -> u64 {
     match key_type {
         near_crypto::KeyType::SECP256K1 => 0u64,
         near_crypto::KeyType::ED25519 => 1u64,
+        // MPC only derives ecdsa/eddsa keys; callers reject ML-DSA-65 before
+        // reaching this point (see the payload match above).
+        near_crypto::KeyType::MLDSA65 => {
+            unreachable!("MPC does not support post-quantum ML-DSA-65 keys")
+        }
     }
 }
 

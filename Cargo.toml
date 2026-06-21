@@ -78,12 +78,18 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "0.36.0"
-near-primitives = "0.36.0"
-near-jsonrpc-client = { version = "0.21", features = ["any"] }
-near-jsonrpc-primitives = "0.36.0"
-near-parameters = "0.36.0"
-near-socialdb-client = "0.15"
+# TODO(post-quantum): temporary git pins for nearcore 2.13 (post-quantum
+# ML-DSA-65 access keys, nearcore#15731). The 2.13 crates are not published to
+# crates.io yet, so we pin every crate that exchanges near-primitives/near-crypto
+# types to the same nearcore `2.13-release` rev (and the matching draft branches
+# of the jsonrpc/socialdb clients) so they resolve to a single version. Swap all
+# of these back to published crates.io versions once nearcore 2.13 ships.
+near-crypto = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
+near-primitives = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
+near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs", rev = "5f5d150d47315745945fba7672bf8c90c5bf7f95", features = ["any"] }
+near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
+near-parameters = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
+near-socialdb-client = { git = "https://github.com/near/near-socialdb-client-rs", rev = "2268c29c4e8ad095de2a511521f08411858a1811" }
 
 near-ledger = { version = "0.9.4", optional = true }
 
