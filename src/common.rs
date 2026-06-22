@@ -836,6 +836,158 @@ pub fn generate_keypair() -> color_eyre::eyre::Result<KeyPairProperties> {
     Ok(key_pair_properties)
 }
 
+/// Signature scheme to use when autogenerating a new key pair: the classic
+/// Ed25519, or the post-quantum ML-DSA-65 (FIPS 204) scheme that protocol 2.13
+/// adds as a third access-key type.
+#[derive(Debug, Clone, strum::EnumDiscriminants, clap::ValueEnum)]
+#[strum_discriminants(derive(strum::EnumMessage, strum::EnumIter))]
+pub enum SignatureScheme {
+    /// Ed25519 (classic, default NEAR key type)
+    #[value(name = "ed25519")]
+    Ed25519,
+    /// ML-DSA-65 post-quantum signature scheme (FIPS 204)
+    #[value(name = "ml-dsa-65")]
+    MlDsa65,
+}
+
+impl interactive_clap::ToCli for SignatureScheme {
+    type CliVariant = SignatureScheme;
+}
+
+impl std::fmt::Display for SignatureScheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Ed25519 => write!(f, "ed25519"),
+            Self::MlDsa65 => write!(f, "ml-dsa-65"),
+        }
+    }
+}
+
+impl std::str::FromStr for SignatureScheme {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "ed25519" => Ok(Self::Ed25519),
+            "ml-dsa-65" => Ok(Self::MlDsa65),
+            _ => Err(format!("SignatureScheme: invalid value `{s}`")),
+        }
+    }
+}
+
+impl std::fmt::Display for SignatureSchemeDiscriminants {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Ed25519 => write!(f, "ed25519    - Ed25519 (classic, default NEAR key type)"),
+            Self::MlDsa65 => write!(
+                f,
+                "ml-dsa-65  - ML-DSA-65 post-quantum signature scheme (FIPS 204)"
+            ),
+        }
+    }
+}
+
+/// Shared resolver for the `--signature-scheme` argument of every command that
+/// autogenerates a key pair. When the flag is omitted we default to Ed25519
+/// (so existing non-interactive invocations keep their behaviour) but, in an
+/// interactive terminal, prompt the user to pick instead.
+pub fn input_signature_scheme() -> color_eyre::eyre::Result<Option<SignatureScheme>> {
+    use std::io::IsTerminal;
+    if !std::io::stdin().is_terminal() {
+        return Ok(Some(SignatureScheme::Ed25519));
+    }
+    let variants = SignatureSchemeDiscriminants::iter().collect::<Vec<_>>();
+    let selected = Select::new(
+        "Which signature scheme should the new key pair use?",
+        variants,
+    )
+    .prompt()?;
+    Ok(Some(match selected {
+        SignatureSchemeDiscriminants::Ed25519 => SignatureScheme::Ed25519,
+        SignatureSchemeDiscriminants::MlDsa65 => SignatureScheme::MlDsa65,
+    }))
+}
+
+/// A freshly generated key pair for either supported signature scheme. The
+/// Ed25519 variant keeps the full [`KeyPairProperties`] (seed phrase, HD path,
+/// implicit account id); ML-DSA-65 keys are random and carry only the key
+/// strings (there is no seed phrase or implicit-account form for them yet).
+#[derive(Debug, Clone)]
+pub enum GeneratedKeyPair {
+    Ed25519(KeyPairProperties),
+    MlDsa65 {
+        public_key: String,
+        private_key: String,
+    },
+}
+
+impl GeneratedKeyPair {
+    pub fn generate(signature_scheme: &SignatureScheme) -> color_eyre::eyre::Result<Self> {
+        match signature_scheme {
+            SignatureScheme::Ed25519 => Ok(Self::Ed25519(generate_keypair()?)),
+            SignatureScheme::MlDsa65 => {
+                let private_key =
+                    near_crypto::SecretKey::from_random(near_crypto::KeyType::MLDSA65);
+                Ok(Self::MlDsa65 {
+                    public_key: private_key.public_key().to_string(),
+                    private_key: private_key.to_string(),
+                })
+            }
+        }
+    }
+
+    pub fn public_key_str(&self) -> &str {
+        match self {
+            Self::Ed25519(properties) => &properties.public_key_str,
+            Self::MlDsa65 { public_key, .. } => public_key,
+        }
+    }
+
+    pub fn public_key(&self) -> color_eyre::eyre::Result<near_crypto::PublicKey> {
+        Ok(near_crypto::PublicKey::from_str(self.public_key_str())?)
+    }
+
+    /// JSON written to the keychain / legacy keychain credentials file. Ed25519
+    /// preserves the historical full `KeyPairProperties` layout; ML-DSA-65 uses
+    /// the minimal `{ public_key, private_key }` credentials format (which the
+    /// keychain reader already understands).
+    pub fn keychain_json(&self) -> color_eyre::eyre::Result<String> {
+        Ok(match self {
+            Self::Ed25519(properties) => serde_json::to_string(properties)?,
+            Self::MlDsa65 {
+                public_key,
+                private_key,
+            } => serde_json::to_string(&serde_json::json!({
+                "public_key": public_key,
+                "private_key": private_key,
+            }))?,
+        })
+    }
+
+    /// Human-readable "access key info" block printed to the terminal.
+    pub fn terminal_info(&self) -> String {
+        match self {
+            Self::Ed25519(properties) => format!(
+                "\n--------------------  Access key info ------------------\
+                 \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}\
+                 \n--------------------------------------------------------",
+                properties.master_seed_phrase,
+                properties.seed_phrase_hd_path,
+                properties.implicit_account_id,
+                properties.public_key_str,
+                properties.secret_keypair_str,
+            ),
+            Self::MlDsa65 {
+                public_key,
+                private_key,
+            } => format!(
+                "\n--------------------  Access key info ------------------\
+                 \nSignature scheme: ML-DSA-65 (post-quantum, FIPS 204)\nPublic Key: {public_key}\nSECRET KEYPAIR: {private_key}\
+                 \n--------------------------------------------------------",
+            ),
+        }
+    }
+}
+
 pub fn print_full_signed_transaction(
     transaction: near_primitives::transaction::SignedTransaction,
 ) -> String {

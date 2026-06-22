@@ -57,8 +57,8 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                     crate::common::save_access_key_to_keychain_or_save_to_legacy_keychain(
                         network_config.clone(),
                         credentials_home_dir.clone(),
-                        &serde_json::to_string(&item.0.key_pair_properties)?,
-                        &item.0.key_pair_properties.public_key_str,
+                        &item.0.generated_key_pair.keychain_json()?,
+                        item.0.generated_key_pair.public_key_str(),
                         account_id.as_ref(),
                     )
                 }

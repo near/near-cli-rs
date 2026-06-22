@@ -1,6 +1,6 @@
 use color_eyre::eyre::Context;
-use inquire::{CustomType, Select};
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
+use inquire::CustomType;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 /// Generate a fresh key pair offline, without touching any account or the
 /// network. Supports the classic Ed25519 keys as well as the post-quantum
@@ -9,17 +9,17 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage, IntoEnumIterator};
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = GenerateKeypairContext)]
 pub struct GenerateKeypairCommand {
-    #[interactive_clap(value_enum)]
+    #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     /// Which signature scheme should the new key pair use?
-    signature_scheme: SignatureScheme,
+    signature_scheme: crate::common::SignatureScheme,
     #[interactive_clap(subcommand)]
     output_mode: OutputMode,
 }
 
 #[derive(Debug, Clone)]
 pub struct GenerateKeypairContext {
-    key_pair: GeneratedKeyPair,
+    key_pair: crate::common::GeneratedKeyPair,
 }
 
 impl GenerateKeypairContext {
@@ -27,73 +27,17 @@ impl GenerateKeypairContext {
         _previous_context: crate::GlobalContext,
         scope: &<GenerateKeypairCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let key_pair = GeneratedKeyPair::generate(&scope.signature_scheme)?;
-        Ok(Self { key_pair })
+        Ok(Self {
+            key_pair: crate::common::GeneratedKeyPair::generate(&scope.signature_scheme)?,
+        })
     }
 }
 
 impl GenerateKeypairCommand {
     fn input_signature_scheme(
         _context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<SignatureScheme>> {
-        let variants = SignatureSchemeDiscriminants::iter().collect::<Vec<_>>();
-        let selected = Select::new(
-            "Which signature scheme should the new key pair use?",
-            variants,
-        )
-        .prompt()?;
-        Ok(Some(match selected {
-            SignatureSchemeDiscriminants::Ed25519 => SignatureScheme::Ed25519,
-            SignatureSchemeDiscriminants::MlDsa65 => SignatureScheme::MlDsa65,
-        }))
-    }
-}
-
-#[derive(Debug, Clone, EnumDiscriminants, clap::ValueEnum)]
-#[strum_discriminants(derive(EnumMessage, EnumIter))]
-/// Which signature scheme should the new key pair use?
-pub enum SignatureScheme {
-    /// Ed25519 (classic, default NEAR key type)
-    #[value(name = "ed25519")]
-    Ed25519,
-    /// ML-DSA-65 post-quantum signature scheme (FIPS 204)
-    #[value(name = "ml-dsa-65")]
-    MlDsa65,
-}
-
-impl interactive_clap::ToCli for SignatureScheme {
-    type CliVariant = SignatureScheme;
-}
-
-impl std::fmt::Display for SignatureScheme {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Ed25519 => write!(f, "ed25519"),
-            Self::MlDsa65 => write!(f, "ml-dsa-65"),
-        }
-    }
-}
-
-impl std::str::FromStr for SignatureScheme {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "ed25519" => Ok(Self::Ed25519),
-            "ml-dsa-65" => Ok(Self::MlDsa65),
-            _ => Err(format!("SignatureScheme: invalid value `{s}`")),
-        }
-    }
-}
-
-impl std::fmt::Display for SignatureSchemeDiscriminants {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Ed25519 => write!(f, "ed25519    - Ed25519 (classic, default NEAR key type)"),
-            Self::MlDsa65 => write!(
-                f,
-                "ml-dsa-65  - ML-DSA-65 post-quantum signature scheme (FIPS 204)"
-            ),
-        }
+    ) -> color_eyre::eyre::Result<Option<crate::common::SignatureScheme>> {
+        crate::common::input_signature_scheme()
     }
 }
 
@@ -127,7 +71,7 @@ impl PrintToTerminalContext {
         previous_context: GenerateKeypairContext,
         _scope: &<PrintToTerminal as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        previous_context.key_pair.print_to_terminal();
+        eprintln!("{}", previous_context.key_pair.terminal_info());
         Ok(Self)
     }
 }
@@ -150,7 +94,15 @@ impl SaveToFileContext {
         scope: &<SaveToFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let file_path: std::path::PathBuf = scope.file_path.clone().into();
-        previous_context.key_pair.save_to_file(&file_path)?;
+        if let Some(parent) = file_path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)
+                .wrap_err_with(|| format!("Failed to create parent directory for {file_path:?}"))?;
+        }
+        std::fs::write(&file_path, previous_context.key_pair.keychain_json()?)
+            .wrap_err_with(|| format!("Failed to write the key pair to {file_path:?}"))?;
+        eprintln!("\nThe key pair was saved to {file_path:?}");
         Ok(Self)
     }
 }
@@ -169,92 +121,9 @@ impl SaveToFile {
     }
 }
 
-/// A freshly generated key pair, holding everything we want to display or
-/// persist for the chosen signature scheme.
-#[derive(Debug, Clone)]
-enum GeneratedKeyPair {
-    Ed25519(crate::common::KeyPairProperties),
-    /// ML-DSA-65 keys are random (no seed phrase / HD derivation) and have no
-    /// implicit-account-id form defined yet, so we only keep the key strings.
-    MlDsa65 {
-        public_key: String,
-        private_key: String,
-    },
-}
-
-impl GeneratedKeyPair {
-    fn generate(signature_scheme: &SignatureScheme) -> color_eyre::eyre::Result<Self> {
-        match signature_scheme {
-            SignatureScheme::Ed25519 => Ok(Self::Ed25519(crate::common::generate_keypair()?)),
-            SignatureScheme::MlDsa65 => {
-                let private_key =
-                    near_crypto::SecretKey::from_random(near_crypto::KeyType::MLDSA65);
-                let public_key = private_key.public_key();
-                Ok(Self::MlDsa65 {
-                    public_key: public_key.to_string(),
-                    private_key: private_key.to_string(),
-                })
-            }
-        }
-    }
-
-    fn print_to_terminal(&self) {
-        match self {
-            Self::Ed25519(properties) => {
-                eprintln!(
-                    "\nSignature scheme: Ed25519\
-                     \nMaster Seed Phrase: {}\
-                     \nSeed Phrase HD Path: {}\
-                     \nImplicit Account ID: {}\
-                     \nPublic Key: {}\
-                     \nSECRET KEYPAIR: {}",
-                    properties.master_seed_phrase,
-                    properties.seed_phrase_hd_path,
-                    properties.implicit_account_id,
-                    properties.public_key_str,
-                    properties.secret_keypair_str,
-                );
-            }
-            Self::MlDsa65 {
-                public_key,
-                private_key,
-            } => {
-                eprintln!(
-                    "\nSignature scheme: ML-DSA-65 (post-quantum, FIPS 204)\
-                     \nPublic Key: {public_key}\
-                     \nSECRET KEYPAIR: {private_key}"
-                );
-            }
-        }
-    }
-
-    fn save_to_file(&self, file_path: &std::path::Path) -> color_eyre::eyre::Result<()> {
-        if let Some(parent) = file_path.parent()
-            && !parent.as_os_str().is_empty()
-        {
-            std::fs::create_dir_all(parent)
-                .wrap_err_with(|| format!("Failed to create parent directory for {file_path:?}"))?;
-        }
-        let json = match self {
-            Self::Ed25519(properties) => serde_json::to_string_pretty(properties)?,
-            Self::MlDsa65 {
-                public_key,
-                private_key,
-            } => serde_json::to_string_pretty(&serde_json::json!({
-                "public_key": public_key,
-                "private_key": private_key,
-            }))?,
-        };
-        std::fs::write(file_path, json)
-            .wrap_err_with(|| format!("Failed to write the key pair to {file_path:?}"))?;
-        eprintln!("\nThe key pair was saved to {file_path:?}");
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::common::{GeneratedKeyPair, SignatureScheme};
     use std::str::FromStr;
 
     #[test]

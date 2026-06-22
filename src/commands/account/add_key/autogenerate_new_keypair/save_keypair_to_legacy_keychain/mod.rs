@@ -14,7 +14,7 @@ pub struct SaveKeypairToLegacyKeychainContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
-    key_pair_properties: crate::common::KeyPairProperties,
+    generated_key_pair: crate::common::GeneratedKeyPair,
     public_key: near_crypto::PublicKey,
 }
 
@@ -27,7 +27,7 @@ impl SaveKeypairToLegacyKeychainContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
-            key_pair_properties: previous_context.key_pair_properties,
+            generated_key_pair: previous_context.generated_key_pair,
             public_key: previous_context.public_key,
         })
     }
@@ -69,18 +69,18 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
                             signed_delegate_action,
                         ) => signed_delegate_action.delegate_action.sender_id.clone()
                     };
-                    let key_pair_properties_buf = serde_json::to_string(&item.key_pair_properties)?;
+                    let key_pair_properties_buf = item.generated_key_pair.keychain_json()?;
                     crate::common::save_access_key_to_legacy_keychain(
                         network_config.clone(),
                         credentials_home_dir.clone(),
                         &key_pair_properties_buf,
-                        &item.key_pair_properties.public_key_str,
+                        item.generated_key_pair.public_key_str(),
                         account_id.as_ref(),
                     )
                     .wrap_err_with(|| {
                         format!(
                             "Failed to save a file with access key: {}",
-                            &item.key_pair_properties.public_key_str
+                            item.generated_key_pair.public_key_str()
                         )
                     })
                 }

@@ -1,11 +1,13 @@
-use std::str::FromStr;
-
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = super::super::NewAccountContext)]
 #[interactive_clap(output_context = GenerateKeypairContext)]
 pub struct GenerateKeypair {
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    /// Which signature scheme should the new key pair use?
+    signature_scheme: crate::common::SignatureScheme,
     #[interactive_clap(subcommand)]
     save_mode: SaveMode,
 }
@@ -15,27 +17,35 @@ pub struct GenerateKeypairContext {
     config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
     public_key: near_crypto::PublicKey,
-    key_pair_properties: crate::common::KeyPairProperties,
+    generated_key_pair: crate::common::GeneratedKeyPair,
     on_before_creating_account_callback: super::super::network::OnBeforeCreatingAccountCallback,
 }
 
 impl GenerateKeypairContext {
     pub fn from_previous_context(
         previous_context: super::super::NewAccountContext,
-        _scope: &<GenerateKeypair as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+        scope: &<GenerateKeypair as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let key_pair_properties: crate::common::KeyPairProperties =
-            crate::common::generate_keypair()?;
-        let public_key = near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+        let generated_key_pair =
+            crate::common::GeneratedKeyPair::generate(&scope.signature_scheme)?;
+        let public_key = generated_key_pair.public_key()?;
 
         Ok(Self {
             config: previous_context.config,
             new_account_id: previous_context.new_account_id,
             public_key,
-            key_pair_properties,
+            generated_key_pair,
             on_before_creating_account_callback: previous_context
                 .on_before_creating_account_callback,
         })
+    }
+}
+
+impl GenerateKeypair {
+    fn input_signature_scheme(
+        _context: &super::super::NewAccountContext,
+    ) -> color_eyre::eyre::Result<Option<crate::common::SignatureScheme>> {
+        crate::common::input_signature_scheme()
     }
 }
 
@@ -75,44 +85,31 @@ impl SaveModeContext {
         let on_after_getting_network_callback: super::super::network::OnAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let new_account_id_str = previous_context.new_account_id.to_string();
-                let key_pair_properties = previous_context.key_pair_properties.clone();
+                let generated_key_pair = previous_context.generated_key_pair.clone();
                 let credentials_home_dir = previous_context.config.credentials_home_dir.clone();
 
                 move |network_config| {
                     match scope {
                         SaveModeDiscriminants::SaveToKeychain => {
-                            let key_pair_properties_buf =
-                                serde_json::to_string(&key_pair_properties)?;
                             crate::common::save_access_key_to_keychain_or_save_to_legacy_keychain(
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
-                                &key_pair_properties_buf,
-                                &key_pair_properties.public_key_str,
+                                &generated_key_pair.keychain_json()?,
+                                generated_key_pair.public_key_str(),
                                 &new_account_id_str,
                             )
                         }
                         SaveModeDiscriminants::SaveToLegacyKeychain => {
-                            let key_pair_properties_buf =
-                                serde_json::to_string(&key_pair_properties)?;
                             crate::common::save_access_key_to_legacy_keychain(
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
-                                &key_pair_properties_buf,
-                                &key_pair_properties.public_key_str,
+                                &generated_key_pair.keychain_json()?,
+                                generated_key_pair.public_key_str(),
                                 &new_account_id_str,
                             )
                         }
                         SaveModeDiscriminants::PrintToTerminal => {
-                            Ok(format!(
-                                "\n--------------------  Access key info ------------------
-                                \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}
-                                \n--------------------------------------------------------",
-                                key_pair_properties.master_seed_phrase,
-                                key_pair_properties.seed_phrase_hd_path,
-                                key_pair_properties.implicit_account_id,
-                                key_pair_properties.public_key_str,
-                                key_pair_properties.secret_keypair_str,
-                            ))
+                            Ok(generated_key_pair.terminal_info())
                         }
                     }
                 }
