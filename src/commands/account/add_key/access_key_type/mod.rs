@@ -151,3 +151,191 @@ impl FunctionCallType {
         Ok(Some(allowance_near_balance))
     }
 }
+
+/// Prompt for the number of parallel nonces of a gas key.
+///
+/// `interactive_clap` only implements `ToCli` for `u64`/`u128` (not `u16`), so
+/// the CLI field is a `u64` and is narrowed to `NonceIndex` (`u16`) in the
+/// context builder, where it is also bounded by the protocol limit
+/// `AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY`.
+fn input_num_nonces() -> color_eyre::eyre::Result<u64> {
+    let num_nonces: u64 =
+        CustomType::new("How many parallel nonces should this gas key have (1..=1024)?")
+            .with_starting_input("1")
+            .prompt()?;
+    Ok(num_nonces)
+}
+
+/// Narrow a CLI-provided `u64` nonce count to a protocol-valid `NonceIndex`.
+fn validate_num_nonces(
+    num_nonces: u64,
+) -> color_eyre::eyre::Result<near_primitives::types::NonceIndex> {
+    let max = near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY;
+    if num_nonces == 0 || num_nonces > u64::from(max) {
+        color_eyre::eyre::bail!(
+            "A gas key must have between 1 and {max} parallel nonces, got {num_nonces}"
+        );
+    }
+    Ok(num_nonces as near_primitives::types::NonceIndex)
+}
+
+/// Prompt for the initial NEAR balance funded into the gas key.
+fn input_gas_key_balance() -> color_eyre::eyre::Result<crate::types::near_token::NearToken> {
+    let balance: crate::types::near_token::NearToken = CustomType::new(
+        "How much NEAR do you want to deposit into the gas key balance (example: 1 NEAR or 0.5 NEAR or 10000 yoctonear)?",
+    )
+    .prompt()?;
+    Ok(balance)
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = super::AddKeyCommandContext)]
+#[interactive_clap(output_context = GasKeyFullAccessTypeContext)]
+pub struct GasKeyFullAccessType {
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    balance: crate::types::near_token::NearToken,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    num_nonces: u64,
+    #[interactive_clap(subcommand)]
+    pub access_key_mode: super::AccessKeyMode,
+}
+
+#[derive(Debug, Clone)]
+pub struct GasKeyFullAccessTypeContext {
+    global_context: crate::GlobalContext,
+    signer_account_id: near_primitives::types::AccountId,
+    permission: near_primitives::account::AccessKeyPermission,
+}
+
+impl GasKeyFullAccessTypeContext {
+    pub fn from_previous_context(
+        previous_context: super::AddKeyCommandContext,
+        scope: &<GasKeyFullAccessType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.owner_account_id.into(),
+            permission: near_primitives::account::AccessKeyPermission::GasKeyFullAccess(
+                near_primitives::account::GasKeyInfo {
+                    balance: scope.balance.into(),
+                    num_nonces: validate_num_nonces(scope.num_nonces)?,
+                },
+            ),
+        })
+    }
+}
+
+impl From<GasKeyFullAccessTypeContext> for AccessTypeContext {
+    fn from(item: GasKeyFullAccessTypeContext) -> Self {
+        Self {
+            global_context: item.global_context,
+            signer_account_id: item.signer_account_id,
+            permission: item.permission,
+        }
+    }
+}
+
+impl GasKeyFullAccessType {
+    pub fn input_balance(
+        _context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
+        Ok(Some(input_gas_key_balance()?))
+    }
+
+    pub fn input_num_nonces(
+        _context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        Ok(Some(input_num_nonces()?))
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = super::AddKeyCommandContext)]
+#[interactive_clap(output_context = GasKeyFunctionCallTypeContext)]
+pub struct GasKeyFunctionCallType {
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    balance: crate::types::near_token::NearToken,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    num_nonces: u64,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    allowance: crate::types::near_allowance::NearAllowance,
+    #[interactive_clap(long)]
+    /// Enter the contract account ID that this gas key can be used to sign call function transactions for:
+    contract_account_id: crate::types::account_id::AccountId,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    function_names: crate::types::vec_string::VecString,
+    #[interactive_clap(subcommand)]
+    access_key_mode: super::AccessKeyMode,
+}
+
+#[derive(Debug, Clone)]
+pub struct GasKeyFunctionCallTypeContext {
+    global_context: crate::GlobalContext,
+    signer_account_id: near_primitives::types::AccountId,
+    permission: near_primitives::account::AccessKeyPermission,
+}
+
+impl GasKeyFunctionCallTypeContext {
+    pub fn from_previous_context(
+        previous_context: super::AddKeyCommandContext,
+        scope: &<GasKeyFunctionCallType as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context.global_context,
+            signer_account_id: previous_context.owner_account_id.into(),
+            permission: near_primitives::account::AccessKeyPermission::GasKeyFunctionCall(
+                near_primitives::account::GasKeyInfo {
+                    balance: scope.balance.into(),
+                    num_nonces: validate_num_nonces(scope.num_nonces)?,
+                },
+                near_primitives::account::FunctionCallPermission {
+                    allowance: scope.allowance.optional_near_token().map(Into::into),
+                    receiver_id: scope.contract_account_id.to_string(),
+                    method_names: scope.function_names.clone().into(),
+                },
+            ),
+        })
+    }
+}
+
+impl From<GasKeyFunctionCallTypeContext> for AccessTypeContext {
+    fn from(item: GasKeyFunctionCallTypeContext) -> Self {
+        Self {
+            global_context: item.global_context,
+            signer_account_id: item.signer_account_id,
+            permission: item.permission,
+        }
+    }
+}
+
+impl GasKeyFunctionCallType {
+    pub fn input_balance(
+        _context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
+        Ok(Some(input_gas_key_balance()?))
+    }
+
+    pub fn input_num_nonces(
+        _context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<u64>> {
+        Ok(Some(input_num_nonces()?))
+    }
+
+    pub fn input_allowance(
+        context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::near_allowance::NearAllowance>> {
+        FunctionCallType::input_allowance(context)
+    }
+
+    pub fn input_function_names(
+        context: &super::AddKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
+        FunctionCallType::input_function_names(context)
+    }
+}

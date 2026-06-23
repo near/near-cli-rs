@@ -2914,6 +2914,22 @@ pub fn display_access_key_list(access_keys: &[near_primitives::views::AccessKeyI
     table.printstd();
 }
 
+pub fn display_gas_key_nonces(
+    public_key: &near_crypto::PublicKey,
+    nonces: &[near_primitives::types::Nonce],
+) {
+    eprintln!("Gas key nonces for public key {public_key}:");
+    let mut table = Table::new();
+    table.set_titles(prettytable::row![Fg=>"Nonce index", "Nonce"]);
+
+    for (nonce_index, nonce) in nonces.iter().enumerate() {
+        table.add_row(prettytable::row![Fg->nonce_index, nonce]);
+    }
+
+    table.set_format(*prettytable::format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+    table.printstd();
+}
+
 /// Interactive prompt for network name.
 ///
 /// If account_ids is provided, show the network connections that are more
@@ -2993,6 +3009,16 @@ pub trait JsonRpcClientExt {
     fn blocking_call_view_access_key_list(
         &self,
         account_id: &near_primitives::types::AccountId,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> BoxedJsonRpcResult<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
+    >;
+
+    fn blocking_call_view_gas_key_nonces(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        public_key: &near_crypto::PublicKey,
         block_reference: near_primitives::types::BlockReference,
     ) -> BoxedJsonRpcResult<
         near_jsonrpc_primitives::types::query::RpcQueryResponse,
@@ -3225,6 +3251,41 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             .inspect(teach_me_call_response)
     }
 
+    #[tracing::instrument(name = "Getting gas key nonces for", skip_all)]
+    fn blocking_call_view_gas_key_nonces(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        public_key: &near_crypto::PublicKey,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> BoxedJsonRpcResult<
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        near_jsonrpc_primitives::types::query::RpcQueryError,
+    > {
+        tracing::Span::current().pb_set_message(&format!(
+            "gas key {public_key} on account <{account_id}>..."
+        ));
+        tracing::info!(target: "near_teach_me", "Getting gas key nonces for public key {public_key} on account <{account_id}>...");
+
+        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewGasKeyNonces {
+                account_id: account_id.clone(),
+                public_key: public_key.clone(),
+            },
+        };
+
+        tracing::info!(
+            target: "near_teach_me",
+            parent: &tracing::Span::none(),
+            "I am making HTTP call to NEAR JSON RPC to get the gas key nonces for public key {} on account <{}>",
+            public_key,
+            account_id
+        );
+
+        self.blocking_call(query_view_method_request)
+            .inspect(teach_me_call_response)
+    }
+
     #[tracing::instrument(name = "Getting information about", skip_all)]
     fn blocking_call_view_account(
         &self,
@@ -3411,6 +3472,21 @@ pub impl near_jsonrpc_primitives::types::query::RpcQueryResponse {
         } else {
             color_eyre::eyre::bail!(
                 "Internal error: Received unexpected query kind in response to a View Access Key List query call",
+            );
+        }
+    }
+
+    fn gas_key_nonces_view(
+        &self,
+    ) -> color_eyre::eyre::Result<near_primitives::views::GasKeyNoncesView> {
+        if let near_jsonrpc_primitives::types::query::QueryResponseKind::GasKeyNonces(
+            gas_key_nonces,
+        ) = &self.kind
+        {
+            Ok(gas_key_nonces.clone())
+        } else {
+            color_eyre::eyre::bail!(
+                "Internal error: Received unexpected query kind in response to a View Gas Key Nonces query call",
             );
         }
     }

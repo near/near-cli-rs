@@ -11,6 +11,7 @@ mod list_keys;
 pub mod storage_management;
 pub mod update_social_profile;
 pub mod view_account_summary;
+mod view_gas_key_nonces;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 
@@ -54,6 +55,11 @@ pub enum AccountActions {
     ))]
     /// View a list of access keys of an account
     ListKeys(self::list_keys::ViewListKeys),
+    #[strum_discriminants(strum(
+        message = "view-gas-key-nonces     - View the parallel nonces of a gas key"
+    ))]
+    /// View the parallel nonces of a gas key
+    ViewGasKeyNonces(self::view_gas_key_nonces::ViewGasKeyNonces),
     #[strum_discriminants(strum(
         message = "get-public-key          - Get the public key to your account"
     ))]
