@@ -78,18 +78,16 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-# TODO(post-quantum): temporary git pins for nearcore 2.13 (post-quantum
-# ML-DSA-65 access keys, nearcore#15731). The 2.13 crates are not published to
-# crates.io yet, so we pin every crate that exchanges near-primitives/near-crypto
-# types to the same nearcore `2.13-release` rev (and the matching draft branches
-# of the jsonrpc/socialdb clients) so they resolve to a single version. Swap all
-# of these back to published crates.io versions once nearcore 2.13 ships.
-near-crypto = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
-near-primitives = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
-near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs", rev = "5f5d150d47315745945fba7672bf8c90c5bf7f95", features = ["any"] }
-near-jsonrpc-primitives = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
-near-parameters = { git = "https://github.com/near/nearcore", rev = "46483c8d45579dd89faa3bd47317d4c563bcde10" }
-near-socialdb-client = { git = "https://github.com/near/near-socialdb-client-rs", rev = "2268c29c4e8ad095de2a511521f08411858a1811" }
+# TODO(post-quantum): nearcore 2.13 (post-quantum ML-DSA-65 access keys,
+# nearcore#15731). Published 2.13 RC 0.37.0-rc.1; bump to 0.37.0 (drop
+# pre-release) once 2.13 ships stable. The jsonrpc/socialdb clients stay on
+# their matching 2.13 draft revs until they cut crates.io releases.
+near-crypto = "0.37.0-rc.1"
+near-primitives = "0.37.0-rc.1"
+near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs", rev = "b1ea63913de39768f4c40affaaf958e79704710d", features = ["any"] }
+near-jsonrpc-primitives = "0.37.0-rc.1"
+near-parameters = "0.37.0-rc.1"
+near-socialdb-client = { git = "https://github.com/near/near-socialdb-client-rs", rev = "c6c81d1a17bfd5275aa279b478b299721af108e8" }
 
 near-ledger = { version = "0.9.4", optional = true }
 
