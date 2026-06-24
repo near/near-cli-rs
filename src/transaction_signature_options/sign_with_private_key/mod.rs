@@ -1,10 +1,6 @@
-use color_eyre::eyre::{ContextCompat, WrapErr};
+use color_eyre::eyre::ContextCompat;
 use inquire::CustomType;
-use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
-
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -21,6 +17,9 @@ pub struct SignPrivateKey {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     pub block_height: Option<near_primitives::types::BlockHeight>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_interactive_input)]
+    pub nonce_index: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
@@ -56,45 +55,42 @@ impl SignPrivateKeyContext {
         let signer_secret_key: near_crypto::SecretKey = scope.signer_private_key.clone().into();
         let public_key = signer_secret_key.public_key();
 
-        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
-            (
-                scope
-                    .nonce
-                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
-                scope
-                    .block_hash
-                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
-                    .0,
-                scope
-                    .block_height
-                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
-            )
-        } else {
-            let rpc_query_response = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key(
+        let nonce_index = scope
+            .nonce_index
+            .map(super::nonce_index_from_cli)
+            .transpose()?;
+
+        let (nonce_resolution, block_hash, block_height) =
+            if previous_context.global_context.offline {
+                (
+                    super::resolve_offline_nonce(
+                        scope
+                            .nonce
+                            .wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                        nonce_index,
+                    ),
+                    scope
+                        .block_hash
+                        .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                        .0,
+                    scope.block_height.wrap_err(
+                        "Block Height is required to sign a transaction in offline mode",
+                    )?,
+                )
+            } else {
+                super::resolve_online_nonce(
+                    &network_config.json_rpc_client(),
                     &previous_context.prepopulated_transaction.signer_id,
                     &public_key,
-                    near_primitives::types::BlockReference::latest()
-                )
-                .wrap_err_with(||
-                    format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
-                )?;
-            (
-                rpc_query_response
-                    .access_key_view()
-                    .wrap_err("Error current_nonce")?
-                    .nonce
-                    + 1,
-                rpc_query_response.block_hash,
-                rpc_query_response.block_height,
-            )
-        };
+                    nonce_index,
+                    &network_config.network_name,
+                )?
+            };
 
         let mut unsigned_transaction = TransactionV0 {
             public_key: public_key.clone(),
             block_hash,
-            nonce,
+            nonce: nonce_resolution.nonce(),
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
@@ -102,7 +98,8 @@ impl SignPrivateKeyContext {
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-        let unsigned_transaction = Transaction::V0(unsigned_transaction);
+        let unsigned_transaction =
+            super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
 
         let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
 
