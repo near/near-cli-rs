@@ -179,22 +179,10 @@ fn validate_num_nonces(
     Ok(num_nonces as near_primitives::types::NonceIndex)
 }
 
-/// Prompt for the initial NEAR balance funded into the gas key.
-fn input_gas_key_balance() -> color_eyre::eyre::Result<crate::types::near_token::NearToken> {
-    let balance: crate::types::near_token::NearToken = CustomType::new(
-        "How much NEAR do you want to deposit into the gas key balance (example: 1 NEAR or 0.5 NEAR or 10000 yoctonear)?",
-    )
-    .prompt()?;
-    Ok(balance)
-}
-
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::AddKeyCommandContext)]
 #[interactive_clap(output_context = GasKeyFullAccessTypeContext)]
 pub struct GasKeyFullAccessType {
-    #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
-    balance: crate::types::near_token::NearToken,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     num_nonces: u64,
@@ -217,9 +205,11 @@ impl GasKeyFullAccessTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
+            // Gas keys must be created empty: the protocol rejects an AddKey that
+            // sets a non-zero gas-key balance. Fund it afterwards with `fund-gas-key`.
             permission: near_primitives::account::AccessKeyPermission::GasKeyFullAccess(
                 near_primitives::account::GasKeyInfo {
-                    balance: scope.balance.into(),
+                    balance: near_token::NearToken::from_yoctonear(0),
                     num_nonces: validate_num_nonces(scope.num_nonces)?,
                 },
             ),
@@ -238,12 +228,6 @@ impl From<GasKeyFullAccessTypeContext> for AccessTypeContext {
 }
 
 impl GasKeyFullAccessType {
-    pub fn input_balance(
-        _context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        Ok(Some(input_gas_key_balance()?))
-    }
-
     pub fn input_num_nonces(
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
@@ -255,9 +239,6 @@ impl GasKeyFullAccessType {
 #[interactive_clap(input_context = super::AddKeyCommandContext)]
 #[interactive_clap(output_context = GasKeyFunctionCallTypeContext)]
 pub struct GasKeyFunctionCallType {
-    #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
-    balance: crate::types::near_token::NearToken,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     num_nonces: u64,
@@ -289,9 +270,11 @@ impl GasKeyFunctionCallTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
+            // Gas keys must be created empty: the protocol rejects an AddKey that
+            // sets a non-zero gas-key balance. Fund it afterwards with `fund-gas-key`.
             permission: near_primitives::account::AccessKeyPermission::GasKeyFunctionCall(
                 near_primitives::account::GasKeyInfo {
-                    balance: scope.balance.into(),
+                    balance: near_token::NearToken::from_yoctonear(0),
                     num_nonces: validate_num_nonces(scope.num_nonces)?,
                 },
                 near_primitives::account::FunctionCallPermission {
@@ -315,12 +298,6 @@ impl From<GasKeyFunctionCallTypeContext> for AccessTypeContext {
 }
 
 impl GasKeyFunctionCallType {
-    pub fn input_balance(
-        _context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::near_token::NearToken>> {
-        Ok(Some(input_gas_key_balance()?))
-    }
-
     pub fn input_num_nonces(
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
