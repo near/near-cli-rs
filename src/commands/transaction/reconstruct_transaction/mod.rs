@@ -265,6 +265,9 @@ fn action_transformation(
         Action::Delegate(_) => {
             panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
         }
+        Action::DelegateV2(_) => Err(color_eyre::eyre::eyre!(
+            "Reconstructing DelegateV2 (meta) transactions is not supported."
+        )),
         Action::DeployGlobalContract(action) => {
             let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the file path where to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")

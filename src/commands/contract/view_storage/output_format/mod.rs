@@ -37,6 +37,8 @@ pub fn get_contract_state(
                 account_id: contract_account_id.clone(),
                 prefix,
                 include_proof: false,
+                after_key: None,
+                limit: None,
             },
         })
         .wrap_err_with(|| {

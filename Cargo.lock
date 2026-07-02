@@ -147,6 +147,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
+name = "aws-lc-rs"
+version = "1.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a054912289d18629dc78375ba2c3726a3afe3ff71b4edba9dedfca0e3446d1fc"
+dependencies = [
+ "aws-lc-sys",
+ "untrusted 0.7.1",
+ "zeroize",
+]
+
+[[package]]
+name = "aws-lc-sys"
+version = "0.39.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83a25cf98105baa966497416dbd42565ce3a8cf8dbfd59803ec9ad46f3126399"
+dependencies = [
+ "cc",
+ "cmake",
+ "dunce",
+ "fs_extra",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.3.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -543,6 +566,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3e64b0cc0439b12df2fa678eae89a1c56a529fd067a9115f7827f1fffd22b32"
 
 [[package]]
+name = "cmake"
+version = "0.1.58"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0f78a02292a74a88ac736019ab962ece0bc380e3f977bf72e376c5d78ff0678"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "color-eyre"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -581,7 +613,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1097,7 +1129,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1246,7 +1278,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1374,6 +1406,12 @@ dependencies = [
  "rustix",
  "windows-sys 0.59.0",
 ]
+
+[[package]]
+name = "fs_extra"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
 
 [[package]]
 name = "funty"
@@ -2081,7 +2119,7 @@ checksum = "3640c1c38b8e4e43584d8df18be5fc6b0aa314ce6ebf51b53313d4306cca8e46"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2506,9 +2544,9 @@ dependencies = [
 
 [[package]]
 name = "near-chain-configs"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ad19244d6390aa12020ed3f5971ea452fb54aa8b8f6435d4cf0cbbbc8fbd302"
+checksum = "139112ed78ed5f62ace80e88f4fe2de3edad1a94b90431263b18654d62473e9a"
 dependencies = [
  "anyhow",
  "bytesize",
@@ -2600,9 +2638,9 @@ dependencies = [
 
 [[package]]
 name = "near-config-utils"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0238af1d79fd3841817e3a5861bb628ba825669f211ca379836ae716da67bb21"
+checksum = "a4b30e07d9eb158f1084a36db8963262f75a353b0093a033aa0529faae9db108"
 dependencies = [
  "anyhow",
  "json_comments",
@@ -2612,10 +2650,11 @@ dependencies = [
 
 [[package]]
 name = "near-crypto"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfe9390bf0db47f0a34386ef6a30adc1270288874b7eac5cab7fa48d3f89fe03"
+checksum = "9ee338484a9348f3768f4d636a98875f746b9dfeb58f4d7761e70ff74f3ddbb5"
 dependencies = [
+ "aws-lc-rs",
  "blake2",
  "borsh",
  "bs58 0.4.0",
@@ -2632,15 +2671,16 @@ dependencies = [
  "secp256k1",
  "serde",
  "serde_json",
+ "sha3",
  "subtle",
  "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "near-fmt"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "503fac5d4e533a6d5e2c642cd22bd2400d1159dd5b2db58072dfc183a288c273"
+checksum = "1bf5e92ed9616818b0cbedcc582d2a582194334f9b622276580453624712380b"
 dependencies = [
  "near-primitives-core",
 ]
@@ -2659,8 +2699,7 @@ dependencies = [
 [[package]]
 name = "near-jsonrpc-client"
 version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "614359c17b9cbf5faf2d82ecfe10d7a79b588c51f5f04517f75eff09f1751cdb"
+source = "git+https://github.com/near/near-jsonrpc-client-rs?rev=4196c34db5c5e6acfc563d62ab16c68b7c666d7e#4196c34db5c5e6acfc563d62ab16c68b7c666d7e"
 dependencies = [
  "borsh",
  "lazy_static",
@@ -2677,9 +2716,9 @@ dependencies = [
 
 [[package]]
 name = "near-jsonrpc-primitives"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99fa313996117ffead7c6f8eb12bb2b83e6ad569c7c2fd58d406c0f53ed06e01"
+checksum = "79ada6f8e357a6eecba4947cb21e56abc58036fcab2136a438b358a4042b62a6"
 dependencies = [
  "arbitrary",
  "near-chain-configs",
@@ -2716,9 +2755,9 @@ dependencies = [
 
 [[package]]
 name = "near-parameters"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b89a9337ab742575d6dc9770ee7d4398de8cec8bbe5eaf25f00349f4e13d0173"
+checksum = "c9a94eb0bc87f470537646ea6bc5b5b9272bcceb8a798a1bd47e938f8737454a"
 dependencies = [
  "borsh",
  "enum-map",
@@ -2735,9 +2774,9 @@ dependencies = [
 
 [[package]]
 name = "near-primitives"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "381f54f821ecdddfaccba5815a8d72bb4bb7abacac79783ce86841518523c591"
+checksum = "b5704a32bee9023c61c725ed6403f6bfdd21226e4798d74312b427c5a0f7022c"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2778,9 +2817,9 @@ dependencies = [
 
 [[package]]
 name = "near-primitives-core"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5660ac51d24534bc144e7cc04f702921c22a7e2553072663d4b43a56a8bb1ae7"
+checksum = "f94564d97ca478c94b8a34fdcda0a0077b967fa83e7187c6b8267e9b6e441d47"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2824,15 +2863,15 @@ dependencies = [
 
 [[package]]
 name = "near-schema-checker-core"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37ad456b1bd9876772d6c0b557d100d518d60dd13e359daca8e0293828e29a05"
+checksum = "481ec75b745264fa2403643acde2402536ed4273fbf05ea8749a5d1813f683a0"
 
 [[package]]
 name = "near-schema-checker-lib"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebdeed0043b2309b306984e4d3eeff6777ba6c66a2f955d34f883fd4ce7f84f2"
+checksum = "5eb4a7f0e4eb5aaa1032a396ef0b840f6b3cda399dfa74b9d5cfaf0c1b537260"
 dependencies = [
  "near-schema-checker-core",
  "near-schema-checker-macro",
@@ -2840,9 +2879,9 @@ dependencies = [
 
 [[package]]
 name = "near-schema-checker-macro"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "731a7b9cc155e291f149f2f6f8f88f5cab512b772aaf301f9defb4e4bceb1629"
+checksum = "24abafad706a94a56a687618ae7e13b296b0443f54c7b7d92477b3b3c82e336d"
 
 [[package]]
 name = "near-slip10"
@@ -2858,8 +2897,7 @@ dependencies = [
 [[package]]
 name = "near-socialdb-client"
 version = "0.15.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a7cd480aad6faff2ba872e3368cd17b96db3b4244621e59bb8b95df984607a8"
+source = "git+https://github.com/near/near-socialdb-client-rs?rev=66580af4ce6736056e3d6f15e6c93f0127b86aad#66580af4ce6736056e3d6f15e6c93f0127b86aad"
 dependencies = [
  "eyre",
  "near-crypto",
@@ -2874,15 +2912,15 @@ dependencies = [
 
 [[package]]
 name = "near-stdx"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f35191f9d7a78d5cdca9788e648dce89ebbb74faef4abfa6992ed7f1fb300369"
+checksum = "f1e1cf6e256646ef9cabf86759582b2e7b06edfde846edaa68fc7d3e69d833f8"
 
 [[package]]
 name = "near-time"
-version = "0.36.0"
+version = "0.37.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ba02806ee8691aaf41717febbe09f8e8b60ff145f09f0fc23438c07a370b3b7"
+checksum = "3014c3edcc10d38313abd8401700b565ab555423eee090a1b1491c700ed711a2"
 dependencies = [
  "parking_lot",
  "serde",
@@ -2950,7 +2988,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3436,7 +3474,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -3681,7 +3719,7 @@ dependencies = [
  "cfg-if",
  "getrandom 0.2.17",
  "libc",
- "untrusted",
+ "untrusted 0.9.0",
  "windows-sys 0.52.0",
 ]
 
@@ -3762,7 +3800,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3798,7 +3836,7 @@ checksum = "df33b2b81ac578cabaf06b89b0631153a3f416b0a886e8a7a1707fb51abbd1ef"
 dependencies = [
  "ring",
  "rustls-pki-types",
- "untrusted",
+ "untrusted 0.9.0",
 ]
 
 [[package]]
@@ -4489,7 +4527,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5005,6 +5043,12 @@ checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
 
 [[package]]
 name = "untrusted"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
+
+[[package]]
+name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
@@ -5323,7 +5367,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

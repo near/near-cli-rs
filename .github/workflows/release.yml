@@ -112,6 +112,11 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BUILD_MANIFEST_NAME: target/distrib/${{ join(matrix.targets, '-') }}-dist-manifest.json
+      # near-crypto (post-quantum ML-DSA-65) pulls in aws-lc-sys, which needs
+      # NASM to assemble its x86_64 Windows code. Use aws-lc-sys's pregenerated
+      # NASM objects so the x86_64-pc-windows-msvc build doesn't require NASM on
+      # the runner. (aarch64 Windows / unix targets ignore this variable.)
+      AWS_LC_SYS_PREBUILT_NASM: "1"
     steps:
       - name: enable windows longpaths
         run: |

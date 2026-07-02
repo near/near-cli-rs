@@ -12,7 +12,7 @@ pub struct PrintKeypairToTerminalContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     permission: near_primitives::account::AccessKeyPermission,
-    key_pair_properties: crate::common::KeyPairProperties,
+    generated_key_pair: crate::common::GeneratedKeyPair,
     public_key: near_crypto::PublicKey,
 }
 
@@ -25,7 +25,7 @@ impl PrintKeypairToTerminalContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             permission: previous_context.permission,
-            key_pair_properties: previous_context.key_pair_properties,
+            generated_key_pair: previous_context.generated_key_pair,
             public_key: previous_context.public_key,
         })
     }
@@ -62,18 +62,7 @@ impl From<PrintKeypairToTerminalContext> for crate::commands::ActionContext {
                 |_prepopulated_unsigned_transaction, _network_config| Ok(()),
             ),
             on_before_sending_transaction_callback: std::sync::Arc::new(
-                move |_transaction, _network_config| {
-                    Ok(format!(
-                        "\n--------------------  Access key info ------------------
-                        \nMaster Seed Phrase: {}\nSeed Phrase HD Path: {}\nImplicit Account ID: {}\nPublic Key: {}\nSECRET KEYPAIR: {}
-                        \n--------------------------------------------------------",
-                        item.key_pair_properties.master_seed_phrase,
-                        item.key_pair_properties.seed_phrase_hd_path,
-                        item.key_pair_properties.implicit_account_id,
-                        item.key_pair_properties.public_key_str,
-                        item.key_pair_properties.secret_keypair_str,
-                    ))
-                },
+                move |_transaction, _network_config| Ok(item.generated_key_pair.terminal_info()),
             ),
             on_after_sending_transaction_callback: std::sync::Arc::new(
                 move |_outcome_view, _network_config| Ok(()),

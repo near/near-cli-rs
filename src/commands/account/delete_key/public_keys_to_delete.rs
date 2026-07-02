@@ -110,11 +110,21 @@ impl PublicKeyList {
                 ) {
                 Ok(rpc_query_response) => {
                     let access_key_list_for_network = rpc_query_response.access_key_list_view()?;
-                    access_key_list.extend(access_key_list_for_network.keys.iter().map(
-                        |access_key_info_view| AccessKeyInfo {
-                            public_key: access_key_info_view.public_key.clone(),
-                            permission: access_key_info_view.access_key.permission.clone(),
-                            network_name: network_config.network_name.clone(),
+                    access_key_list.extend(access_key_list_for_network.keys.iter().filter_map(
+                        |access_key_info_view| {
+                            // In 2.13 the access-key list returns a `PublicKeyHandle`.
+                            // ML-DSA-65 keys are stored on-chain only as a hash, so the
+                            // full public key needed to build a DeleteKey action can't be
+                            // recovered here; `full_pubkey()` returns `None` for them and
+                            // they are skipped from the interactive picker.
+                            access_key_info_view
+                                .public_key
+                                .full_pubkey()
+                                .map(|public_key| AccessKeyInfo {
+                                    public_key,
+                                    permission: access_key_info_view.access_key.permission.clone(),
+                                    network_name: network_config.network_name.clone(),
+                                })
                         },
                     ));
                     processed_network.push(network_config.network_name.to_string());
