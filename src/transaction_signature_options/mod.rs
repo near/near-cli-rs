@@ -255,7 +255,7 @@ pub fn nonce_index_from_cli(
     let max = near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY;
     if nonce_index >= u64::from(max) {
         color_eyre::eyre::bail!(
-            "--nonce-index must be less than the gas key's number of parallel nonces (at most {max}), got {nonce_index}"
+            "--nonce-index must be less than {max}, the maximum number of parallel nonces a gas key can have, got {nonce_index}"
         );
     }
     Ok(nonce_index as near_primitives::types::NonceIndex)
