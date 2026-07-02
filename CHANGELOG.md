@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.0](https://github.com/near/near-cli-rs/compare/v0.27.0...v0.28.0) - 2026-07-02
+
+### Added
+
+- sign transactions with a gas key (nonce_index) ([#608](https://github.com/near/near-cli-rs/pull/608))
+- gas-key support (nearcore 2.13) ([#607](https://github.com/near/near-cli-rs/pull/607))
+- post-quantum (ML-DSA-65) key generation (draft) ([#605](https://github.com/near/near-cli-rs/pull/605))
+- Validate beneficiary account before deleting account ([#596](https://github.com/near/near-cli-rs/pull/596))
+
+### Fixed
+
+- Fixed output information for transaction status "Started" ([#594](https://github.com/near/near-cli-rs/pull/594))
+
+### Other
+
+- Fixed NPM Trusted Publishing ([#603](https://github.com/near/near-cli-rs/pull/603))
+
 ## [0.27.0](https://github.com/near/near-cli-rs/compare/v0.26.2...v0.27.0) - 2026-06-03
 
 ### Added
