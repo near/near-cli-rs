@@ -170,4 +170,37 @@ mod tests {
         assert!(properties.public_key_str.starts_with("ed25519:"));
         assert!(near_crypto::PublicKey::from_str(&properties.public_key_str).is_ok());
     }
+
+    // The keychain / legacy-keychain identifier a key is *saved* under must
+    // equal the string the RPC access-key list reports (a
+    // `near_crypto::PublicKeyHandle`), because that is what the signers look the
+    // key up by. For ed25519 that is the full public key; for ML-DSA-65 it is
+    // the short `ml-dsa-65-hash:...` handle, never the ~1952-byte full key.
+    #[test]
+    fn ed25519_keychain_id_is_the_full_public_key() {
+        let key_pair = GeneratedKeyPair::generate(&SignatureScheme::Ed25519).unwrap();
+        assert_eq!(
+            key_pair.keychain_key_id().unwrap(),
+            key_pair.public_key_str()
+        );
+    }
+
+    #[test]
+    fn ml_dsa_65_keychain_id_is_the_on_chain_handle() {
+        let key_pair = GeneratedKeyPair::generate(&SignatureScheme::MlDsa65).unwrap();
+        let key_id = key_pair.keychain_key_id().unwrap();
+
+        // The saved id is the on-trie handle, not the full key.
+        assert!(key_id.starts_with("ml-dsa-65-hash:"), "{key_id}");
+        assert_ne!(key_id, key_pair.public_key_str());
+        // Bounded length (well under any filesystem name limit), unlike the
+        // ~2.6KB full ML-DSA-65 key string.
+        assert!(key_id.len() < 80, "{} chars", key_id.len());
+
+        // It must be exactly what the RPC access-key list would report for this
+        // key (`PublicKeyHandle`), so a saved key can be found again for signing.
+        let public_key = key_pair.public_key().unwrap();
+        let handle = near_crypto::PublicKeyHandle::from(&public_key).to_string();
+        assert_eq!(key_id, handle);
+    }
 }

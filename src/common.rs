@@ -946,6 +946,26 @@ impl GeneratedKeyPair {
         Ok(near_crypto::PublicKey::from_str(self.public_key_str())?)
     }
 
+    /// Identifier under which this key's credentials are stored: the keychain
+    /// entry name and the legacy-keychain file name. It must equal the
+    /// public-key string the RPC access-key list returns, because that is what
+    /// `sign_with_keychain` / the legacy-keychain signer look the saved key up
+    /// by — otherwise a key saved here can never be found again.
+    ///
+    /// For ed25519 this is the full public-key string, unchanged. For ML-DSA-65
+    /// the on-chain identifier is the short `ml-dsa-65-hash:...` SHA3-256 handle
+    /// (`near_crypto::PublicKeyHandle`), not the ~1952-byte full key: the full
+    /// key would blow past filesystem name limits and would never match the
+    /// handle the chain reports for the key.
+    pub fn keychain_key_id(&self) -> color_eyre::eyre::Result<String> {
+        Ok(match self {
+            Self::Ed25519(properties) => properties.public_key_str.clone(),
+            Self::MlDsa65 { .. } => {
+                near_crypto::PublicKeyHandle::from(&self.public_key()?).to_string()
+            }
+        })
+    }
+
     /// JSON written to the keychain / legacy keychain credentials file. Ed25519
     /// preserves the historical full `KeyPairProperties` layout; ML-DSA-65 uses
     /// the minimal `{ public_key, private_key }` credentials format (which the
