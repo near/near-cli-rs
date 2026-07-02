@@ -58,7 +58,7 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                         network_config.clone(),
                         credentials_home_dir.clone(),
                         &item.0.generated_key_pair.keychain_json()?,
-                        item.0.generated_key_pair.public_key_str(),
+                        &item.0.generated_key_pair.keychain_key_id()?,
                         account_id.as_ref(),
                     )
                 }

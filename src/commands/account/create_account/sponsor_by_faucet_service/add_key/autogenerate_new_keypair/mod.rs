@@ -95,7 +95,7 @@ impl SaveModeContext {
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
                                 &generated_key_pair.keychain_json()?,
-                                generated_key_pair.public_key_str(),
+                                &generated_key_pair.keychain_key_id()?,
                                 &new_account_id_str,
                             )
                         }
@@ -104,7 +104,7 @@ impl SaveModeContext {
                                 network_config.clone(),
                                 credentials_home_dir.clone(),
                                 &generated_key_pair.keychain_json()?,
-                                generated_key_pair.public_key_str(),
+                                &generated_key_pair.keychain_key_id()?,
                                 &new_account_id_str,
                             )
                         }

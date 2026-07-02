@@ -63,6 +63,16 @@ pub enum AccessKeyPermission {
     ))]
     /// Provide data for a function-call access key
     GrantFunctionCallAccess(self::access_key_type::FunctionCallType),
+    #[strum_discriminants(strum(
+        message = "grant-gas-key-full-access   - A gas key with full access (created empty; fund with fund-gas-key)"
+    ))]
+    /// Provide data for a gas key with full access (created with zero balance; fund it later with `fund-gas-key`)
+    GrantGasKeyFullAccess(self::access_key_type::GasKeyFullAccessType),
+    #[strum_discriminants(strum(
+        message = "grant-gas-key-function-call - A gas key with function call (created empty; fund with fund-gas-key)"
+    ))]
+    /// Provide data for a gas key with function call (created with zero balance; fund it later with `fund-gas-key`)
+    GrantGasKeyFunctionCallAccess(self::access_key_type::GasKeyFunctionCallType),
 }
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]

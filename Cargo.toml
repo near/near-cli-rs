@@ -79,15 +79,15 @@ prettytable = "0.10.0"
 textwrap = "0.16.1"
 
 # TODO(post-quantum): nearcore 2.13 (post-quantum ML-DSA-65 access keys,
-# nearcore#15731). Published 2.13 RC 0.37.0-rc.2; bump to 0.37.0 (drop
-# pre-release) once 2.13 ships stable. The jsonrpc/socialdb clients stay on
-# their matching 2.13 draft revs until they cut crates.io releases.
-near-crypto = "0.37.0-rc.2"
-near-primitives = "0.37.0-rc.2"
-near-jsonrpc-client = { git = "https://github.com/near/near-jsonrpc-client-rs", rev = "4196c34db5c5e6acfc563d62ab16c68b7c666d7e", features = ["any"] }
-near-jsonrpc-primitives = "0.37.0-rc.2"
-near-parameters = "0.37.0-rc.2"
-near-socialdb-client = { git = "https://github.com/near/near-socialdb-client-rs", rev = "66580af4ce6736056e3d6f15e6c93f0127b86aad" }
+# nearcore#15731) has no stable crates.io release yet, so every near-* crate
+# below is pinned to an exact `=` 2.13 pre-release (no git deps). Relax these
+# to `0.37` / stable jsonrpc + socialdb once 2.13 ships to mainnet.
+near-crypto = "=0.37.0-rc.2"
+near-primitives = "=0.37.0-rc.2"
+near-jsonrpc-client = { version = "=0.22.0-rc.1", features = ["any"] }
+near-jsonrpc-primitives = "=0.37.0-rc.2"
+near-parameters = "=0.37.0-rc.2"
+near-socialdb-client = "=0.16.0-rc.1"
 
 near-ledger = { version = "0.9.4", optional = true }
 

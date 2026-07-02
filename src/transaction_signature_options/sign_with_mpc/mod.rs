@@ -641,8 +641,10 @@ pub fn near_key_type_to_mpc_domain_id(key_type: near_crypto::KeyType) -> u64 {
     match key_type {
         near_crypto::KeyType::SECP256K1 => 0u64,
         near_crypto::KeyType::ED25519 => 1u64,
-        // MPC only derives ecdsa/eddsa keys; callers reject ML-DSA-65 before
-        // reaching this point (see the payload match above).
+        // MPC has no domain for post-quantum keys. Both callers exclude
+        // ML-DSA-65 before reaching here: the signing payload match returns an
+        // error for it, and `derive_public_key` is only ever given a key type
+        // chosen from `MpcKeyType`, which offers ed25519 / secp256k1 only.
         near_crypto::KeyType::MLDSA65 => {
             unreachable!("MPC does not support post-quantum ML-DSA-65 keys")
         }

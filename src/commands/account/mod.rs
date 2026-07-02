@@ -5,12 +5,15 @@ pub mod create_account;
 pub mod delete_account;
 pub mod delete_key;
 pub mod export_account;
+mod fund_gas_key;
 mod get_public_key;
 mod import_account;
 mod list_keys;
 pub mod storage_management;
 pub mod update_social_profile;
 pub mod view_account_summary;
+mod view_gas_key_nonces;
+mod withdraw_from_gas_key;
 
 pub const MIN_ALLOWED_TOP_LEVEL_ACCOUNT_LENGTH: usize = 32;
 
@@ -55,6 +58,11 @@ pub enum AccountActions {
     /// View a list of access keys of an account
     ListKeys(self::list_keys::ViewListKeys),
     #[strum_discriminants(strum(
+        message = "view-gas-key-nonces     - View the parallel nonces of a gas key"
+    ))]
+    /// View the parallel nonces of a gas key
+    ViewGasKeyNonces(self::view_gas_key_nonces::ViewGasKeyNonces),
+    #[strum_discriminants(strum(
         message = "get-public-key          - Get the public key to your account"
     ))]
     /// Get the public key to your account
@@ -64,6 +72,16 @@ pub enum AccountActions {
     ))]
     /// Add an access key to an account
     AddKey(self::add_key::AddKeyCommand),
+    #[strum_discriminants(strum(
+        message = "fund-gas-key            - Transfer NEAR into a gas key's balance"
+    ))]
+    /// Transfer NEAR into a gas key's balance
+    FundGasKey(self::fund_gas_key::FundGasKeyCommand),
+    #[strum_discriminants(strum(
+        message = "withdraw-from-gas-key   - Withdraw NEAR from a gas key's balance back to the account"
+    ))]
+    /// Withdraw NEAR from a gas key's balance back to the account
+    WithdrawFromGasKey(self::withdraw_from_gas_key::WithdrawFromGasKeyCommand),
     #[strum_discriminants(strum(
         message = "delete-keys             - Delete access keys from an account"
     ))]
