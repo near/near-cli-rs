@@ -244,9 +244,9 @@ pub struct GasKeyFunctionCallType {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     num_nonces: u64,
-    #[interactive_clap(long)]
-    #[interactive_clap(skip_default_input_arg)]
-    allowance: crate::types::near_allowance::NearAllowance,
+    // No `allowance`: the protocol rejects an AddKey that sets an allowance on a
+    // gas-key function-call key (`GasKeyFunctionCallAllowanceNotAllowed`) - a
+    // gas key pays for gas from its own balance, not from an access-key allowance.
     #[interactive_clap(long)]
     /// Enter the contract account ID that this gas key can be used to sign call function transactions for:
     contract_account_id: crate::types::account_id::AccountId,
@@ -280,7 +280,9 @@ impl GasKeyFunctionCallTypeContext {
                     num_nonces: validate_num_nonces(scope.num_nonces)?,
                 },
                 near_primitives::account::FunctionCallPermission {
-                    allowance: scope.allowance.optional_near_token().map(Into::into),
+                    // Always `None`: the protocol rejects a gas-key function-call
+                    // key that carries an allowance (see the struct field above).
+                    allowance: None,
                     receiver_id: scope.contract_account_id.to_string(),
                     method_names: scope.function_names.clone().into(),
                 },
@@ -304,12 +306,6 @@ impl GasKeyFunctionCallType {
         _context: &super::AddKeyCommandContext,
     ) -> color_eyre::eyre::Result<Option<u64>> {
         Ok(Some(input_num_nonces()?))
-    }
-
-    pub fn input_allowance(
-        context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::near_allowance::NearAllowance>> {
-        FunctionCallType::input_allowance(context)
     }
 
     pub fn input_function_names(
