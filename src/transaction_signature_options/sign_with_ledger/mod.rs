@@ -3,12 +3,8 @@ use inquire::CustomType;
 use near_ledger::NEARLedgerError;
 use near_primitives::action::delegate::SignedDelegateAction;
 use near_primitives::borsh;
-use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
-
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
 
 #[cfg(feature = "ledger-ble")]
 pub mod ble_helpers;
@@ -37,6 +33,9 @@ pub struct SignLedger {
     block_height: Option<near_primitives::types::BlockHeight>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
+    nonce_index: Option<u64>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
     #[interactive_clap(subcommand)]
     connection: LedgerConnectionType,
@@ -49,6 +48,7 @@ pub struct SignLedgerContext {
     pub nonce: Option<u64>,
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     pub block_height: Option<near_primitives::types::BlockHeight>,
+    pub nonce_index: Option<u64>,
     pub meta_transaction_valid_for: Option<u64>,
 }
 
@@ -63,6 +63,7 @@ impl SignLedgerContext {
             nonce: scope.nonce,
             block_hash: scope.block_hash,
             block_height: scope.block_height,
+            nonce_index: scope.nonce_index,
             meta_transaction_valid_for: scope.meta_transaction_valid_for,
         })
     }
@@ -170,6 +171,7 @@ impl interactive_clap::FromCli for UsbConnection {
             context.nonce,
             context.block_hash,
             context.block_height,
+            context.nonce_index,
             context.meta_transaction_valid_for,
         ) {
             Ok(ctx) => ctx,
@@ -194,6 +196,9 @@ impl interactive_clap::FromCli for UsbConnection {
     }
 }
 
+// One extra signing parameter (`nonce_index`) over clippy's 7-argument limit;
+// the parameters are all sibling tx-building inputs forwarded from the context.
+#[allow(clippy::too_many_arguments)]
 #[tracing::instrument(
     name = "Signing the transaction with Ledger device via USB. Follow the instructions on the ledger ...",
     skip_all
@@ -205,6 +210,7 @@ fn sign_transaction_with_usb(
     nonce: Option<u64>,
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     block_height: Option<near_primitives::types::BlockHeight>,
+    nonce_index: Option<u64>,
     meta_transaction_valid_for: Option<u64>,
 ) -> color_eyre::eyre::Result<UsbConnectionContext> {
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via USB. Follow the instructions on the ledger ...");
@@ -213,9 +219,14 @@ fn sign_transaction_with_usb(
     let seed_phrase_hd_path_raw: near_slip10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
-    let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
+    let nonce_index = nonce_index.map(super::nonce_index_from_cli).transpose()?;
+
+    let (nonce_resolution, block_hash, block_height) = if previous_context.global_context.offline {
         (
-            nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
+            super::resolve_offline_nonce(
+                nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                nonce_index,
+            ),
             block_hash
                 .wrap_err("Block Hash is required to sign a transaction in offline mode")?
                 .0,
@@ -223,32 +234,19 @@ fn sign_transaction_with_usb(
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
     } else {
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &previous_context.prepopulated_transaction.signer_id,
-                &public_key,
-                near_primitives::types::BlockReference::latest(),
-            )
-            .wrap_err_with(||
-                format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
-            )?;
-
-        (
-            rpc_query_response
-                .access_key_view()
-                .wrap_err("Error current_nonce")?
-                .nonce
-                + 1,
-            rpc_query_response.block_hash,
-            rpc_query_response.block_height,
-        )
+        super::resolve_online_nonce(
+            &network_config.json_rpc_client(),
+            &previous_context.prepopulated_transaction.signer_id,
+            &public_key,
+            nonce_index,
+            &network_config.network_name,
+        )?
     };
 
     let mut unsigned_transaction = TransactionV0 {
         public_key: signer_public_key.clone().into(),
         block_hash,
-        nonce,
+        nonce: nonce_resolution.nonce(),
         signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
         receiver_id: previous_context
             .prepopulated_transaction
@@ -259,9 +257,12 @@ fn sign_transaction_with_usb(
 
     (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-    let unsigned_transaction = Transaction::V0(unsigned_transaction);
+    let unsigned_transaction =
+        super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
 
     if previous_context.sign_as_delegate_action {
+        super::ensure_gas_key_not_delegated(&unsigned_transaction)?;
+
         let max_block_height = block_height
             + meta_transaction_valid_for.unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
 
@@ -436,6 +437,7 @@ impl interactive_clap::FromCli for BluetoothConnection {
             context.nonce,
             context.block_hash,
             context.block_height,
+            context.nonce_index,
             context.meta_transaction_valid_for,
         ) {
             Ok(ctx) => ctx,
@@ -474,6 +476,7 @@ fn sign_transaction_with_ble(
     nonce: Option<u64>,
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     block_height: Option<near_primitives::types::BlockHeight>,
+    nonce_index: Option<u64>,
     meta_transaction_valid_for: Option<u64>,
 ) -> color_eyre::eyre::Result<BluetoothConnectionContext> {
     tracing::info!(target: "near_teach_me", "Signing the transaction with Ledger device via Bluetooth. Follow the instructions on the ledger ...");
@@ -482,9 +485,14 @@ fn sign_transaction_with_ble(
     let seed_phrase_hd_path_raw: near_slip10::BIP32Path = seed_phrase_hd_path.clone().into();
     let public_key: near_crypto::PublicKey = signer_public_key.clone().into();
 
-    let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
+    let nonce_index = nonce_index.map(super::nonce_index_from_cli).transpose()?;
+
+    let (nonce_resolution, block_hash, block_height) = if previous_context.global_context.offline {
         (
-            nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
+            super::resolve_offline_nonce(
+                nonce.wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                nonce_index,
+            ),
             block_hash
                 .wrap_err("Block Hash is required to sign a transaction in offline mode")?
                 .0,
@@ -492,32 +500,19 @@ fn sign_transaction_with_ble(
                 .wrap_err("Block Height is required to sign a transaction in offline mode")?,
         )
     } else {
-        let rpc_query_response = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key(
-                &previous_context.prepopulated_transaction.signer_id,
-                &public_key,
-                near_primitives::types::BlockReference::latest(),
-            )
-            .wrap_err_with(||
-                format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>", network_config.network_name)
-            )?;
-
-        (
-            rpc_query_response
-                .access_key_view()
-                .wrap_err("Error current_nonce")?
-                .nonce
-                + 1,
-            rpc_query_response.block_hash,
-            rpc_query_response.block_height,
-        )
+        super::resolve_online_nonce(
+            &network_config.json_rpc_client(),
+            &previous_context.prepopulated_transaction.signer_id,
+            &public_key,
+            nonce_index,
+            &network_config.network_name,
+        )?
     };
 
     let mut unsigned_transaction = TransactionV0 {
         public_key: signer_public_key.clone().into(),
         block_hash,
-        nonce,
+        nonce: nonce_resolution.nonce(),
         signer_id: previous_context.prepopulated_transaction.signer_id.clone(),
         receiver_id: previous_context
             .prepopulated_transaction
@@ -528,9 +523,12 @@ fn sign_transaction_with_ble(
 
     (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-    let unsigned_transaction = Transaction::V0(unsigned_transaction);
+    let unsigned_transaction =
+        super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
 
     if previous_context.sign_as_delegate_action {
+        super::ensure_gas_key_not_delegated(&unsigned_transaction)?;
+
         let max_block_height = block_height
             + meta_transaction_valid_for.unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
 

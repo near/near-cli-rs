@@ -4,7 +4,6 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select};
-use near_primitives::transaction::Transaction;
 use near_primitives::transaction::TransactionV0;
 
 use crate::common::JsonRpcClientExt;
@@ -26,6 +25,9 @@ pub struct SignLegacyKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     pub block_height: Option<near_primitives::types::BlockHeight>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_interactive_input)]
+    nonce_index: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     meta_transaction_valid_for: Option<u64>,
@@ -59,6 +61,11 @@ impl SignLegacyKeychainContext {
         tracing::info!(target: "near_teach_me", "Signing the transaction with a key saved in legacy keychain ...");
 
         let network_config = previous_context.network_config.clone();
+
+        // A `--nonce-index` means the user wants to sign with a gas key, so match
+        // gas-key credential files (gas keys are excluded from the ordinary
+        // full-access selection); otherwise keep the full-access-only behavior.
+        let want_gas_key = scope.nonce_index.is_some();
 
         let keychain_folder = previous_context
             .global_context
@@ -97,10 +104,14 @@ impl SignLegacyKeychainContext {
                     .keys
                     .iter()
                     .filter(|access_key_info| {
-                        matches!(
-                            access_key_info.access_key.permission,
-                            near_primitives::views::AccessKeyPermissionView::FullAccess
-                        )
+                        if want_gas_key {
+                            super::is_gas_key_permission(&access_key_info.access_key.permission)
+                        } else {
+                            matches!(
+                                access_key_info.access_key.permission,
+                                near_primitives::views::AccessKeyPermissionView::FullAccess
+                            )
+                        }
                     })
                     .map(|access_key_info| {
                         format!(
@@ -144,45 +155,42 @@ impl SignLegacyKeychainContext {
                 )
             })?;
 
-        let (nonce, block_hash, block_height) = if previous_context.global_context.offline {
-            (
-                scope
-                    .nonce
-                    .wrap_err("Nonce is required to sign a transaction in offline mode")?,
-                scope
-                    .block_hash
-                    .wrap_err("Block Hash is required to sign a transaction in offline mode")?
-                    .0,
-                scope
-                    .block_height
-                    .wrap_err("Block Height is required to sign a transaction in offline mode")?,
-            )
-        } else {
-            let rpc_query_response = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key(
+        let nonce_index = scope
+            .nonce_index
+            .map(super::nonce_index_from_cli)
+            .transpose()?;
+
+        let (nonce_resolution, block_hash, block_height) =
+            if previous_context.global_context.offline {
+                (
+                    super::resolve_offline_nonce(
+                        scope
+                            .nonce
+                            .wrap_err("Nonce is required to sign a transaction in offline mode")?,
+                        nonce_index,
+                    ),
+                    scope
+                        .block_hash
+                        .wrap_err("Block Hash is required to sign a transaction in offline mode")?
+                        .0,
+                    scope.block_height.wrap_err(
+                        "Block Height is required to sign a transaction in offline mode",
+                    )?,
+                )
+            } else {
+                super::resolve_online_nonce(
+                    &network_config.json_rpc_client(),
                     &previous_context.prepopulated_transaction.signer_id,
                     &signer_access_key.public_key,
-                    near_primitives::types::BlockReference::latest()
-                )
-                .wrap_err(
-                    "Cannot sign a transaction due to an error while fetching the most recent nonce value",
-                )?;
-            (
-                rpc_query_response
-                    .access_key_view()
-                    .wrap_err("Error current_nonce")?
-                    .nonce
-                    + 1,
-                rpc_query_response.block_hash,
-                rpc_query_response.block_height,
-            )
-        };
+                    nonce_index,
+                    &network_config.network_name,
+                )?
+            };
 
         let mut unsigned_transaction = TransactionV0 {
             public_key: signer_access_key.public_key.clone(),
             block_hash,
-            nonce,
+            nonce: nonce_resolution.nonce(),
             signer_id: previous_context.prepopulated_transaction.signer_id,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             actions: previous_context.prepopulated_transaction.actions,
@@ -190,7 +198,8 @@ impl SignLegacyKeychainContext {
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
 
-        let unsigned_transaction = Transaction::V0(unsigned_transaction);
+        let unsigned_transaction =
+            super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
 
         if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
@@ -203,7 +212,7 @@ impl SignLegacyKeychainContext {
                 &signer_access_key.public_key,
                 signer_access_key.private_key,
                 max_block_height,
-            );
+            )?;
 
             return Ok(Self {
                 network_config: previous_context.network_config,

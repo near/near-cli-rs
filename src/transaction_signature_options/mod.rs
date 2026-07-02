@@ -153,13 +153,33 @@ impl From<near_primitives::action::delegate::SignedDelegateAction>
     }
 }
 
+/// A gas key cannot be used to sign a meta-transaction yet: a (v1)
+/// `DelegateAction` only carries a plain `nonce`, so delegating a gas-key
+/// transaction would drop its `nonce_index` and the runtime would reject the
+/// result (`DelegateActionRequiresNonGasKey`). Full support needs DelegateV2,
+/// which is out of the 2.13 scope. Reject the combination up front with a clear
+/// error. Called from every delegate-action path (the shared
+/// [`get_signed_delegate_action`] and the two Ledger manual branches).
+pub fn ensure_gas_key_not_delegated(
+    unsigned_transaction: &near_primitives::transaction::Transaction,
+) -> color_eyre::eyre::Result<()> {
+    if unsigned_transaction.nonce().nonce_index().is_some() {
+        color_eyre::eyre::bail!(
+            "Signing with a gas key is not supported for meta-transactions (--sign-as-delegate-action) yet: a DelegateAction cannot carry the gas key's nonce index (requires DelegateV2). Re-run without --sign-as-delegate-action, or sign with an ordinary access key."
+        );
+    }
+    Ok(())
+}
+
 pub fn get_signed_delegate_action(
     unsigned_transaction: near_primitives::transaction::Transaction,
     public_key: &near_crypto::PublicKey,
     private_key: near_crypto::SecretKey,
     max_block_height: u64,
-) -> near_primitives::action::delegate::SignedDelegateAction {
+) -> color_eyre::eyre::Result<near_primitives::action::delegate::SignedDelegateAction> {
     use near_primitives::signable_message::{SignableMessage, SignableMessageType};
+
+    ensure_gas_key_not_delegated(&unsigned_transaction)?;
 
     let mut delegate_action = near_primitives::action::delegate::DelegateAction {
         sender_id: unsigned_transaction.signer_id().clone(),
@@ -193,8 +213,225 @@ pub fn get_signed_delegate_action(
         ))
     );
 
-    near_primitives::action::delegate::SignedDelegateAction {
+    Ok(near_primitives::action::delegate::SignedDelegateAction {
         delegate_action,
         signature,
+    })
+}
+
+/// The nonce (and, for gas keys, the nonce index) to use for the next transaction.
+///
+/// Determined once by [`resolve_online_nonce`] / [`resolve_offline_nonce`] and then
+/// consumed by [`build_unsigned_transaction`] to pick the transaction version.
+#[derive(Debug, Clone, Copy)]
+pub enum NonceResolution {
+    /// Ordinary access key: a plain nonce, builds a (V0) transaction.
+    Plain {
+        nonce: near_primitives::types::Nonce,
+    },
+    /// Gas key: a nonce at a specific parallel-nonce index, builds a V1 transaction.
+    GasKey {
+        nonce: near_primitives::types::Nonce,
+        nonce_index: near_primitives::types::NonceIndex,
+    },
+}
+
+impl NonceResolution {
+    /// The nonce value, used to populate the intermediate `TransactionV0.nonce` field
+    /// (which is preserved as-is for the plain path and superseded for the gas-key path).
+    pub fn nonce(&self) -> near_primitives::types::Nonce {
+        match self {
+            NonceResolution::Plain { nonce } | NonceResolution::GasKey { nonce, .. } => *nonce,
+        }
+    }
+}
+
+/// `interactive-clap` only implements `ToCli` for `u64`/`u128`, not `u16`, so the
+/// `--nonce-index` CLI field is collected as `u64` and narrowed here, bounded by the
+/// protocol limit `AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY`.
+pub fn nonce_index_from_cli(
+    nonce_index: u64,
+) -> color_eyre::eyre::Result<near_primitives::types::NonceIndex> {
+    let max = near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY;
+    if nonce_index >= u64::from(max) {
+        color_eyre::eyre::bail!(
+            "--nonce-index must be less than {max}, the maximum number of parallel nonces a gas key can have, got {nonce_index}"
+        );
+    }
+    Ok(nonce_index as near_primitives::types::NonceIndex)
+}
+
+/// Returns `true` if the access key permission is a gas key.
+pub(crate) fn is_gas_key_permission(
+    permission: &near_primitives::views::AccessKeyPermissionView,
+) -> bool {
+    matches!(
+        permission,
+        near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. }
+            | near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+    )
+}
+
+/// Online path: query the access key for `signer_id`/`public_key` and resolve the next
+/// nonce, the recent block hash and block height.
+///
+/// For an ordinary access key this is `access_key.nonce + 1` (unchanged behavior). For a
+/// gas key it queries `view_gas_key_nonces` and uses `nonces[nonce_index] + 1`; when no
+/// `--nonce-index` was given, index 0 is used.
+pub fn resolve_online_nonce(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    signer_id: &near_primitives::types::AccountId,
+    public_key: &near_crypto::PublicKey,
+    nonce_index: Option<near_primitives::types::NonceIndex>,
+    network_name: &str,
+) -> color_eyre::eyre::Result<(
+    NonceResolution,
+    near_primitives::hash::CryptoHash,
+    near_primitives::types::BlockHeight,
+)> {
+    use crate::common::JsonRpcClientExt;
+    use crate::common::RpcQueryResponseExt;
+    use color_eyre::eyre::WrapErr;
+
+    let rpc_query_response = json_rpc_client
+        .blocking_call_view_access_key(
+            signer_id,
+            public_key,
+            near_primitives::types::BlockReference::latest(),
+        )
+        .wrap_err_with(|| {
+            format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{network_name}>")
+        })?;
+    let access_key = rpc_query_response
+        .access_key_view()
+        .wrap_err("Error current_nonce")?;
+    let block_hash = rpc_query_response.block_hash;
+    let block_height = rpc_query_response.block_height;
+
+    let resolution = if is_gas_key_permission(&access_key.permission) {
+        let nonce_index = nonce_index.unwrap_or(0);
+        let gas_key_nonces = json_rpc_client
+            .blocking_call_view_gas_key_nonces(
+                signer_id,
+                public_key,
+                near_primitives::types::BlockReference::latest(),
+            )
+            .wrap_err_with(|| {
+                format!("Cannot sign a transaction due to an error while fetching gas key nonces on network <{network_name}>")
+            })?
+            .gas_key_nonces_view()?;
+        let current = *gas_key_nonces
+            .nonces
+            .get(usize::from(nonce_index))
+            .ok_or_else(|| {
+                color_eyre::eyre::eyre!(
+                    "Gas key has {} parallel nonce(s); --nonce-index {} is out of range",
+                    gas_key_nonces.nonces.len(),
+                    nonce_index
+                )
+            })?;
+        NonceResolution::GasKey {
+            nonce: current + 1,
+            nonce_index,
+        }
+    } else {
+        if let Some(nonce_index) = nonce_index {
+            // Refuse rather than silently sign with a plain nonce: the user asked
+            // for a specific gas-key parallel nonce, but this key isn't a gas key.
+            color_eyre::eyre::bail!(
+                "--nonce-index {nonce_index} was provided, but access key {public_key} on {signer_id} is not a gas key. Only gas keys have parallel nonces; omit --nonce-index to sign with an ordinary access key."
+            );
+        }
+        NonceResolution::Plain {
+            nonce: access_key.nonce + 1,
+        }
+    };
+
+    Ok((resolution, block_hash, block_height))
+}
+
+/// Offline path: build the nonce resolution from a user-provided nonce and optional
+/// `--nonce-index` (a gas-key nonce when an index is given, otherwise a plain nonce).
+pub fn resolve_offline_nonce(
+    nonce: near_primitives::types::Nonce,
+    nonce_index: Option<near_primitives::types::NonceIndex>,
+) -> NonceResolution {
+    match nonce_index {
+        Some(nonce_index) => NonceResolution::GasKey { nonce, nonce_index },
+        None => NonceResolution::Plain { nonce },
+    }
+}
+
+/// Wrap a (post-`on_before_signing_callback`) [`TransactionV0`] into the right transaction
+/// version: V0 for an ordinary nonce, V1 with `TransactionNonce::GasKeyNonce` for a gas key.
+///
+/// All gas-key / versioning logic lives here so the signer modules stay version-agnostic.
+pub fn build_unsigned_transaction(
+    tx: near_primitives::transaction::TransactionV0,
+    resolution: NonceResolution,
+) -> near_primitives::transaction::Transaction {
+    match resolution {
+        NonceResolution::Plain { .. } => near_primitives::transaction::Transaction::V0(tx),
+        NonceResolution::GasKey { nonce, nonce_index } => {
+            near_primitives::transaction::Transaction::V1(
+                near_primitives::transaction::TransactionV1 {
+                    signer_id: tx.signer_id,
+                    public_key: tx.public_key,
+                    nonce: near_primitives::transaction::TransactionNonce::GasKeyNonce {
+                        nonce,
+                        nonce_index,
+                    },
+                    receiver_id: tx.receiver_id,
+                    block_hash: tx.block_hash,
+                    actions: tx.actions,
+                    nonce_mode: near_primitives::transaction::NonceMode::default(),
+                },
+            )
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_tx_v0() -> near_primitives::transaction::TransactionV0 {
+        near_primitives::transaction::TransactionV0 {
+            signer_id: "alice.near".parse().unwrap(),
+            public_key: near_crypto::SecretKey::from_random(near_crypto::KeyType::ED25519)
+                .public_key(),
+            nonce: 1,
+            receiver_id: "bob.near".parse().unwrap(),
+            block_hash: near_primitives::hash::CryptoHash::default(),
+            actions: vec![],
+        }
+    }
+
+    #[test]
+    fn nonce_index_from_cli_bounds() {
+        let max = u64::from(near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY);
+        // The largest valid index is `max - 1`; `max` and above are rejected.
+        assert!(nonce_index_from_cli(max - 1).is_ok());
+        assert!(nonce_index_from_cli(max).is_err());
+    }
+
+    #[test]
+    fn plain_transactions_may_be_delegated() {
+        let tx = build_unsigned_transaction(sample_tx_v0(), NonceResolution::Plain { nonce: 1 });
+        assert!(ensure_gas_key_not_delegated(&tx).is_ok());
+    }
+
+    #[test]
+    fn gas_key_transactions_cannot_be_delegated() {
+        // A gas-key nonce carries a nonce_index that a v1 DelegateAction can't
+        // encode, so meta-transactions must be refused up front.
+        let tx = build_unsigned_transaction(
+            sample_tx_v0(),
+            NonceResolution::GasKey {
+                nonce: 1,
+                nonce_index: 0,
+            },
+        );
+        assert!(ensure_gas_key_not_delegated(&tx).is_err());
     }
 }
