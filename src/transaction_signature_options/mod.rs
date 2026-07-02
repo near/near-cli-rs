@@ -262,7 +262,9 @@ pub fn nonce_index_from_cli(
 }
 
 /// Returns `true` if the access key permission is a gas key.
-fn is_gas_key_permission(permission: &near_primitives::views::AccessKeyPermissionView) -> bool {
+pub(crate) fn is_gas_key_permission(
+    permission: &near_primitives::views::AccessKeyPermissionView,
+) -> bool {
     matches!(
         permission,
         near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. }
@@ -334,8 +336,10 @@ pub fn resolve_online_nonce(
         }
     } else {
         if let Some(nonce_index) = nonce_index {
-            tracing::warn!(
-                "--nonce-index {nonce_index} was provided but {public_key} is not a gas key; ignoring it"
+            // Refuse rather than silently sign with a plain nonce: the user asked
+            // for a specific gas-key parallel nonce, but this key isn't a gas key.
+            color_eyre::eyre::bail!(
+                "--nonce-index {nonce_index} was provided, but access key {public_key} on {signer_id} is not a gas key. Only gas keys have parallel nonces; omit --nonce-index to sign with an ordinary access key."
             );
         }
         NonceResolution::Plain {

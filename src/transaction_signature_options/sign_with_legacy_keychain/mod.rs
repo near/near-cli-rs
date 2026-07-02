@@ -62,6 +62,11 @@ impl SignLegacyKeychainContext {
 
         let network_config = previous_context.network_config.clone();
 
+        // A `--nonce-index` means the user wants to sign with a gas key, so match
+        // gas-key credential files (gas keys are excluded from the ordinary
+        // full-access selection); otherwise keep the full-access-only behavior.
+        let want_gas_key = scope.nonce_index.is_some();
+
         let keychain_folder = previous_context
             .global_context
             .config
@@ -99,10 +104,14 @@ impl SignLegacyKeychainContext {
                     .keys
                     .iter()
                     .filter(|access_key_info| {
-                        matches!(
-                            access_key_info.access_key.permission,
-                            near_primitives::views::AccessKeyPermissionView::FullAccess
-                        )
+                        if want_gas_key {
+                            super::is_gas_key_permission(&access_key_info.access_key.permission)
+                        } else {
+                            matches!(
+                                access_key_info.access_key.permission,
+                                near_primitives::views::AccessKeyPermissionView::FullAccess
+                            )
+                        }
                     })
                     .map(|access_key_info| {
                         format!(

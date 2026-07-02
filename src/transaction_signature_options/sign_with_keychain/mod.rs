@@ -78,6 +78,11 @@ impl SignKeychainContext {
             previous_context.prepopulated_transaction.signer_id.as_str()
         ));
 
+        // A `--nonce-index` means the user wants to sign with a gas key, so select
+        // one from the keychain (gas keys are excluded from the ordinary
+        // full-access selection); otherwise keep the full-access-only behavior.
+        let want_gas_key = scope.nonce_index.is_some();
+
         let password = if previous_context.global_context.offline {
             let res = keyring::Entry::new(
                 &service_name,
@@ -122,10 +127,14 @@ impl SignKeychainContext {
                 .keys
                 .into_iter()
                 .filter(|key| {
-                    matches!(
-                        key.access_key.permission,
-                        near_primitives::views::AccessKeyPermissionView::FullAccess
-                    )
+                    if want_gas_key {
+                        super::is_gas_key_permission(&key.access_key.permission)
+                    } else {
+                        matches!(
+                            key.access_key.permission,
+                            near_primitives::views::AccessKeyPermissionView::FullAccess
+                        )
+                    }
                 })
                 .map(|key| key.public_key)
                 .find_map(|public_key| {
