@@ -124,7 +124,7 @@ impl SignSeedPhraseContext {
                 &signer_public_key,
                 signer_secret_key,
                 max_block_height,
-            );
+            )?;
 
             return Ok(Self {
                 network_config: previous_context.network_config,

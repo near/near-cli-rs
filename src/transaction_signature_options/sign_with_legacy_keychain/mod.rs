@@ -203,7 +203,7 @@ impl SignLegacyKeychainContext {
                 &signer_access_key.public_key,
                 signer_access_key.private_key,
                 max_block_height,
-            );
+            )?;
 
             return Ok(Self {
                 network_config: previous_context.network_config,

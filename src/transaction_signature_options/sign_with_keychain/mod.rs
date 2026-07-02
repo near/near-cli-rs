@@ -214,7 +214,7 @@ impl SignKeychainContext {
                 &account_json.public_key,
                 account_json.private_key,
                 max_block_height,
-            );
+            )?;
 
             return Ok(Self {
                 network_config: previous_context.network_config,

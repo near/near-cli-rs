@@ -153,13 +153,33 @@ impl From<near_primitives::action::delegate::SignedDelegateAction>
     }
 }
 
+/// A gas key cannot be used to sign a meta-transaction yet: a (v1)
+/// `DelegateAction` only carries a plain `nonce`, so delegating a gas-key
+/// transaction would drop its `nonce_index` and the runtime would reject the
+/// result (`DelegateActionRequiresNonGasKey`). Full support needs DelegateV2,
+/// which is out of the 2.13 scope. Reject the combination up front with a clear
+/// error. Called from every delegate-action path (the shared
+/// [`get_signed_delegate_action`] and the two Ledger manual branches).
+pub fn ensure_gas_key_not_delegated(
+    unsigned_transaction: &near_primitives::transaction::Transaction,
+) -> color_eyre::eyre::Result<()> {
+    if unsigned_transaction.nonce().nonce_index().is_some() {
+        color_eyre::eyre::bail!(
+            "Signing with a gas key is not supported for meta-transactions (--sign-as-delegate-action) yet: a DelegateAction cannot carry the gas key's nonce index (requires DelegateV2). Re-run without --sign-as-delegate-action, or sign with an ordinary access key."
+        );
+    }
+    Ok(())
+}
+
 pub fn get_signed_delegate_action(
     unsigned_transaction: near_primitives::transaction::Transaction,
     public_key: &near_crypto::PublicKey,
     private_key: near_crypto::SecretKey,
     max_block_height: u64,
-) -> near_primitives::action::delegate::SignedDelegateAction {
+) -> color_eyre::eyre::Result<near_primitives::action::delegate::SignedDelegateAction> {
     use near_primitives::signable_message::{SignableMessage, SignableMessageType};
+
+    ensure_gas_key_not_delegated(&unsigned_transaction)?;
 
     let mut delegate_action = near_primitives::action::delegate::DelegateAction {
         sender_id: unsigned_transaction.signer_id().clone(),
@@ -193,10 +213,10 @@ pub fn get_signed_delegate_action(
         ))
     );
 
-    near_primitives::action::delegate::SignedDelegateAction {
+    Ok(near_primitives::action::delegate::SignedDelegateAction {
         delegate_action,
         signature,
-    }
+    })
 }
 
 /// The nonce (and, for gas keys, the nonce index) to use for the next transaction.
@@ -364,5 +384,50 @@ pub fn build_unsigned_transaction(
                 },
             )
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_tx_v0() -> near_primitives::transaction::TransactionV0 {
+        near_primitives::transaction::TransactionV0 {
+            signer_id: "alice.near".parse().unwrap(),
+            public_key: near_crypto::SecretKey::from_random(near_crypto::KeyType::ED25519)
+                .public_key(),
+            nonce: 1,
+            receiver_id: "bob.near".parse().unwrap(),
+            block_hash: near_primitives::hash::CryptoHash::default(),
+            actions: vec![],
+        }
+    }
+
+    #[test]
+    fn nonce_index_from_cli_bounds() {
+        let max = u64::from(near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY);
+        // The largest valid index is `max - 1`; `max` and above are rejected.
+        assert!(nonce_index_from_cli(max - 1).is_ok());
+        assert!(nonce_index_from_cli(max).is_err());
+    }
+
+    #[test]
+    fn plain_transactions_may_be_delegated() {
+        let tx = build_unsigned_transaction(sample_tx_v0(), NonceResolution::Plain { nonce: 1 });
+        assert!(ensure_gas_key_not_delegated(&tx).is_ok());
+    }
+
+    #[test]
+    fn gas_key_transactions_cannot_be_delegated() {
+        // A gas-key nonce carries a nonce_index that a v1 DelegateAction can't
+        // encode, so meta-transactions must be refused up front.
+        let tx = build_unsigned_transaction(
+            sample_tx_v0(),
+            NonceResolution::GasKey {
+                nonce: 1,
+                nonce_index: 0,
+            },
+        );
+        assert!(ensure_gas_key_not_delegated(&tx).is_err());
     }
 }
