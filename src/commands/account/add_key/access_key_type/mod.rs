@@ -159,10 +159,12 @@ impl FunctionCallType {
 /// context builder, where it is also bounded by the protocol limit
 /// `AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY`.
 fn input_num_nonces() -> color_eyre::eyre::Result<u64> {
-    let num_nonces: u64 =
-        CustomType::new("How many parallel nonces should this gas key have (1..=1024)?")
-            .with_starting_input("1")
-            .prompt()?;
+    let max = near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY;
+    let num_nonces: u64 = CustomType::new(&format!(
+        "How many parallel nonces should this gas key have (1..={max})?"
+    ))
+    .with_starting_input("1")
+    .prompt()?;
     Ok(num_nonces)
 }
 
