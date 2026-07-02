@@ -39,7 +39,7 @@ impl ViewGasKeyNoncesContext {
                     )
                     .wrap_err_with(|| {
                         format!(
-                            "Failed to fetch query GasKeyNonces for {} on account <{}>",
+                            "Failed to fetch the gas key nonces for {} on account <{}>",
                             &public_key, &account_id
                         )
                     })?
