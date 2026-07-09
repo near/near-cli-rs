@@ -97,7 +97,7 @@ impl ContractFileContext {
         scope: &<ContractFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let code = std::fs::read(&scope.file_path).wrap_err_with(|| {
-            format!("Failed to open or read the file: {:?}.", &scope.file_path.0,)
+            format!("Failed to open or read the file: {:?}.", scope.file_path.0,)
         })?;
         Ok(Self(GenericDeployContext {
             global_context: previous_context.global_context,

@@ -1029,7 +1029,7 @@ pub fn print_full_unsigned_transaction(
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "public_key:",
-        &transaction.public_key()
+        transaction.public_key()
     ));
     info_str.push_str(&format!(
         "\n{:<13} {}",
@@ -1039,7 +1039,7 @@ pub fn print_full_unsigned_transaction(
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "block_hash:",
-        &transaction.block_hash()
+        transaction.block_hash()
     ));
 
     let prepopulated = crate::commands::PrepopulatedTransaction::from(transaction);
@@ -1074,7 +1074,7 @@ pub fn print_unsigned_transaction(
             near_primitives::transaction::Action::CreateAccount(_) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
-                    "--", "create account:", &transaction.receiver_id
+                    "--", "create account:", transaction.receiver_id
                 ));
             }
             near_primitives::transaction::Action::DeployContract(code) => {
@@ -1092,7 +1092,7 @@ pub fn print_unsigned_transaction(
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "function call:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "method name:", &function_call_action.method_name
+                    "", "method name:", function_call_action.method_name
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -1139,7 +1139,7 @@ pub fn print_unsigned_transaction(
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "stake:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "public key:", &stake_action.public_key
+                    "", "public key:", stake_action.public_key
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -1152,32 +1152,32 @@ pub fn print_unsigned_transaction(
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "public key:", &add_key_action.public_key
+                    "", "public key:", add_key_action.public_key
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "nonce:", &add_key_action.access_key.nonce
+                    "", "nonce:", add_key_action.access_key.nonce
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {:?}",
-                    "", "permission:", &add_key_action.access_key.permission
+                    "", "permission:", add_key_action.access_key.permission
                 ));
             }
             near_primitives::transaction::Action::DeleteKey(delete_key_action) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "delete access key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "public key:", &delete_key_action.public_key
+                    "", "public key:", delete_key_action.public_key
                 ));
             }
             near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
                 info_str.push_str(&format!(
                     "\n{:>5} {:<20} {}",
-                    "--", "delete account:", &transaction.receiver_id
+                    "--", "delete account:", transaction.receiver_id
                 ));
                 info_str.push_str(&format!(
                     "\n{:>8} {:<17} {}",
-                    "", "beneficiary id:", &delete_account_action.beneficiary_id
+                    "", "beneficiary id:", delete_account_action.beneficiary_id
                 ));
             }
             near_primitives::transaction::Action::Delegate(signed_delegate_action) => {
@@ -1266,7 +1266,7 @@ pub fn print_unsigned_transaction(
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "public key:", &transfer_to_gas_key.public_key
+                    "", "public key:", transfer_to_gas_key.public_key
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -1279,7 +1279,7 @@ pub fn print_unsigned_transaction(
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "withdraw from gas key:"));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
-                    "", "public key:", &withdraw_from_gas_key.public_key
+                    "", "public key:", withdraw_from_gas_key.public_key
                 ));
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
@@ -2200,7 +2200,7 @@ pub fn save_access_key_to_legacy_keychain(
     let message_1 = if path_with_key_name.exists() {
         format!(
             "The file: {} already exists! Therefore it was not overwritten.",
-            &path_with_key_name.display()
+            path_with_key_name.display()
         )
     } else {
         std::fs::File::create(&path_with_key_name)
@@ -2209,7 +2209,7 @@ pub fn save_access_key_to_legacy_keychain(
             .wrap_err_with(|| format!("Failed to write to file: {path_with_key_name:?}"))?;
         format!(
             "The data for the access key is saved in a file {}",
-            &path_with_key_name.display()
+            path_with_key_name.display()
         )
     };
 
@@ -2221,7 +2221,7 @@ pub fn save_access_key_to_legacy_keychain(
         Ok(format!(
             "{}\nThe file: {} already exists! Therefore it was not overwritten.",
             message_1,
-            &path_with_account_name.display()
+            path_with_account_name.display()
         ))
     } else {
         std::fs::File::create(&path_with_account_name)
@@ -2231,7 +2231,7 @@ pub fn save_access_key_to_legacy_keychain(
         Ok(format!(
             "{}\nThe data for the access key is saved in a file {}",
             message_1,
-            &path_with_account_name.display()
+            path_with_account_name.display()
         ))
     }
 }
@@ -2245,7 +2245,7 @@ pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
         (subcommand, args.collect::<Vec<String>>())
     };
     let is_top_level_command_known = crate::commands::TopLevelCommandDiscriminants::iter()
-        .map(|x| format!("{:?}", &x).to_lowercase())
+        .map(|x| format!("{:?}", x).to_lowercase())
         .any(|x| x == subcommand);
     if is_top_level_command_known {
         error.exit()
@@ -3190,7 +3190,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     parent: &tracing::Span::none(),
                     "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
                     indent_payload(&format!("{}\n ", 
-                        &String::from_utf8(call_result.result.clone())
+                        String::from_utf8(call_result.result.clone())
                             .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
                     ))
                 );
@@ -3366,7 +3366,7 @@ fn replace_params_with_file(
             Err(err) => {
                 return Err(format!(
                     "Failed to save payload to `{}`. Serialization error:\n{}",
-                    &file_path.display(),
+                    file_path.display(),
                     indent_payload(&format!("{err:#?}"))
                 ));
             }
@@ -3389,23 +3389,23 @@ fn replace_params_with_file(
                 Ok(buf) => match file.write(&buf) {
                     Ok(_) => Ok(Some(format!(
                         "The file `{}` was created successfully. It has a signed transaction (serialized as base64).",
-                        &file_path.display()
+                        file_path.display()
                     ))),
                     Err(err) => Err(format!(
                         "Failed to save payload to `{}`. Failed to write file:\n{}",
-                        &file_path.display(),
+                        file_path.display(),
                         indent_payload(&format!("{err:#?}"))
                     )),
                 },
                 Err(err) => Err(format!(
                     "Failed to save payload to `{}`. Serialization error:\n{}",
-                    &file_path.display(),
+                    file_path.display(),
                     indent_payload(&format!("{err:#?}"))
                 )),
             },
             Err(err) => Err(format!(
                 "Failed to save payload to `{}`. Failed to create file:\n{}",
-                &file_path.display(),
+                file_path.display(),
                 indent_payload(&format!("{err:#?}"))
             )),
         };
@@ -3604,7 +3604,7 @@ pub fn create_used_account_list_from_legacy_keychain(
     std::fs::create_dir_all(credentials_home_dir)?;
     if !used_account_list_path.exists() {
         std::fs::File::create(&used_account_list_path)
-            .wrap_err_with(|| format!("Failed to create file: {:?}", &used_account_list_path))?;
+            .wrap_err_with(|| format!("Failed to create file: {:?}", used_account_list_path))?;
     }
     if !used_account_list.is_empty() {
         let used_account_list_buf = serde_json::to_string(

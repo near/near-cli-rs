@@ -89,7 +89,7 @@ async fn get_contract_code(
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query ViewCode for <{}> on network <{}>",
-                &account_id, network_config.network_name
+                account_id, network_config.network_name
             )
         })
 }
@@ -593,7 +593,7 @@ pub async fn get_contract_source_metadata(
                             parent: &tracing::Span::none(),
                             "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
                             crate::common::indent_payload(&format!("{}\n ",
-                                &String::from_utf8(call_result.result.clone())
+                                String::from_utf8(call_result.result.clone())
                                     .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
                             ))
                         );

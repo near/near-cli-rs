@@ -47,7 +47,7 @@ impl ExportAccountFromSeedPhraseContext {
                         .wrap_err("Access key file not found!")?;
                     let key_pair_properties: crate::common::KeyPairProperties =
                         serde_json::from_str(&data).wrap_err_with(|| {
-                            format!("Error reading data from file: {:?}", &data_path)
+                            format!("Error reading data from file: {:?}", data_path)
                         })?;
                     println!(
                         "Here is the secret recovery seed phrase for account <{}>: \"{}\" (HD Path: {}).",

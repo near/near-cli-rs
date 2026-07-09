@@ -39,12 +39,12 @@ impl SaveToFileContext {
                     serde_json::to_value(FileSignedTransaction { signed_transaction })?;
 
                 std::fs::File::create(&file_path)
-                    .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
+                    .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                     .write(&serde_json::to_vec(&data_signed_transaction)?)
-                    .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
+                    .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
                 eprintln!(
                     "\nThe file {:?} was created successfully. It has a signed transaction (serialized as base64).",
-                    &file_path
+                    file_path
                 );
 
                 eprintln!(
@@ -62,12 +62,12 @@ impl SaveToFileContext {
                     })?;
 
                 std::fs::File::create(&file_path)
-                    .wrap_err_with(|| format!("Failed to create file: {:?}", &file_path))?
+                    .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
                     .write(&serde_json::to_vec(&data_signed_delegate_action)?)
-                    .wrap_err_with(|| format!("Failed to write to file: {:?}", &file_path))?;
+                    .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
                 eprintln!(
                     "\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).",
-                    &file_path
+                    file_path
                 );
 
                 eprintln!(

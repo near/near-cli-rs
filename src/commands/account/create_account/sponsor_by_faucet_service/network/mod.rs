@@ -35,17 +35,17 @@ impl NetworkContext {
         let mut info_str: String = String::new();
         info_str.push_str(&format!(
             "\n{:<13} {}",
-            "signer_id:", &network_config.network_name
+            "signer_id:", network_config.network_name
         ));
         info_str.push_str("\nactions:");
         info_str.push_str(&format!(
             "\n{:>5} {:<20} {}",
-            "--", "create account:", &previous_context.new_account_id
+            "--", "create account:", previous_context.new_account_id
         ));
         info_str.push_str(&format!("\n{:>5} {:<20}", "--", "add access key:"));
         info_str.push_str(&format!(
             "\n{:>18} {:<13} {}",
-            "", "public key:", &previous_context.public_key
+            "", "public key:", previous_context.public_key
         ));
         info_str.push_str(&format!("\n{:>18} {:<13} FullAccess", "", "permission:"));
         info_str.push_str("\n ");

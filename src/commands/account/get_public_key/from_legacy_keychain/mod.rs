@@ -93,7 +93,7 @@ impl PublicKeyFromLegacyKeychainContext {
                         serde_json::from_slice(&signer_access_key_json).wrap_err_with(|| {
                             format!(
                                 "Error reading data from file: {:?}",
-                                &signer_access_key_file_path
+                                signer_access_key_file_path
                             )
                         })?;
 

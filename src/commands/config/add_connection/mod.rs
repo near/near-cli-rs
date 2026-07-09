@@ -108,7 +108,7 @@ impl AddNetworkConnectionContext {
         config.write_config_toml()?;
         eprintln!(
             "Network connection \"{}\" was successfully added to config.toml",
-            &scope.connection_name
+            scope.connection_name
         );
         Ok(Self)
     }

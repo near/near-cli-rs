@@ -215,7 +215,7 @@ impl MsgFileContext {
         scope: &<MsgFile as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let msg = std::fs::read_to_string(&scope.file_path)
-            .wrap_err_with(|| format!("Failed to read msg from file: {:?}", &scope.file_path))?
+            .wrap_err_with(|| format!("Failed to read msg from file: {:?}", scope.file_path))?
             .trim()
             .to_string();
         Ok(Self(build_action_context(previous_context, msg)?))

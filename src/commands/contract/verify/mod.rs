@@ -250,7 +250,7 @@ fn get_contract_properties_from_docker_build(
         )
     })?;
     let contract_code = std::fs::read(&contract_path_buf)
-        .wrap_err_with(|| format!("Failed to open or read the file: {:?}.", &contract_path_buf,))?;
+        .wrap_err_with(|| format!("Failed to open or read the file: {:?}.", contract_path_buf,))?;
     let contract_code_hash = near_verify_rs::logic::compute_hash(contract_path_buf)?;
 
     let contract_properties = ContractProperties {
@@ -306,7 +306,7 @@ fn get_contract_code_from_contract_account_id(
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query ViewCode for <{}> on network <{}>",
-                &account_id, network_config.network_name
+                account_id, network_config.network_name
             )
         })?;
 

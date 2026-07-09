@@ -21,7 +21,7 @@ impl DeleteNetworkConnectionContext {
         config.write_config_toml()?;
         eprintln!(
             "Network connection \"{}\" was successfully removed from config.toml",
-            &scope.connection_name
+            scope.connection_name
         );
         Ok(Self)
     }

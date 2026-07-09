@@ -91,7 +91,7 @@ impl NewAccount {
                 if let Some(network_config) = network_where_account_exist {
                     tracing::warn!("{}", format!(
                         "Heads up! You will only waste tokens if you proceed creating <{}> account on <{}> as the account already exists.",
-                        &account_id, network_config.network_name
+                        account_id, network_config.network_name
                     ).red()
                     );
                     if !crate::common::ask_if_different_account_id_wanted()? {

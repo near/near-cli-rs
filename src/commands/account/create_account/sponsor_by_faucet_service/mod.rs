@@ -80,7 +80,7 @@ pub fn before_creating_account(
         None => {
             return Err(color_eyre::Report::msg(format!(
                 "The <{}> network does not have a faucet (helper service) that can sponsor the creation of an account.",
-                &network_config.network_name
+                network_config.network_name
             )));
         }
     };
