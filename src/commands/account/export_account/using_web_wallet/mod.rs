@@ -68,7 +68,7 @@ fn auto_import_secret_key(
     url.set_fragment(Some(&fragment));
     eprintln!(
         "If your browser doesn't automatically open, please visit this URL:\n {}\n",
-        &url.as_str()
+        url.as_str()
     );
     // url.open();
     open::that(url.as_ref()).ok();

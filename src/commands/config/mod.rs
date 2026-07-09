@@ -52,10 +52,10 @@ impl ShowConnectionsContext {
         path_config_toml.push("near-cli/config.toml");
         eprintln!(
             "\nConfiguration data is stored in a file {:?}",
-            &path_config_toml
+            path_config_toml
         );
         let config_toml = toml::to_string(&previous_context.config)?;
-        eprintln!("{}", &config_toml);
+        eprintln!("{}", config_toml);
         Ok(Self)
     }
 }

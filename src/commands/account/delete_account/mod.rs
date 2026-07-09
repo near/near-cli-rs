@@ -157,7 +157,7 @@ pub fn validate_beneficiary_in_network(
             "{}{}",
             format!(
                 "Skipping verification of account <{}> as a beneficiary in offline mode.",
-                &beneficiary_account_id,
+                beneficiary_account_id,
             ).red(),
             crate::common::indent_payload(&format!("\n{}",
                 "Make sure you specify an existing account as a beneficiary to avoid losing your funds.\nIt is currently possible to continue deleting an account offline.\nYou can sign and send the created transaction later.\n "

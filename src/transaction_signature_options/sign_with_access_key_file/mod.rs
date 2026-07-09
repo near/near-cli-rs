@@ -56,7 +56,7 @@ impl SignAccessKeyFileContext {
         let data =
             std::fs::read_to_string(&scope.file_path).wrap_err("Access key file not found!")?;
         let account_json: super::AccountKeyPair = serde_json::from_str(&data)
-            .wrap_err_with(|| format!("Error reading data from file: {:?}", &scope.file_path))?;
+            .wrap_err_with(|| format!("Error reading data from file: {:?}", scope.file_path))?;
 
         let nonce_index = scope
             .nonce_index

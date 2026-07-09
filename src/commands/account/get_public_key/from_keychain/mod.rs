@@ -36,7 +36,7 @@ impl PublicKeyFromKeychainContext {
                     }
                     let service_name = std::borrow::Cow::Owned(format!(
                         "near-{}-{}",
-                        network_config.network_name, &account_id
+                        network_config.network_name, account_id
                     ));
 
                     let password = {

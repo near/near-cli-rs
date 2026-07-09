@@ -134,7 +134,7 @@ pub fn get_account_key_pair_from_legacy_keychain(
     let data = std::fs::read_to_string(&data_path).wrap_err("Access key file not found!")?;
     let account_key_pair: crate::transaction_signature_options::AccountKeyPair =
         serde_json::from_str(&data)
-            .wrap_err_with(|| format!("Error reading data from file: {:?}", &data_path))?;
+            .wrap_err_with(|| format!("Error reading data from file: {:?}", data_path))?;
     Ok(account_key_pair)
 }
 

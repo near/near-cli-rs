@@ -30,7 +30,7 @@ impl EditConnectionContext {
             .unwrap_or_else(|| {
                 panic!(
                     "Network connection \"{}\" not found",
-                    &scope.connection_name
+                    scope.connection_name
                 )
             })
             .clone();
@@ -160,7 +160,7 @@ impl ParameterContext {
         config.write_config_toml()?;
         eprintln!(
             "Network connection \"{}\" was successfully updated with the new value for <{}>",
-            &previous_context.connection_name, &scope.key
+            previous_context.connection_name, scope.key
         );
         Ok(Self)
     }
