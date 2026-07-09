@@ -27,12 +27,7 @@ impl EditConnectionContext {
             .config
             .network_connection
             .get(&scope.connection_name)
-            .unwrap_or_else(|| {
-                panic!(
-                    "Network connection \"{}\" not found",
-                    scope.connection_name
-                )
-            })
+            .unwrap_or_else(|| panic!("Network connection \"{}\" not found", scope.connection_name))
             .clone();
 
         Ok(Self {

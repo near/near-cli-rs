@@ -19,9 +19,8 @@ impl SignAccessKeyFileContext {
         let data =
             std::fs::read_to_string(&scope.file_path).wrap_err("Access key file not found!")?;
         let account_json: crate::transaction_signature_options::AccountKeyPair =
-            serde_json::from_str(&data).wrap_err_with(|| {
-                format!("Error reading data from file: {:?}", scope.file_path)
-            })?;
+            serde_json::from_str(&data)
+                .wrap_err_with(|| format!("Error reading data from file: {:?}", scope.file_path))?;
 
         let signature = super::super::sign_nep413_payload(
             &previous_context.payload,
