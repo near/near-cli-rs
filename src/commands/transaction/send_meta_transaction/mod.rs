@@ -31,7 +31,7 @@ pub enum SignedMetaTransactionType {
 #[derive(Debug, Clone)]
 pub struct SignedMetaTransactionContext {
     global_context: crate::GlobalContext,
-    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+    signed_delegate_action: crate::types::signed_delegate_action::SignedDelegateActionAsBase64,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -55,7 +55,7 @@ impl Base64SignedMetaTransactionContext {
     ) -> color_eyre::eyre::Result<Self> {
         Ok(Self(SignedMetaTransactionContext {
             global_context: previous_context,
-            signed_delegate_action: scope.signed_delegate_action.clone().into(),
+            signed_delegate_action: scope.signed_delegate_action.clone(),
         }))
     }
 }
@@ -100,7 +100,7 @@ impl FileWithBase64SignedMetaTransactionContext {
 
         Ok(Self(SignedMetaTransactionContext {
             global_context: previous_context,
-            signed_delegate_action: signed_delegate_action.into(),
+            signed_delegate_action,
         }))
     }
 }
