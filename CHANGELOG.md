@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- sign gas-key meta-transactions as DelegateV2 (NEP-611) and reconstruct DelegateV2 transactions ([#617](https://github.com/near/near-cli-rs/pull/617))
+
 ## [0.28.0](https://github.com/near/near-cli-rs/compare/v0.27.0...v0.28.0) - 2026-07-09
 
 ### Added
