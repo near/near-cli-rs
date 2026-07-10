@@ -87,7 +87,7 @@ fn save_signed_delegate_action_to_file(
 
     std::fs::File::create(file_path)
         .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
-        .write(&serde_json::to_vec(&data_signed_delegate_action)?)
+        .write_all(&serde_json::to_vec(&data_signed_delegate_action)?)
         .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
     eprintln!(
         "\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).",
