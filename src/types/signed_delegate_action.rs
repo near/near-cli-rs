@@ -91,7 +91,7 @@ impl<'de> serde::Deserialize<'de> for SignedDelegateActionAsBase64 {
         )
         .map_err(|err| {
             serde::de::Error::custom(format!(
-                "The value could not decoded from base64 due to: {err}"
+                "The value could not be decoded from base64 due to: {err}"
             ))
         })?;
         Self::from_borsh(&signed_delegate_action_borsh).map_err(serde::de::Error::custom)
