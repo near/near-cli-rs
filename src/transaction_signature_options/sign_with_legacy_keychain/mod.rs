@@ -217,7 +217,7 @@ impl SignLegacyKeychainContext {
             return Ok(Self {
                 network_config: previous_context.network_config,
                 global_context: previous_context.global_context,
-                signed_transaction_or_signed_delegate_action: signed_delegate_action.into(),
+                signed_transaction_or_signed_delegate_action: signed_delegate_action,
                 on_before_sending_transaction_callback: previous_context
                     .on_before_sending_transaction_callback,
                 on_after_sending_transaction_callback: previous_context
