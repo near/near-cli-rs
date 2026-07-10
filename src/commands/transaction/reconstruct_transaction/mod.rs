@@ -288,9 +288,9 @@ fn action_transformation(
                 }
             )))
         }
-        Action::Delegate(_) | Action::DelegateV2(_) => {
-            panic!("Internal error: Delegate/DelegateV2 action should have been handled before calling action_transformation.");
-        }
+        Action::Delegate(_) | Action::DelegateV2(_) => Err(color_eyre::eyre::eyre!(
+            "Reconstructing a delegate action (Delegate or DelegateV2) is only supported when it is the transaction's single action (a standalone meta-transaction), which is unwrapped into its inner actions beforehand. A delegate action alongside other actions cannot be reconstructed."
+        )),
         Action::DeployGlobalContract(action) => {
             let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the file path where to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
