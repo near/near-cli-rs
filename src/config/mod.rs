@@ -40,6 +40,7 @@ impl Default for Config {
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
                 mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
                 tx_wait_until: None,
+                nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -61,6 +62,7 @@ impl Default for Config {
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
                 mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
                 tx_wait_until: None,
+                nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -82,6 +84,7 @@ impl Default for Config {
                 coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
                 mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
                 tx_wait_until: None,
+                nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
             },
         );
 
@@ -106,6 +109,7 @@ impl Default for Config {
                 coingecko_url: None,
                 mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
                 tx_wait_until: None,
+                nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -127,6 +131,7 @@ impl Default for Config {
                 coingecko_url: None,
                 mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
                 tx_wait_until: None,
+                nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
             },
         );
         network_connection.insert(
@@ -148,6 +153,7 @@ impl Default for Config {
                 coingecko_url: None,
                 mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
                 tx_wait_until: None,
+                nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
             },
         );
 
@@ -172,7 +178,7 @@ impl Config {
     }
 
     pub fn into_latest_version(self) -> migrations::ConfigVersion {
-        migrations::ConfigVersion::V4(self)
+        migrations::ConfigVersion::V5(self)
     }
 
     pub fn get_config_toml() -> color_eyre::eyre::Result<Self> {
@@ -201,7 +207,8 @@ impl Config {
             let config: Config = config_version.into();
 
             if !is_latest_version {
-                Self::write_config_toml(config.clone())?;
+                config.write_backup_config_toml()?;
+                config.clone().write_config_toml()?;
             }
 
             Ok(config)
@@ -228,6 +235,36 @@ impl Config {
 
         Ok(())
     }
+
+    /// Backup existing config.toml (if present)
+    pub fn write_backup_config_toml(&self) -> CliResult {
+        let mut path_config_toml =
+            dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
+
+        path_config_toml.push("near-cli");
+        std::fs::create_dir_all(&path_config_toml)?;
+        path_config_toml.push("config.toml");
+
+        if path_config_toml.is_file() {
+            let mut candidate = path_config_toml.clone();
+            let mut idx: usize = 0;
+            loop {
+                let file_name = if idx == 0 {
+                    "config_backup.toml".to_string()
+                } else {
+                    format!("config_backup-{}.toml", idx)
+                };
+                candidate.set_file_name(&file_name);
+                if !candidate.exists() {
+                    break;
+                }
+                idx += 1;
+            }
+            std::fs::rename(&path_config_toml, &candidate)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -248,6 +285,7 @@ pub struct NetworkConfig {
     pub coingecko_url: Option<url::Url>,
     pub mpc_contract_account_id: Option<near_primitives::types::AccountId>,
     pub tx_wait_until: Option<crate::types::tx_execution_status::TxExecutionStatus>,
+    pub nearblocks_url: Option<url::Url>,
 }
 
 impl NetworkConfig {
@@ -329,7 +367,11 @@ impl From<migrations::ConfigVersion> for Config {
                     migrations::ConfigVersion::V4(config_v3.into())
                 }
                 migrations::ConfigVersion::V4(config_v4) => {
-                    break config_v4;
+                    eprintln!("Migrating config.toml from V4 to V5...");
+                    migrations::ConfigVersion::V5(config_v4.into())
+                }
+                migrations::ConfigVersion::V5(config_v5) => {
+                    break config_v5;
                 }
             };
         }

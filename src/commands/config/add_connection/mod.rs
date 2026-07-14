@@ -49,6 +49,9 @@ pub struct AddNetworkConnection {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     tx_wait_until: Option<crate::types::tx_execution_status::TxExecutionStatus>,
+    #[interactive_clap(long)]
+    #[interactive_clap(skip_default_input_arg)]
+    nearblocks_url: Option<crate::types::url::Url>,
 }
 
 #[derive(Debug, Clone)]
@@ -102,6 +105,10 @@ impl AddNetworkConnectionContext {
                     .clone()
                     .map(|mpc_contract_account_id| mpc_contract_account_id.into()),
                 tx_wait_until: scope.tx_wait_until.clone(),
+                nearblocks_url: scope
+                    .nearblocks_url
+                    .clone()
+                    .map(|nearblocks_url| nearblocks_url.into()),
             },
         );
         eprintln!();
@@ -358,6 +365,32 @@ impl AddNetworkConnection {
                 CustomType::new("What is the MPC (Multi-Party Computation) contract account ID?")
                     .prompt()?;
             Ok(Some(mpc_contract_account_id))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn input_nearblocks_url(
+        _context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        #[derive(strum_macros::Display)]
+        enum ConfirmOptions {
+            #[strum(to_string = "Yes, I want to enter the NearBlocks API URL")]
+            Yes,
+            #[strum(to_string = "No, I don't want to enter the NearBlocks API URL")]
+            No,
+        }
+        let select_choose_input = Select::new(
+            "Do you want to enter the NearBlocks API URL?",
+            vec![ConfirmOptions::Yes, ConfirmOptions::No],
+        )
+        .prompt()?;
+        if let ConfirmOptions::Yes = select_choose_input {
+            let nearblocks_url: crate::types::url::Url =
+                CustomType::new("What is the NearBlocks API URL?")
+                    .with_starting_input("https://api.nearblocks.io/")
+                    .prompt()?;
+            Ok(Some(nearblocks_url))
         } else {
             Ok(None)
         }
