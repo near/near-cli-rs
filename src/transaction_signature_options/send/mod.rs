@@ -157,21 +157,19 @@ pub fn sending_signed_transaction(
             crate::common::block_on(client.rpc().call("send_tx", params));
         match result {
             Ok(response) => break response.outcome,
-            Err(ref err) => match crate::common::rpc_transaction_error(err) {
-                Ok(message) => {
-                    if let Some(retries_left) = retries.next() {
-                        sleep_before_retry(format!(
-                            "{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
-                            network_config.rpc_url,
-                            message.red(),
-                            retries_left
-                        ));
-                    } else {
-                        return Err(color_eyre::eyre::eyre!(err.to_string()));
-                    }
+            Err(ref err) => {
+                let message = crate::common::rpc_transaction_error(err)?;
+                if let Some(retries_left) = retries.next() {
+                    sleep_before_retry(format!(
+                        "{} (Previous attempt failed with error: `{}`. Will retry {} more times)",
+                        network_config.rpc_url,
+                        message.red(),
+                        retries_left
+                    ));
+                } else {
+                    return Err(color_eyre::eyre::eyre!(err.to_string()));
                 }
-                Err(report) => return Err(report),
-            },
+            }
         };
     };
 

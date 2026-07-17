@@ -34,10 +34,7 @@ impl ViewListKeysContext {
                 )
                 .into_eyre()
                 .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch query AccessKeyList for {}",
-                        &account_id
-                    )
+                    format!("Failed to fetch query AccessKeyList for {}", account_id)
                 })?;
                 crate::common::display_access_key_list(&nk_list.keys);
                 Ok(())

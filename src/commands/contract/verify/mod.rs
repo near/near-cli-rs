@@ -312,7 +312,7 @@ fn get_contract_code_from_contract_account_id(
     .wrap_err_with(|| {
         format!(
             "Failed to fetch query ViewCode for <{}> on network <{}>",
-            &account_id, network_config.network_name
+            account_id, network_config.network_name
         )
     })?;
 
