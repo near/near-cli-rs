@@ -6,6 +6,7 @@ pub mod delete_account;
 pub mod delete_key;
 pub mod export_account;
 mod fund_gas_key;
+mod generate_keypair;
 mod get_public_key;
 mod import_account;
 mod list_keys;
@@ -67,6 +68,11 @@ pub enum AccountActions {
     ))]
     /// Get the public key to your account
     GetPublicKey(self::get_public_key::GetPublicKey),
+    #[strum_discriminants(strum(
+        message = "generate-keypair        - Generate a new key pair offline (Ed25519 or post-quantum ML-DSA-65)"
+    ))]
+    /// Generate a new key pair offline (Ed25519 or post-quantum ML-DSA-65)
+    GenerateKeypair(self::generate_keypair::GenerateKeypairCommand),
     #[strum_discriminants(strum(
         message = "add-key                 - Add an access key to an account"
     ))]
