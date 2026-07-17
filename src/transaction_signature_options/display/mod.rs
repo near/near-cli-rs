@@ -36,19 +36,26 @@ impl DisplayContext {
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
             ) => {
-                eprintln!(
-                    "\nSigned delegate action (serialized as base64):\n{}\n",
-                    crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
-                        signed_delegate_action
-                    )
-                );
-                eprintln!(
-                    "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
-                    crate::common::get_near_exec_path()
-                );
-                eprintln!("{storage_message}");
+                display_signed_delegate_action(signed_delegate_action.into(), &storage_message);
+            }
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateActionV2(
+                signed_delegate_action,
+            ) => {
+                display_signed_delegate_action(signed_delegate_action.into(), &storage_message);
             }
         }
         Ok(Self)
     }
+}
+
+fn display_signed_delegate_action(
+    signed_delegate_action: crate::types::signed_delegate_action::SignedDelegateActionAsBase64,
+    storage_message: &str,
+) {
+    eprintln!("\nSigned delegate action (serialized as base64):\n{signed_delegate_action}\n");
+    eprintln!(
+        "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
+        crate::common::get_near_exec_path()
+    );
+    eprintln!("{storage_message}");
 }

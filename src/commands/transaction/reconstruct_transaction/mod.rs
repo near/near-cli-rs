@@ -61,16 +61,42 @@ impl TransactionInfoContext {
                         ))
                     );
 
-                    if prepopulated_transaction.actions.len() == 1
-                        && let near_primitives::transaction::Action::Delegate(
-                            signed_delegate_action,
-                        ) = &prepopulated_transaction.actions[0]
-                    {
-                        prepopulated_transaction = crate::commands::PrepopulatedTransaction {
-                            signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
-                            receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
-                            actions: signed_delegate_action.delegate_action.get_actions(),
-                        };
+                    // A meta-transaction is reconstructed from its inner actions:
+                    // unwrap a lone Delegate (NEP-366) or DelegateV2 (NEP-611)
+                    // action into the sender/receiver/actions it delegates.
+                    if prepopulated_transaction.actions.len() == 1 {
+                        match &prepopulated_transaction.actions[0] {
+                            near_primitives::transaction::Action::Delegate(
+                                signed_delegate_action,
+                            ) => {
+                                prepopulated_transaction = crate::commands::PrepopulatedTransaction {
+                                    signer_id: signed_delegate_action
+                                        .delegate_action
+                                        .sender_id
+                                        .clone(),
+                                    receiver_id: signed_delegate_action
+                                        .delegate_action
+                                        .receiver_id
+                                        .clone(),
+                                    actions: signed_delegate_action.delegate_action.get_actions(),
+                                };
+                            }
+                            near_primitives::transaction::Action::DelegateV2(
+                                signed_delegate_action,
+                            ) => match &signed_delegate_action.delegate_action {
+                                near_primitives::action::delegate::VersionedDelegateActionPayload::V2(
+                                    delegate_action,
+                                ) => {
+                                    prepopulated_transaction =
+                                        crate::commands::PrepopulatedTransaction {
+                                            signer_id: delegate_action.sender_id.clone(),
+                                            receiver_id: delegate_action.receiver_id.clone(),
+                                            actions: delegate_action.get_actions(),
+                                        };
+                                }
+                            },
+                            _ => {}
+                        }
                     }
 
                     let cmd =
@@ -262,11 +288,8 @@ fn action_transformation(
                 }
             )))
         }
-        Action::Delegate(_) => {
-            panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
-        }
-        Action::DelegateV2(_) => Err(color_eyre::eyre::eyre!(
-            "Reconstructing DelegateV2 (meta) transactions is not supported."
+        Action::Delegate(_) | Action::DelegateV2(_) => Err(color_eyre::eyre::eyre!(
+            "Reconstructing a delegate action (Delegate or DelegateV2) is only supported when it is the transaction's single action (a standalone meta-transaction), which is unwrapped into its inner actions beforehand. A delegate action alongside other actions cannot be reconstructed."
         )),
         Action::DeployGlobalContract(action) => {
             let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the file path where to save the contract:")

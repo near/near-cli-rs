@@ -56,29 +56,50 @@ impl SaveToFileContext {
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                 signed_delegate_action,
             ) => {
-                let data_signed_delegate_action =
-                    serde_json::to_value(&FileSignedMetaTransaction {
-                        signed_delegate_action: signed_delegate_action.into(),
-                    })?;
-
-                std::fs::File::create(&file_path)
-                    .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
-                    .write(&serde_json::to_vec(&data_signed_delegate_action)?)
-                    .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
-                eprintln!(
-                    "\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).",
-                    file_path
-                );
-
-                eprintln!(
-                    "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
-                    crate::common::get_near_exec_path()
-                );
-                eprintln!("{storage_message}");
+                save_signed_delegate_action_to_file(
+                    &file_path,
+                    signed_delegate_action.into(),
+                    &storage_message,
+                )?;
+            }
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateActionV2(
+                signed_delegate_action,
+            ) => {
+                save_signed_delegate_action_to_file(
+                    &file_path,
+                    signed_delegate_action.into(),
+                    &storage_message,
+                )?;
             }
         }
         Ok(Self)
     }
+}
+
+fn save_signed_delegate_action_to_file(
+    file_path: &std::path::Path,
+    signed_delegate_action: crate::types::signed_delegate_action::SignedDelegateActionAsBase64,
+    storage_message: &str,
+) -> color_eyre::eyre::Result<()> {
+    let data_signed_delegate_action = serde_json::to_value(FileSignedMetaTransaction {
+        signed_delegate_action,
+    })?;
+
+    std::fs::File::create(file_path)
+        .wrap_err_with(|| format!("Failed to create file: {:?}", file_path))?
+        .write_all(&serde_json::to_vec(&data_signed_delegate_action)?)
+        .wrap_err_with(|| format!("Failed to write to file: {:?}", file_path))?;
+    eprintln!(
+        "\nThe file {:?} was created successfully. It has a signed delegate action (serialized as base64).",
+        file_path
+    );
+
+    eprintln!(
+        "This base64-encoded signed delegate action is ready to be sent to the meta-transaction relayer. There is a helper command on near CLI that can do that:\n$ {} transaction send-meta-transaction\n",
+        crate::common::get_near_exec_path()
+    );
+    eprintln!("{storage_message}");
+    Ok(())
 }
 
 impl SaveToFile {
@@ -89,7 +110,8 @@ impl SaveToFile {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(_) => {
                 "signed-transaction-info.json"
             }
-            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(_) => {
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(_)
+            | super::SignedTransactionOrSignedDelegateAction::SignedDelegateActionV2(_) => {
                 "signed-meta-transaction-info.json"
             }
         };

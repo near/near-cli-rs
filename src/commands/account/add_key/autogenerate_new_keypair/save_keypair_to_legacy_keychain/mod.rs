@@ -67,7 +67,14 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
                         ) => signed_transaction.transaction.signer_id().clone(),
                         crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                             signed_delegate_action,
-                        ) => signed_delegate_action.delegate_action.sender_id.clone()
+                        ) => signed_delegate_action.delegate_action.sender_id.clone(),
+                        crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedDelegateActionV2(
+                            signed_delegate_action,
+                        ) => match &signed_delegate_action.delegate_action {
+                            near_primitives::action::delegate::VersionedDelegateActionPayload::V2(
+                                delegate_action,
+                            ) => delegate_action.sender_id.clone(),
+                        },
                     };
                     let key_pair_properties_buf = item.generated_key_pair.keychain_json()?;
                     let key_id = item.generated_key_pair.keychain_key_id()?;

@@ -52,7 +52,14 @@ impl From<SaveKeypairToKeychainContext> for crate::commands::ActionContext {
                         ) => signed_transaction.transaction.signer_id().clone(),
                         crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
                             signed_delegate_action,
-                        ) => signed_delegate_action.delegate_action.sender_id.clone()
+                        ) => signed_delegate_action.delegate_action.sender_id.clone(),
+                        crate::transaction_signature_options::SignedTransactionOrSignedDelegateAction::SignedDelegateActionV2(
+                            signed_delegate_action,
+                        ) => match &signed_delegate_action.delegate_action {
+                            near_primitives::action::delegate::VersionedDelegateActionPayload::V2(
+                                delegate_action,
+                            ) => delegate_action.sender_id.clone(),
+                        },
                     };
                     crate::common::save_access_key_to_keychain_or_save_to_legacy_keychain(
                         network_config.clone(),
