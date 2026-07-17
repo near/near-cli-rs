@@ -1,6 +1,5 @@
 use color_eyre::eyre::ContextCompat;
 use inquire::CustomType;
-use near_primitives::transaction::TransactionV0;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -16,7 +15,7 @@ pub struct SignPrivateKey {
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_height: Option<near_primitives::types::BlockHeight>,
+    pub block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     pub nonce_index: Option<u64>,
@@ -52,7 +51,7 @@ impl SignPrivateKeyContext {
         tracing::info!(target: "near_teach_me", "Signing the transaction with a plaintext private key ...");
 
         let network_config = previous_context.network_config.clone();
-        let signer_secret_key: near_crypto::SecretKey = scope.signer_private_key.clone().into();
+        let signer_secret_key: near_kit::SecretKey = scope.signer_private_key.clone().into();
         let public_key = signer_secret_key.public_key();
 
         let nonce_index = scope
@@ -79,15 +78,14 @@ impl SignPrivateKeyContext {
                 )
             } else {
                 super::resolve_online_nonce(
-                    &network_config.json_rpc_client(),
+                    &network_config,
                     &previous_context.prepopulated_transaction.signer_id,
                     &public_key,
                     nonce_index,
-                    &network_config.network_name,
                 )?
             };
 
-        let mut unsigned_transaction = TransactionV0 {
+        let mut unsigned_transaction = near_kit::Transaction {
             public_key: public_key.clone(),
             block_hash,
             nonce: nonce_resolution.nonce(),
@@ -100,8 +98,7 @@ impl SignPrivateKeyContext {
 
         let unsigned_transaction =
             super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
-
-        let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+        let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_bytes());
 
         if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
@@ -129,10 +126,10 @@ impl SignPrivateKeyContext {
             });
         }
 
-        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-            signature.clone(),
-            unsigned_transaction,
-        );
+        let mut signed_transaction = near_kit::SignedTransactionV1 {
+            transaction: unsigned_transaction,
+            signature: signature.clone(),
+        };
 
         tracing::info!(
             parent: &tracing::Span::none(),
@@ -203,13 +200,10 @@ impl SignPrivateKey {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)

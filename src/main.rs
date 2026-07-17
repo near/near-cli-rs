@@ -278,10 +278,7 @@ fn try_rewrite_construct_transaction_args() -> Option<Vec<String>> {
     if receiver_arg.starts_with('-') {
         return None;
     }
-    if receiver_arg
-        .parse::<near_primitives::types::AccountId>()
-        .is_err()
-    {
+    if receiver_arg.parse::<near_kit::AccountId>().is_err() {
         return None;
     }
     // Insert "account-id" before the receiver.

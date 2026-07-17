@@ -16,7 +16,7 @@ pub struct GenerateKeypair {
 pub struct GenerateKeypairContext {
     config: crate::config::Config,
     new_account_id: crate::types::account_id::AccountId,
-    public_key: near_crypto::PublicKey,
+    public_key: near_kit::PublicKey,
     generated_key_pair: crate::common::GeneratedKeyPair,
     on_before_creating_account_callback: super::super::network::OnBeforeCreatingAccountCallback,
 }

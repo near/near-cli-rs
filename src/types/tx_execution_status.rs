@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
-pub struct TxExecutionStatus(pub near_primitives::views::TxExecutionStatus);
+pub struct TxExecutionStatus(pub near_kit::TxExecutionStatus);
 
-impl From<TxExecutionStatus> for near_primitives::views::TxExecutionStatus {
+impl From<TxExecutionStatus> for near_kit::TxExecutionStatus {
     fn from(status: TxExecutionStatus) -> Self {
         status.0
     }
@@ -23,16 +23,16 @@ impl<'de> serde::Deserialize<'de> for TxExecutionStatus {
 impl std::fmt::Display for TxExecutionStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
-            near_primitives::views::TxExecutionStatus::None => write!(f, "none"),
-            near_primitives::views::TxExecutionStatus::Included => write!(f, "included"),
-            near_primitives::views::TxExecutionStatus::ExecutedOptimistic => {
+            near_kit::TxExecutionStatus::None => write!(f, "none"),
+            near_kit::TxExecutionStatus::Included => write!(f, "included"),
+            near_kit::TxExecutionStatus::ExecutedOptimistic => {
                 write!(f, "executed-optimistic")
             }
-            near_primitives::views::TxExecutionStatus::IncludedFinal => {
+            near_kit::TxExecutionStatus::IncludedFinal => {
                 write!(f, "included-final")
             }
-            near_primitives::views::TxExecutionStatus::Executed => write!(f, "executed"),
-            near_primitives::views::TxExecutionStatus::Final => write!(f, "final"),
+            near_kit::TxExecutionStatus::Executed => write!(f, "executed"),
+            near_kit::TxExecutionStatus::Final => write!(f, "final"),
         }
     }
 }
@@ -42,16 +42,16 @@ impl std::str::FromStr for TxExecutionStatus {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "none" => Ok(Self(near_primitives::views::TxExecutionStatus::None)),
-            "included" => Ok(Self(near_primitives::views::TxExecutionStatus::Included)),
-            "executed-optimistic" | "executed_optimistic" => Ok(Self(
-                near_primitives::views::TxExecutionStatus::ExecutedOptimistic,
-            )),
-            "included-final" | "included_final" => Ok(Self(
-                near_primitives::views::TxExecutionStatus::IncludedFinal,
-            )),
-            "executed" => Ok(Self(near_primitives::views::TxExecutionStatus::Executed)),
-            "final" => Ok(Self(near_primitives::views::TxExecutionStatus::Final)),
+            "none" => Ok(Self(near_kit::TxExecutionStatus::None)),
+            "included" => Ok(Self(near_kit::TxExecutionStatus::Included)),
+            "executed-optimistic" | "executed_optimistic" => {
+                Ok(Self(near_kit::TxExecutionStatus::ExecutedOptimistic))
+            }
+            "included-final" | "included_final" => {
+                Ok(Self(near_kit::TxExecutionStatus::IncludedFinal))
+            }
+            "executed" => Ok(Self(near_kit::TxExecutionStatus::Executed)),
+            "final" => Ok(Self(near_kit::TxExecutionStatus::Final)),
             _ => Err(format!(
                 "Unknown tx execution status: '{}'. Valid values: none, included, executed-optimistic, included-final, executed, final",
                 s

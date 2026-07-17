@@ -17,14 +17,10 @@ impl DeleteKeyActionContext {
         previous_context: super::super::super::ConstructTransactionContext,
         scope: &<DeleteKeyAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let public_keys: Vec<near_crypto::PublicKey> = scope.public_keys.clone().into();
-        let action: Vec<near_primitives::transaction::Action> = public_keys
+        let public_keys: Vec<near_kit::PublicKey> = scope.public_keys.clone().into();
+        let action: Vec<near_kit::Action> = public_keys
             .into_iter()
-            .map(|public_key| {
-                near_primitives::transaction::Action::DeleteKey(Box::new(
-                    near_primitives::transaction::DeleteKeyAction { public_key },
-                ))
-            })
+            .map(|public_key| near_kit::Action::DeleteKey(near_kit::DeleteKeyAction { public_key }))
             .collect();
         let mut actions = previous_context.actions;
         actions.extend(action);

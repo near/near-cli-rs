@@ -31,7 +31,7 @@ pub enum SignedMetaTransactionType {
 #[derive(Debug, Clone)]
 pub struct SignedMetaTransactionContext {
     global_context: crate::GlobalContext,
-    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+    signed_delegate_action: near_kit::SignedDelegateAction,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]

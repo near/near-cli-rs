@@ -17,7 +17,7 @@ pub struct WithdrawFromGasKeyCommand {
 #[derive(Debug, Clone)]
 pub struct WithdrawFromGasKeyContext {
     global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
+    owner_account_id: near_kit::AccountId,
     public_key: crate::types::public_key::PublicKey,
     amount: crate::types::near_token::NearToken,
 }
@@ -48,11 +48,11 @@ impl From<WithdrawFromGasKeyContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: owner_account_id.clone(),
                         receiver_id: owner_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::WithdrawFromGasKey(
-                            Box::new(near_primitives::action::WithdrawFromGasKeyAction {
+                        actions: vec![near_kit::Action::WithdrawFromGasKey(
+                            near_kit::WithdrawFromGasKeyAction {
                                 public_key: public_key.clone().into(),
                                 amount: amount.into(),
-                            }),
+                            },
                         )],
                     })
                 }

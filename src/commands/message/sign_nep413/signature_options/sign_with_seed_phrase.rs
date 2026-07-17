@@ -22,7 +22,8 @@ impl SignSeedPhraseContext {
             scope.seed_phrase_hd_path.clone(),
             scope.master_seed_phrase.clone(),
         )?;
-        let secret_key = near_crypto::SecretKey::from_str(&key_pair_properties.secret_keypair_str)?;
+        let secret_key = near_kit::SecretKey::from_str(&key_pair_properties.secret_keypair_str)
+            .map_err(color_eyre::eyre::Report::msg)?;
 
         let signature = super::super::sign_nep413_payload(&previous_context.payload, &secret_key)?;
 

@@ -25,8 +25,8 @@ pub struct DaoProposalContext {
     on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     sign_as_delegate_action: bool,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_kind: dao_kind_arguments::ProposalKind,
 }
 
@@ -46,7 +46,7 @@ impl DaoProposalContext {
             previous_context.on_after_sending_transaction_callback
         } else {
             std::sync::Arc::new(
-                |_final_outcome_view: &near_primitives::views::FinalExecutionOutcomeView,
+                |_final_outcome_view: &near_kit::FinalExecutionOutcome,
                  _network_config: &crate::config::NetworkConfig| Ok(()),
             )
         };
@@ -97,8 +97,8 @@ pub struct DaoProposalArgumentsContext {
     on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     sign_as_delegate_action: bool,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
 }
 
@@ -160,8 +160,8 @@ pub struct PrepaidGasContext {
     on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     sign_as_delegate_action: bool,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
     gas: crate::common::NearGas,
 }
@@ -232,8 +232,8 @@ pub struct DepositContext {
     on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     sign_as_delegate_action: bool,
-    dao_account_id: near_primitives::types::AccountId,
-    receiver_id: near_primitives::types::AccountId,
+    dao_account_id: near_kit::AccountId,
+    receiver_id: near_kit::AccountId,
     proposal_args: Vec<u8>,
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,
@@ -278,13 +278,13 @@ impl From<DepositContext> for crate::commands::TransactionContext {
         let new_prepopulated_transaction = crate::commands::PrepopulatedTransaction {
             signer_id: item.dao_account_id,
             receiver_id: item.receiver_id,
-            actions: vec![near_primitives::transaction::Action::FunctionCall(
-                Box::new(near_primitives::transaction::FunctionCallAction {
+            actions: vec![near_kit::Action::FunctionCall(
+                near_kit::FunctionCallAction {
                     method_name: "add_proposal".to_string(),
                     args: item.proposal_args.clone(),
-                    gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
+                    gas: near_kit::Gas::from_gas(item.gas.as_gas()),
                     deposit: item.deposit.into(),
-                }),
+                },
             )],
         };
 

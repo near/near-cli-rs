@@ -14,8 +14,7 @@ impl PrintContext {
         previous_context: crate::GlobalContext,
         scope: &<PrintTransaction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let signed_transaction: near_primitives::transaction::SignedTransaction =
-            scope.signed_transaction.clone().into();
+        let signed_transaction = &scope.signed_transaction.inner;
         let info_str = crate::common::print_full_signed_transaction(signed_transaction);
         if let crate::Verbosity::Quiet = previous_context.verbosity {
             println!("Signed transaction (full):{info_str}")

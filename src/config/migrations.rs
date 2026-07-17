@@ -28,9 +28,9 @@ pub struct NetworkConfigV1 {
     pub wallet_url: url::Url,
     pub explorer_transaction_url: url::Url,
     // https://github.com/near/near-cli-rs/issues/116
-    pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
+    pub linkdrop_account_id: Option<near_kit::AccountId>,
     // https://docs.near.org/social/contract
-    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
+    pub near_social_db_contract_account_id: Option<near_kit::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
 }
@@ -42,12 +42,12 @@ pub struct NetworkConfigV3 {
     pub rpc_api_key: Option<crate::types::api_key::ApiKey>,
     pub wallet_url: url::Url,
     pub explorer_transaction_url: url::Url,
-    pub linkdrop_account_id: Option<near_primitives::types::AccountId>,
-    pub near_social_db_contract_account_id: Option<near_primitives::types::AccountId>,
+    pub linkdrop_account_id: Option<near_kit::AccountId>,
+    pub near_social_db_contract_account_id: Option<near_kit::AccountId>,
     pub faucet_url: Option<url::Url>,
     pub meta_transaction_relayer_url: Option<url::Url>,
     pub fastnear_url: Option<url::Url>,
-    pub staking_pools_factory_account_id: Option<near_primitives::types::AccountId>,
+    pub staking_pools_factory_account_id: Option<near_kit::AccountId>,
     pub coingecko_url: Option<url::Url>,
 }
 
@@ -150,7 +150,7 @@ impl From<NetworkConfigV1> for NetworkConfigV2 {
 
 impl From<NetworkConfigV3> for NetworkConfigV4 {
     fn from(network_config: NetworkConfigV3) -> Self {
-        let mpc_contract_account_id: Option<near_primitives::types::AccountId> =
+        let mpc_contract_account_id: Option<near_kit::AccountId> =
             match network_config.network_name.as_str() {
                 "mainnet" => Some("v1.signer".parse().unwrap()),
                 "testnet" => Some("v1.signer-prod.testnet".parse().unwrap()),

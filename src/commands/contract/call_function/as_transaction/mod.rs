@@ -15,7 +15,7 @@ pub struct CallFunction {
 #[derive(Debug, Clone)]
 pub struct CallFunctionContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
 }
 
 impl CallFunctionContext {
@@ -62,7 +62,7 @@ pub struct Function {
 #[derive(Clone)]
 pub struct FunctionContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
 }
@@ -114,7 +114,7 @@ pub struct PrepaidGas {
 #[derive(Debug, Clone)]
 pub struct PrepaidGasContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -174,7 +174,7 @@ pub struct Deposit {
 #[derive(Debug, Clone)]
 pub struct DepositContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
@@ -224,12 +224,12 @@ pub struct SignerAccountId {
 #[derive(Debug, Clone)]
 pub struct SignerAccountIdContext {
     global_context: crate::GlobalContext,
-    contract_account_id: near_primitives::types::AccountId,
+    contract_account_id: near_kit::AccountId,
     function_name: String,
     function_args: Vec<u8>,
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
 }
 
 impl SignerAccountIdContext {
@@ -260,13 +260,13 @@ impl From<SignerAccountIdContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: receiver_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![near_kit::Action::FunctionCall(
+                            near_kit::FunctionCallAction {
                                 method_name: item.function_name.clone(),
                                 args: item.function_args.clone(),
-                                gas: near_primitives::gas::Gas::from_gas(item.gas.as_gas()),
+                                gas: near_kit::Gas::from_gas(item.gas.as_gas()),
                                 deposit: item.deposit.into(),
-                            }),
+                            },
                         )],
                     })
                 }

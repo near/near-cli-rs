@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use color_eyre::eyre::ContextCompat;
 use inquire::CustomType;
-use near_primitives::transaction::TransactionV0;
 
 #[derive(Debug, Clone, interactive_clap_derive::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -21,7 +20,7 @@ pub struct SignSeedPhrase {
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_height: Option<near_primitives::types::BlockHeight>,
+    pub block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     pub nonce_index: Option<u64>,
@@ -54,16 +53,14 @@ impl SignSeedPhraseContext {
         tracing::info!(target: "near_teach_me", "Signing the transaction using the seed phrase ...");
 
         let network_config = previous_context.network_config.clone();
-
         let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
             scope.seed_phrase_hd_path.clone(),
             scope.master_seed_phrase.clone(),
         )?;
 
-        let signer_secret_key: near_crypto::SecretKey =
-            near_crypto::SecretKey::from_str(&key_pair_properties.secret_keypair_str)?;
-        let signer_public_key =
-            near_crypto::PublicKey::from_str(&key_pair_properties.public_key_str)?;
+        let signer_secret_key: near_kit::SecretKey =
+            near_kit::SecretKey::from_str(&key_pair_properties.secret_keypair_str)?;
+        let signer_public_key = near_kit::PublicKey::from_str(&key_pair_properties.public_key_str)?;
 
         let nonce_index = scope
             .nonce_index
@@ -89,15 +86,14 @@ impl SignSeedPhraseContext {
                 )
             } else {
                 super::resolve_online_nonce(
-                    &network_config.json_rpc_client(),
+                    &network_config,
                     &previous_context.prepopulated_transaction.signer_id,
                     &signer_public_key,
                     nonce_index,
-                    &network_config.network_name,
                 )?
             };
 
-        let mut unsigned_transaction = TransactionV0 {
+        let mut unsigned_transaction = near_kit::Transaction {
             public_key: signer_public_key.clone(),
             block_hash,
             nonce: nonce_resolution.nonce(),
@@ -110,8 +106,7 @@ impl SignSeedPhraseContext {
 
         let unsigned_transaction =
             super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
-
-        let signature = signer_secret_key.sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+        let signature = signer_secret_key.sign(unsigned_transaction.get_hash().as_bytes());
 
         if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
@@ -139,10 +134,10 @@ impl SignSeedPhraseContext {
             });
         }
 
-        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-            signature.clone(),
-            unsigned_transaction,
-        );
+        let mut signed_transaction = near_kit::SignedTransactionV1 {
+            transaction: unsigned_transaction,
+            signature: signature.clone(),
+        };
 
         tracing::info!(
             parent: &tracing::Span::none(),
@@ -213,13 +208,10 @@ impl SignSeedPhrase {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)
