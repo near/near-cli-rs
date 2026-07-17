@@ -77,7 +77,7 @@ struct ViewCodeResponse {
 }
 
 #[tracing::instrument(name = "Obtaining the contract code ...", skip_all)]
-fn get_contract_code(
+async fn get_contract_code(
     account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_kit::BlockReference,
@@ -92,19 +92,18 @@ fn get_contract_code(
     {
         map.extend(block_params);
     }
-    crate::common::block_on(
-        network_config
-            .client()
-            .rpc()
-            .call::<_, ViewCodeResponse>("query", params),
-    )
-    .into_eyre()
-    .wrap_err_with(|| {
-        format!(
-            "Failed to fetch query ViewCode for <{}> on network <{}>",
-            &account_id, network_config.network_name
-        )
-    })
+    network_config
+        .client()
+        .rpc()
+        .call::<_, ViewCodeResponse>("query", params)
+        .await
+        .into_eyre()
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch query ViewCode for <{}> on network <{}>",
+                &account_id, network_config.network_name
+            )
+        })
 }
 
 #[tracing::instrument(name = "Contract inspection ...", skip_all)]
@@ -114,7 +113,7 @@ async fn display_inspect_contract(
     block_reference: &near_kit::BlockReference,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Contract inspection ...");
-    let view_code_response = get_contract_code(account_id, network_config, block_reference)?;
+    let view_code_response = get_contract_code(account_id, network_config, block_reference).await?;
     let code_bytes = base64::engine::general_purpose::STANDARD
         .decode(view_code_response.code_base64)
         .wrap_err("Failed to decode contract code returned by RPC")?;
