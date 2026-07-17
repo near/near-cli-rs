@@ -70,4 +70,17 @@ mod tests {
 
         assert_eq!(decoded.inner, transaction);
     }
+
+    #[test]
+    fn sign_later_versioned_v0_uses_bare_v0_wire_format() {
+        let transaction = sample_transaction();
+        let versioned = near_kit::VersionedTransaction::V0(transaction.clone());
+
+        let versioned_bytes = borsh::to_vec(&versioned).unwrap();
+        assert_eq!(versioned_bytes, borsh::to_vec(&transaction).unwrap());
+
+        let encoded = STANDARD.encode(versioned_bytes);
+        let decoded: TransactionAsBase64 = encoded.parse().unwrap();
+        assert_eq!(decoded.inner, transaction);
+    }
 }
