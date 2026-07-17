@@ -4,7 +4,6 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 pub mod account;
 mod config;
 pub mod contract;
-pub mod generate_keypair;
 pub mod message;
 mod staking;
 mod tokens;
@@ -49,11 +48,6 @@ pub enum TopLevelCommand {
     ))]
     /// Use this to manage connections in a configuration file (config.toml).
     Config(self::config::ConfigCommands),
-    #[strum_discriminants(strum(
-        message = "generate-keypair - Generate a new key pair offline (Ed25519 or post-quantum ML-DSA-65)"
-    ))]
-    /// Generate a new key pair offline (Ed25519 or post-quantum ML-DSA-65)
-    GenerateKeypair(self::generate_keypair::GenerateKeypairCommand),
     #[cfg(feature = "self-update")]
     #[strum_discriminants(strum(message = "extension   - Manage near CLI and extensions"))]
     /// Use this to manage near CLI and extensions
