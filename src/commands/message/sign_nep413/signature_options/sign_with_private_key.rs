@@ -2,12 +2,31 @@
 #[interactive_clap(input_context = super::super::FinalSignNep413Context)]
 #[interactive_clap(output_context = SignPrivateKeyContext)]
 pub struct SignPrivateKey {
+    #[interactive_clap(skip_default_input_arg)]
     /// Enter your private (secret) key:
     pub private_key: crate::types::secret_key::SecretKey,
 }
 
 #[derive(Debug, Clone)]
 pub struct SignPrivateKeyContext;
+
+impl SignPrivateKey {
+    fn input_private_key(
+        _context: &super::super::FinalSignNep413Context,
+    ) -> color_eyre::eyre::Result<Option<crate::types::secret_key::SecretKey>> {
+        match inquire::Password::new("Enter your private (secret) key:")
+            .without_confirmation()
+            .prompt()
+        {
+            Ok(private_key) => Ok(Some(private_key.parse()?)),
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => Ok(None),
+            Err(err) => Err(err.into()),
+        }
+    }
+}
 
 impl SignPrivateKeyContext {
     pub fn from_previous_context(
