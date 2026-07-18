@@ -19,6 +19,23 @@ impl std::str::FromStr for VecString {
     }
 }
 
+impl VecString {
+    pub fn parse_restricted_function_names(input: &str) -> color_eyre::eyre::Result<Self> {
+        color_eyre::eyre::ensure!(
+            !input.contains('"'),
+            "Function names must not contain double quotes"
+        );
+
+        let function_names: Self = input.parse()?;
+        color_eyre::eyre::ensure!(
+            !function_names.0.is_empty() && function_names.0.iter().all(|name| !name.is_empty()),
+            "Enter at least one function name, or choose unrestricted function access"
+        );
+
+        Ok(function_names)
+    }
+}
+
 impl From<VecString> for Vec<String> {
     fn from(item: VecString) -> Self {
         item.0
@@ -33,4 +50,29 @@ impl From<Vec<String>> for VecString {
 
 impl interactive_clap::ToCli for VecString {
     type CliVariant = VecString;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::VecString;
+
+    #[test]
+    fn parses_restricted_function_names() {
+        let function_names =
+            VecString::parse_restricted_function_names("storage_deposit, ft_transfer").unwrap();
+
+        assert_eq!(function_names.0, vec!["storage_deposit", "ft_transfer"]);
+    }
+
+    #[test]
+    fn rejects_quoted_function_names() {
+        assert!(VecString::parse_restricted_function_names("\"ft_transfer\"").is_err());
+    }
+
+    #[test]
+    fn rejects_empty_function_names() {
+        assert!(VecString::parse_restricted_function_names("").is_err());
+        assert!(VecString::parse_restricted_function_names("  ").is_err());
+        assert!(VecString::parse_restricted_function_names("ft_transfer,").is_err());
+    }
 }

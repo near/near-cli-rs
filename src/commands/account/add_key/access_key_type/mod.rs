@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use inquire::{CustomType, Select, Text};
 
 #[derive(Debug, Clone)]
@@ -124,18 +122,13 @@ impl FunctionCallType {
         )
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
-            let mut input_function_names = Text::new("Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:")
+            let input_function_names = Text::new("Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:")
                     .prompt()?;
-            if input_function_names.contains('\"') {
-                input_function_names.clear()
-            };
-            if input_function_names.is_empty() {
-                Ok(Some(crate::types::vec_string::VecString(vec![])))
-            } else {
-                Ok(Some(crate::types::vec_string::VecString::from_str(
+            Ok(Some(
+                crate::types::vec_string::VecString::parse_restricted_function_names(
                     &input_function_names,
-                )?))
-            }
+                )?,
+            ))
         } else {
             Ok(Some(crate::types::vec_string::VecString(vec![])))
         }
