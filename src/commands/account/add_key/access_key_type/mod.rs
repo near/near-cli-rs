@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use inquire::{CustomType, Select, Text};
 
 #[derive(Debug, Clone)]
@@ -59,7 +57,8 @@ pub struct FunctionCallType {
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    function_names: crate::types::vec_string::VecString,
+    /// Comma-separated function names this key may call. Pass an empty value to allow any function.
+    function_names: crate::types::function_names::FunctionNames,
     #[interactive_clap(subcommand)]
     access_key_mode: super::AccessKeyMode,
 }
@@ -70,7 +69,7 @@ pub struct FunctionCallTypeContext {
     signer_account_id: near_primitives::types::AccountId,
     allowance: Option<crate::types::near_token::NearToken>,
     contract_account_id: crate::types::account_id::AccountId,
-    function_names: crate::types::vec_string::VecString,
+    function_names: crate::types::function_names::FunctionNames,
 }
 
 impl FunctionCallTypeContext {
@@ -107,7 +106,7 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
 impl FunctionCallType {
     pub fn input_function_names(
         _context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::function_names::FunctionNames>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(
@@ -124,20 +123,15 @@ impl FunctionCallType {
         )
         .prompt()?;
         if let ConfirmOptions::Yes = select_choose_input {
-            let mut input_function_names = Text::new("Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:")
+            let input_function_names = Text::new("Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:")
                     .prompt()?;
-            if input_function_names.contains('\"') {
-                input_function_names.clear()
-            };
-            if input_function_names.is_empty() {
-                Ok(Some(crate::types::vec_string::VecString(vec![])))
-            } else {
-                Ok(Some(crate::types::vec_string::VecString::from_str(
+            Ok(Some(
+                crate::types::function_names::FunctionNames::parse_restricted(
                     &input_function_names,
-                )?))
-            }
+                )?,
+            ))
         } else {
-            Ok(Some(crate::types::vec_string::VecString(vec![])))
+            Ok(Some(crate::types::function_names::FunctionNames(vec![])))
         }
     }
 
@@ -252,7 +246,8 @@ pub struct GasKeyFunctionCallType {
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    function_names: crate::types::vec_string::VecString,
+    /// Comma-separated function names this key may call. Pass an empty value to allow any function.
+    function_names: crate::types::function_names::FunctionNames,
     #[interactive_clap(subcommand)]
     access_key_mode: super::AccessKeyMode,
 }
@@ -310,7 +305,7 @@ impl GasKeyFunctionCallType {
 
     pub fn input_function_names(
         context: &super::AddKeyCommandContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::function_names::FunctionNames>> {
         FunctionCallType::input_function_names(context)
     }
 }
