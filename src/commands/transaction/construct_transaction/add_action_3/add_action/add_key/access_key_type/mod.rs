@@ -55,7 +55,8 @@ pub struct FunctionCallType {
     contract_account_id: crate::types::account_id::AccountId,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    function_names: crate::types::vec_string::VecString,
+    /// Comma-separated function names this key may call. Pass an empty value to allow any function.
+    function_names: crate::types::function_names::FunctionNames,
     #[interactive_clap(subcommand)]
     access_key_mode: super::AccessKeyMode,
 }
@@ -95,7 +96,7 @@ impl From<FunctionCallTypeContext> for AccessKeyPermissionContext {
 impl FunctionCallType {
     pub fn input_function_names(
         _context: &super::super::super::super::ConstructTransactionContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::vec_string::VecString>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::function_names::FunctionNames>> {
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
             #[strum(
@@ -115,12 +116,12 @@ impl FunctionCallType {
                     Text::new("Enter a comma-separated list of function names that will be allowed to be called in a transaction signed by this access key:")
                         .prompt()?;
             Ok(Some(
-                crate::types::vec_string::VecString::parse_restricted_function_names(
+                crate::types::function_names::FunctionNames::parse_restricted(
                     &input_function_names,
                 )?,
             ))
         } else {
-            Ok(Some(crate::types::vec_string::VecString(vec![])))
+            Ok(Some(crate::types::function_names::FunctionNames(vec![])))
         }
     }
 
