@@ -159,9 +159,11 @@ allow-dirty = ["ci"]
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
-installers = ["shell", "powershell", "npm", "msi"]
+installers = ["shell", "powershell", "npm", "homebrew", "msi"]
 # Publish jobs to run in CI
-publish-jobs = ["npm"]
+publish-jobs = ["npm", "homebrew"]
+# A GitHub repo to push Homebrew formulas to
+tap = "near/homebrew-tap"
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = [
     "aarch64-apple-darwin",
@@ -181,6 +183,10 @@ pr-run-mode = "upload"
 install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
+
+[package.metadata.dist]
+# Match the installed binary and the public Homebrew package name
+formula = "near"
 
 [workspace.metadata.dist.github-custom-runners]
 aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"

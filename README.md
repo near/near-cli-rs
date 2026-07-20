@@ -13,6 +13,14 @@ Just run `near` and let it guide you through!
 Visit [Releases page](https://github.com/near/near-cli-rs/releases/) to see the latest updates.
 
 <details>
+  <summary>Install via Homebrew (macOS and Linux)</summary>
+
+```sh
+brew install near/tap/near
+```
+</details>
+
+<details>
   <summary>Install via Windows Installer (Windows)</summary>
 
   
