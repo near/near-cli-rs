@@ -2,8 +2,7 @@ use color_eyre::owo_colors::OwoColorize;
 use inquire::ui::{Color, RenderConfig, Styled};
 use inquire::{CustomType, MultiSelect, formatter::MultiOptionFormatter};
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DeleteKeysCommandContext)]
@@ -20,8 +19,8 @@ pub struct PublicKeyList {
 #[derive(Debug, Clone)]
 pub struct PublicKeyListContext {
     global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
-    public_keys: Vec<near_crypto::PublicKey>,
+    owner_account_id: near_kit::AccountId,
+    public_keys: Vec<near_kit::PublicKey>,
 }
 
 impl PublicKeyListContext {
@@ -52,9 +51,11 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
                             .clone()
                             .into_iter()
                             .map(|public_key| {
-                                near_primitives::transaction::Action::DeleteKey(Box::new(
-                                    near_primitives::transaction::DeleteKeyAction { public_key },
-                                ))
+                                near_kit::Action::DeleteKey(
+                                    near_kit::DeleteKeyAction {
+                                        public_key: crate::types::public_key::PublicKey::from(public_key).0,
+                                    },
+                                )
                             })
                             .collect(),
                     })
@@ -102,31 +103,29 @@ impl PublicKeyList {
             if processed_network.contains(&network_config.network_name) {
                 continue;
             }
-            match network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key_list(
+            match block_on(
+                network_config.client().rpc().view_access_key_list(
                     &context.owner_account_id,
-                    near_primitives::types::Finality::Final.into(),
-                ) {
-                Ok(rpc_query_response) => {
-                    let access_key_list_for_network = rpc_query_response.access_key_list_view()?;
-                    access_key_list.extend(access_key_list_for_network.keys.iter().filter_map(
-                        |access_key_info_view| {
-                            // In 2.13 the access-key list returns a `PublicKeyHandle`.
-                            // ML-DSA-65 keys are stored on-chain only as a hash, so the
-                            // full public key needed to build a DeleteKey action can't be
-                            // recovered here; `full_pubkey()` returns `None` for them and
-                            // they are skipped from the interactive picker.
-                            access_key_info_view
-                                .public_key
-                                .full_pubkey()
-                                .map(|public_key| AccessKeyInfo {
-                                    public_key,
-                                    permission: access_key_info_view.access_key.permission.clone(),
-                                    network_name: network_config.network_name.clone(),
-                                })
-                        },
-                    ));
+                    near_kit::Finality::Final.into(),
+                ),
+            )
+            .into_eyre()
+            {
+                Ok(nk_list) => {
+                    // ML-DSA-65 access keys are returned by view RPCs as hash handles.
+                    // The full key required by a DeleteKey action cannot be recovered,
+                    // so skip those handles in the interactive picker.
+                    access_key_list.extend(
+                        nk_list
+                            .keys
+                            .iter()
+                            .filter(|access_key| !access_key.public_key.is_ml_dsa65_hash())
+                            .map(|access_key| AccessKeyInfo {
+                                public_key: access_key.public_key.clone(),
+                                permission: access_key.access_key.permission.clone(),
+                                network_name: network_config.network_name.clone(),
+                            }),
+                    );
                     processed_network.push(network_config.network_name.to_string());
                 }
                 Err(err) => {
@@ -185,15 +184,15 @@ impl PublicKeyList {
 
 #[derive(Debug, Clone)]
 struct AccessKeyInfo {
-    public_key: near_crypto::PublicKey,
-    permission: near_primitives::views::AccessKeyPermissionView,
+    public_key: near_kit::PublicKey,
+    permission: near_kit::AccessKeyPermissionView,
     network_name: String,
 }
 
 impl std::fmt::Display for AccessKeyInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.permission {
-            near_primitives::views::AccessKeyPermissionView::FullAccess => {
+            near_kit::AccessKeyPermissionView::FullAccess => {
                 write!(
                     f,
                     "{} {}\t{}",
@@ -202,7 +201,7 @@ impl std::fmt::Display for AccessKeyInfo {
                     "full access".yellow()
                 )
             }
-            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+            near_kit::AccessKeyPermissionView::FunctionCall {
                 allowance,
                 receiver_id,
                 method_names,
@@ -235,7 +234,7 @@ impl std::fmt::Display for AccessKeyInfo {
                     )
                 }
             }
-            near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall {
+            near_kit::AccessKeyPermissionView::GasKeyFunctionCall {
                 balance,
                 receiver_id,
                 method_names,
@@ -256,7 +255,7 @@ impl std::fmt::Display for AccessKeyInfo {
                     format!("balance: {}", balance.exact_amount_display()).cyan()
                 )
             }
-            near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess {
+            near_kit::AccessKeyPermissionView::GasKeyFullAccess {
                 balance,
                 num_nonces,
             } => {

@@ -14,20 +14,12 @@ fn ml_dsa_65_keypair_roundtrips() {
     assert!(public_key.starts_with("ml-dsa-65:"), "{public_key}");
     assert!(private_key.starts_with("ml-dsa-65:"), "{private_key}");
 
-    // The printed strings must parse back into near_crypto types of the
+    // The printed strings must parse back into near-kit types of the
     // post-quantum key type, and the secret key must derive the public key.
-    let parsed_public = near_crypto::PublicKey::from_str(public_key).unwrap();
-    let parsed_secret = near_crypto::SecretKey::from_str(private_key).unwrap();
-    // `KeyType` intentionally does not implement `PartialEq` in 2.13, so we
-    // match on the variant instead of comparing with `assert_eq!`.
-    assert!(matches!(
-        parsed_public.key_type(),
-        near_crypto::KeyType::MLDSA65
-    ));
-    assert!(matches!(
-        parsed_secret.key_type(),
-        near_crypto::KeyType::MLDSA65
-    ));
+    let parsed_public = near_kit::PublicKey::from_str(public_key).unwrap();
+    let parsed_secret = near_kit::SecretKey::from_str(private_key).unwrap();
+    assert!(matches!(&parsed_public, near_kit::PublicKey::MlDsa65(_)));
+    assert!(matches!(&parsed_secret, near_kit::SecretKey::MlDsa65(_)));
     assert_eq!(parsed_secret.public_key(), parsed_public);
 
     // A signature produced by the secret key must verify under the public key.
@@ -43,11 +35,11 @@ fn ed25519_remains_the_classic_default() {
         panic!("expected an Ed25519 key pair");
     };
     assert!(properties.public_key_str.starts_with("ed25519:"));
-    assert!(near_crypto::PublicKey::from_str(&properties.public_key_str).is_ok());
+    assert!(near_kit::PublicKey::from_str(&properties.public_key_str).is_ok());
 }
 
 // The keychain / legacy-keychain identifier a key is *saved* under must equal
-// the string the RPC access-key list reports (a `near_crypto::PublicKeyHandle`),
+// the string the RPC access-key list reports (an ML-DSA-65 hash handle),
 // because that is what the signers look the key up by. For ed25519 that is the
 // full public key; for ML-DSA-65 it is the short `ml-dsa-65-hash:...` handle,
 // never the ~1952-byte full key.
@@ -72,9 +64,9 @@ fn ml_dsa_65_keychain_id_is_the_on_chain_handle() {
     // full ML-DSA-65 key string.
     assert!(key_id.len() < 80, "{} chars", key_id.len());
 
-    // It must be exactly what the RPC access-key list would report for this key
-    // (`PublicKeyHandle`), so a saved key can be found again for signing.
+    // It must be exactly what the RPC access-key list would report for this key,
+    // so a saved key can be found again for signing.
     let public_key = key_pair.public_key().unwrap();
-    let handle = near_crypto::PublicKeyHandle::from(&public_key).to_string();
+    let handle = public_key.to_ml_dsa65_hash().unwrap().to_string();
     assert_eq!(key_id, handle);
 }

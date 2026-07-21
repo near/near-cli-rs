@@ -1,3 +1,5 @@
+use base64::Engine as _;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::super::keys_to_view::KeysContext)]
 #[interactive_clap(output_context = AsJsonContext)]
@@ -20,17 +22,24 @@ impl AsJsonContext {
             let prefix = previous_context.prefix;
 
             move |network_config, block_reference| {
-                let query_view_method_response =
+                let result =
                     super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
 
-                if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-                    query_view_method_response.kind
-                {
-                    println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&result.values)?);
-                    println!("Contract state (proof):\n{:#?}\n", result.proof);
-                } else {
-                    return Err(color_eyre::Report::msg("Error call result".to_string()));
-                };
+                let values = result
+                    .values
+                    .iter()
+                    .map(|value| {
+                        serde_json::json!({
+                            "key": base64::engine::general_purpose::STANDARD.encode(&value.key),
+                            "value": base64::engine::general_purpose::STANDARD.encode(&value.value),
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                println!(
+                    "Contract state (values):\n{}\n",
+                    serde_json::to_string_pretty(&values)?
+                );
+                println!("Contract state (proof):\n[]\n");
                 Ok(())
             }
         });

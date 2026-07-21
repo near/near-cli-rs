@@ -1,6 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::{CallResultExt, JsonRpcClientExt};
+use crate::common::{CallResultExt, RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::StakeDelegationContext)]
@@ -23,13 +23,12 @@ impl ViewBalanceContext {
         scope: &<ViewBalance as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let account_id = previous_context.account_id.clone();
-        let validator_account_id: near_primitives::types::AccountId =
-            scope.validator_account_id.clone().into();
+        let validator_account_id: near_kit::AccountId = scope.validator_account_id.clone().into();
         let interacting_with_account_ids = vec![account_id.clone(), validator_account_id.clone()];
 
         let on_after_getting_block_reference_callback: crate::network_view_at_block::OnAfterGettingBlockReferenceCallback = std::sync::Arc::new({
 
-            move |network_config: &crate::config::NetworkConfig, block_reference: &near_primitives::types::BlockReference| {
+            move |network_config: &crate::config::NetworkConfig, block_reference: &near_kit::BlockReference| {
                 calculation_delegated_stake_balance(
                     &account_id,
                     &validator_account_id,
@@ -65,10 +64,10 @@ impl ViewBalance {
     skip_all
 )]
 fn calculation_delegated_stake_balance(
-    account_id: &near_primitives::types::AccountId,
-    validator_account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
+    validator_account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
+    block_reference: &near_kit::BlockReference,
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Calculation of the delegated stake balance for your account ...");
     let user_staked_balance: u128 = get_user_staked_balance(
@@ -126,27 +125,29 @@ fn calculation_delegated_stake_balance(
 #[tracing::instrument(name = "Getting the staked balance for the user ...", skip_all)]
 pub fn get_user_staked_balance(
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
-    validator_account_id: &near_primitives::types::AccountId,
-    account_id: &near_primitives::types::AccountId,
+    block_reference: &near_kit::BlockReference,
+    validator_account_id: &near_kit::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
     tracing::info!(target: "near_teach_me", "Getting the staked balance for the user ...");
-    Ok(network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let result = block_on(
+        network_config.client().rpc().view_function(
             validator_account_id,
             "get_account_staked_balance",
-            serde_json::to_vec(&serde_json::json!({
+            &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
             }))?,
             block_reference.clone(),
+        ),
+    )
+    .into_eyre()
+    .wrap_err_with(||{
+        format!("Failed to fetch query for view method: 'get_account_staked_balance' (contract <{}> on network <{}>)",
+            validator_account_id,
+            network_config.network_name
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'get_account_staked_balance' (contract <{}> on network <{}>)",
-                validator_account_id,
-                network_config.network_name
-            )
-        })?
+    })?;
+    Ok(result
         .parse_result_from_json::<String>()
         .wrap_err("Failed to parse return value of view function call for String.")?
         .parse::<u128>()?)
@@ -155,27 +156,29 @@ pub fn get_user_staked_balance(
 #[tracing::instrument(name = "Getting the unstaked balance for the user ...", skip_all)]
 pub fn get_user_unstaked_balance(
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
-    validator_account_id: &near_primitives::types::AccountId,
-    account_id: &near_primitives::types::AccountId,
+    block_reference: &near_kit::BlockReference,
+    validator_account_id: &near_kit::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
     tracing::info!(target: "near_teach_me", "Getting the unstaked balance for the user ...");
-    Ok(network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let result = block_on(
+        network_config.client().rpc().view_function(
             validator_account_id,
             "get_account_unstaked_balance",
-            serde_json::to_vec(&serde_json::json!({
+            &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
             }))?,
             block_reference.clone(),
+        ),
+    )
+    .into_eyre()
+    .wrap_err_with(||{
+        format!("Failed to fetch query for view method: 'get_account_unstaked_balance' (contract <{}> on network <{}>)",
+            validator_account_id,
+            network_config.network_name
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'get_account_unstaked_balance' (contract <{}> on network <{}>)",
-                validator_account_id,
-                network_config.network_name
-            )
-        })?
+    })?;
+    Ok(result
         .parse_result_from_json::<String>()
         .wrap_err("Failed to parse return value of view function call for String.")?
         .parse::<u128>()?)
@@ -184,27 +187,29 @@ pub fn get_user_unstaked_balance(
 #[tracing::instrument(name = "Getting the total balance for the user ...", skip_all)]
 pub fn get_user_total_balance(
     network_config: &crate::config::NetworkConfig,
-    block_reference: &near_primitives::types::BlockReference,
-    validator_account_id: &near_primitives::types::AccountId,
-    account_id: &near_primitives::types::AccountId,
+    block_reference: &near_kit::BlockReference,
+    validator_account_id: &near_kit::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<u128> {
     tracing::info!(target: "near_teach_me", "Getting the total balance for the user ...");
-    Ok(network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let result = block_on(
+        network_config.client().rpc().view_function(
             validator_account_id,
             "get_account_total_balance",
-            serde_json::to_vec(&serde_json::json!({
+            &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
             }))?,
             block_reference.clone(),
+        ),
+    )
+    .into_eyre()
+    .wrap_err_with(||{
+        format!("Failed to fetch query for view method: 'get_account_total_balance' (contract <{}> on network <{}>)",
+            validator_account_id,
+            network_config.network_name
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'get_account_total_balance' (contract <{}> on network <{}>)",
-                validator_account_id,
-                network_config.network_name
-            )
-        })?
+    })?;
+    Ok(result
         .parse_result_from_json::<String>()
         .wrap_err("Failed to parse return value of view function call for String.")?
         .parse::<u128>()?)
@@ -216,28 +221,30 @@ pub fn get_user_total_balance(
 )]
 pub fn is_account_unstaked_balance_available_for_withdrawal(
     network_config: &crate::config::NetworkConfig,
-    validator_account_id: &near_primitives::types::AccountId,
-    account_id: &near_primitives::types::AccountId,
+    validator_account_id: &near_kit::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<bool> {
     tracing::info!(target: "near_teach_me", "Getting account unstaked balance available for withdrawal ...");
-    network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
+    let result = block_on(
+        network_config.client().rpc().view_function(
             validator_account_id,
             "is_account_unstaked_balance_available",
-            serde_json::to_vec(&serde_json::json!({
+            &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id.to_string(),
             }))?,
-            near_primitives::types::BlockReference::Finality(
-                near_primitives::types::Finality::Final,
+            near_kit::BlockReference::Finality(
+                near_kit::Finality::Final,
             ),
+        ),
+    )
+    .into_eyre()
+    .wrap_err_with(||{
+        format!("Failed to fetch query for view method: 'is_account_unstaked_balance_available' (contract <{}> on network <{}>)",
+            validator_account_id,
+            network_config.network_name
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'is_account_unstaked_balance_available' (contract <{}> on network <{}>)",
-                validator_account_id,
-                network_config.network_name
-            )
-        })?
+    })?;
+    result
         .parse_result_from_json::<bool>()
         .wrap_err("Failed to parse return value of view function call for bool value.")
 }

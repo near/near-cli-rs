@@ -1,8 +1,7 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 mod using_private_key;
 mod using_seed_phrase;
@@ -22,7 +21,7 @@ pub struct ExportAccount {
 #[derive(Debug, Clone)]
 pub struct ExportAccountContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
 }
 
 impl ExportAccountContext {
@@ -72,7 +71,7 @@ pub enum ExportAccountActions {
 
 pub fn get_account_key_pair_from_keychain(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
     let password = get_password_from_keychain(network_config, account_id)?;
     let account_key_pair = serde_json::from_str(&password);
@@ -85,7 +84,7 @@ pub fn get_account_key_pair_from_keychain(
 )]
 pub fn get_password_from_keychain(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<String> {
     tracing::info!(target: "near_teach_me", "Receiving the account key pair from the keychain ...");
     let service_name: std::borrow::Cow<'_, str> = std::borrow::Cow::Owned(format!(
@@ -94,25 +93,24 @@ pub fn get_password_from_keychain(
         account_id.as_str()
     ));
     let password = {
-        let access_key_list = network_config
-            .json_rpc_client()
-            .blocking_call_view_access_key_list(
-                account_id,
-                near_primitives::types::Finality::Final.into(),
-            )
-            .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?
-            .access_key_list_view()?;
-
-        access_key_list
+        let nk_list = block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_access_key_list(account_id, near_kit::Finality::Final.into()),
+        )
+        .into_eyre()
+        .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?;
+        nk_list
             .keys
-            .into_iter()
+            .iter()
             .filter(|key| {
                 matches!(
                     key.access_key.permission,
-                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                    near_kit::AccessKeyPermissionView::FullAccess
                 )
             })
-            .map(|key| key.public_key)
+            .map(|key| &key.public_key)
             .find_map(|public_key| {
                 let keyring =
                     keyring::Entry::new(&service_name, &format!("{account_id}:{public_key}"))
@@ -126,7 +124,7 @@ pub fn get_password_from_keychain(
 
 pub fn get_account_key_pair_from_legacy_keychain(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<crate::transaction_signature_options::AccountKeyPair> {
     let data_path =
@@ -140,7 +138,7 @@ pub fn get_account_key_pair_from_legacy_keychain(
 
 fn get_account_key_pair_data_path(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     credentials_home_dir: &std::path::Path,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
     let check_if_seed_phrase_exists = false;
@@ -158,7 +156,7 @@ fn get_account_key_pair_data_path(
 )]
 pub fn get_account_properties_data_path(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     credentials_home_dir: &std::path::Path,
     check_if_seed_phrase_exists: bool,
 ) -> color_eyre::eyre::Result<std::path::PathBuf> {
@@ -185,25 +183,25 @@ pub fn get_account_properties_data_path(
         }
     }
 
-    let access_key_list = network_config
-        .json_rpc_client()
-        .blocking_call_view_access_key_list(
-            account_id,
-            near_primitives::types::Finality::Final.into(),
-        )
-        .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?
-        .access_key_list_view()?;
+    let nk_list = block_on(
+        network_config
+            .client()
+            .rpc()
+            .view_access_key_list(account_id, near_kit::Finality::Final.into()),
+    )
+    .into_eyre()
+    .wrap_err_with(|| format!("Failed to fetch access KeyList for {account_id}"))?;
     let mut path = std::path::PathBuf::from(credentials_home_dir);
     path.push(dir_name);
     path.push(account_id.to_string());
     let mut data_path = std::path::PathBuf::new();
-    for access_key in access_key_list.keys {
+    for access_key in &nk_list.keys {
         let account_public_key = access_key.public_key.to_string().replace(':', "_");
         match &access_key.access_key.permission {
-            near_primitives::views::AccessKeyPermissionView::FullAccess => {}
-            near_primitives::views::AccessKeyPermissionView::FunctionCall { .. }
-            | near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
-            | near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. } => {
+            near_kit::AccessKeyPermissionView::FullAccess => {}
+            near_kit::AccessKeyPermissionView::FunctionCall { .. }
+            | near_kit::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+            | near_kit::AccessKeyPermissionView::GasKeyFullAccess { .. } => {
                 continue;
             }
         }

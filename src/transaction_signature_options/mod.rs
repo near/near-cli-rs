@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use serde::Deserialize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
@@ -94,8 +95,8 @@ pub enum Submit {
 
 #[derive(Debug, Deserialize)]
 pub struct AccountKeyPair {
-    pub public_key: near_crypto::PublicKey,
-    pub private_key: near_crypto::SecretKey,
+    pub public_key: near_kit::PublicKey,
+    pub private_key: near_kit::SecretKey,
 }
 
 pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
@@ -106,17 +107,11 @@ pub type OnBeforeSendingTransactionCallback = std::sync::Arc<
 >;
 
 pub type OnAfterSendingTransactionCallback = std::sync::Arc<
-    dyn Fn(
-        &near_primitives::views::FinalExecutionOutcomeView,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(&near_kit::FinalExecutionOutcome, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 pub type OnSendingDelegateActionCallback = std::sync::Arc<
-    dyn Fn(
-        near_primitives::action::delegate::SignedDelegateAction,
-        &crate::config::NetworkConfig,
-    ) -> crate::CliResult,
+    dyn Fn(near_kit::SignedDelegateAction, &crate::config::NetworkConfig) -> crate::CliResult,
 >;
 
 #[derive(Clone)]
@@ -129,39 +124,82 @@ pub struct SubmitContext {
     pub on_sending_delegate_action_callback: Option<OnSendingDelegateActionCallback>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+/// A signed transaction (including gas-key/V1 transactions) or a V1 delegate action.
+#[derive(Debug, Clone)]
 pub enum SignedTransactionOrSignedDelegateAction {
-    SignedTransaction(near_primitives::transaction::SignedTransaction),
-    SignedDelegateAction(near_primitives::action::delegate::SignedDelegateAction),
+    SignedTransaction(near_kit::SignedTransactionV1),
+    SignedDelegateAction(near_kit::SignedDelegateAction),
 }
 
-impl From<near_primitives::transaction::SignedTransaction>
-    for SignedTransactionOrSignedDelegateAction
-{
-    fn from(signed_transaction: near_primitives::transaction::SignedTransaction) -> Self {
+impl serde::Serialize for SignedTransactionOrSignedDelegateAction {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+
+        let mut map = serializer.serialize_map(Some(1))?;
+        match self {
+            Self::SignedTransaction(transaction) => {
+                map.serialize_entry("SignedTransaction", &transaction.to_base64())?;
+            }
+            Self::SignedDelegateAction(delegate_action) => {
+                let base64 = base64::engine::general_purpose::STANDARD.encode(
+                    borsh::to_vec(delegate_action)
+                        .expect("signed delegate action serialization should not fail"),
+                );
+                map.serialize_entry("SignedDelegateAction", &base64)?;
+            }
+        }
+        map.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for SignedTransactionOrSignedDelegateAction {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let map: std::collections::HashMap<String, String> =
+            serde::Deserialize::deserialize(deserializer)?;
+
+        if let Some(base64) = map.get("SignedTransaction") {
+            let transaction = near_kit::SignedTransactionV1::from_base64(base64)
+                .map_err(serde::de::Error::custom)?;
+            Ok(Self::SignedTransaction(transaction))
+        } else if let Some(base64) = map.get("SignedDelegateAction") {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(base64)
+                .map_err(serde::de::Error::custom)?;
+            let delegate_action = borsh::from_slice(&bytes).map_err(serde::de::Error::custom)?;
+            Ok(Self::SignedDelegateAction(delegate_action))
+        } else {
+            Err(serde::de::Error::custom(
+                "expected SignedTransaction or SignedDelegateAction key",
+            ))
+        }
+    }
+}
+
+impl From<near_kit::SignedTransactionV1> for SignedTransactionOrSignedDelegateAction {
+    fn from(signed_transaction: near_kit::SignedTransactionV1) -> Self {
         Self::SignedTransaction(signed_transaction)
     }
 }
 
-impl From<near_primitives::action::delegate::SignedDelegateAction>
-    for SignedTransactionOrSignedDelegateAction
-{
-    fn from(
-        signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
-    ) -> Self {
+impl From<near_kit::SignedDelegateAction> for SignedTransactionOrSignedDelegateAction {
+    fn from(signed_delegate_action: near_kit::SignedDelegateAction) -> Self {
         Self::SignedDelegateAction(signed_delegate_action)
     }
 }
 
-/// A gas key cannot be used to sign a meta-transaction yet: a (v1)
-/// `DelegateAction` only carries a plain `nonce`, so delegating a gas-key
-/// transaction would drop its `nonce_index` and the runtime would reject the
-/// result (`DelegateActionRequiresNonGasKey`). Full support needs DelegateV2,
-/// which is out of the 2.13 scope. Reject the combination up front with a clear
-/// error. Called from every delegate-action path (the shared
-/// [`get_signed_delegate_action`] and the two Ledger manual branches).
+/// Reject gas-key meta-transactions until the CLI supports DelegateV2 signing.
+///
+/// A V1 `DelegateAction` only carries a plain nonce. Converting a gas-key
+/// transaction to it would discard the nonce index and the runtime would reject
+/// it with `DelegateActionRequiresNonGasKey`.
 pub fn ensure_gas_key_not_delegated(
-    unsigned_transaction: &near_primitives::transaction::Transaction,
+    unsigned_transaction: &near_kit::VersionedTransaction,
 ) -> color_eyre::eyre::Result<()> {
     if unsigned_transaction.nonce().nonce_index().is_some() {
         color_eyre::eyre::bail!(
@@ -172,38 +210,31 @@ pub fn ensure_gas_key_not_delegated(
 }
 
 pub fn get_signed_delegate_action(
-    unsigned_transaction: near_primitives::transaction::Transaction,
-    public_key: &near_crypto::PublicKey,
-    private_key: near_crypto::SecretKey,
+    unsigned_transaction: near_kit::VersionedTransaction,
+    public_key: &near_kit::PublicKey,
+    private_key: near_kit::SecretKey,
     max_block_height: u64,
-) -> color_eyre::eyre::Result<near_primitives::action::delegate::SignedDelegateAction> {
-    use near_primitives::signable_message::{SignableMessage, SignableMessageType};
-
+) -> color_eyre::eyre::Result<near_kit::SignedDelegateAction> {
     ensure_gas_key_not_delegated(&unsigned_transaction)?;
 
-    let mut delegate_action = near_primitives::action::delegate::DelegateAction {
+    let delegate_action = near_kit::DelegateAction {
         sender_id: unsigned_transaction.signer_id().clone(),
         receiver_id: unsigned_transaction.receiver_id().clone(),
-        actions: vec![],
+        actions: unsigned_transaction
+            .actions()
+            .iter()
+            .cloned()
+            .map(near_kit::NonDelegateAction::try_from)
+            .collect::<Result<_, _>>()
+            .expect(
+                "Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).",
+            ),
         nonce: unsigned_transaction.nonce().nonce(),
         max_block_height,
         public_key: unsigned_transaction.public_key().clone(),
     };
 
-    delegate_action.actions = unsigned_transaction
-        .take_actions()
-        .into_iter()
-        .map(near_primitives::action::delegate::NonDelegateAction::try_from)
-        .collect::<Result<_, _>>()
-        .expect("Internal error: can not convert the action to non delegate action (delegate action can not be delegated again).");
-
-    // create a new signature here signing the delegate action + discriminant
-    let signable = SignableMessage::new(&delegate_action, SignableMessageType::DelegateAction);
-    let signer = near_crypto::InMemorySigner::from_secret_key(
-        delegate_action.sender_id.clone(),
-        private_key,
-    );
-    let signature = signable.sign(&signer);
+    let signature = private_key.sign(delegate_action.get_hash().as_bytes());
 
     tracing::info!(
         parent: &tracing::Span::none(),
@@ -213,113 +244,91 @@ pub fn get_signed_delegate_action(
         ))
     );
 
-    Ok(near_primitives::action::delegate::SignedDelegateAction {
-        delegate_action,
-        signature,
-    })
+    Ok(delegate_action.sign(signature))
 }
 
-/// The nonce (and, for gas keys, the nonce index) to use for the next transaction.
-///
-/// Determined once by [`resolve_online_nonce`] / [`resolve_offline_nonce`] and then
-/// consumed by [`build_unsigned_transaction`] to pick the transaction version.
+/// The nonce (and, for gas keys, nonce index) for the next transaction.
 #[derive(Debug, Clone, Copy)]
 pub enum NonceResolution {
-    /// Ordinary access key: a plain nonce, builds a (V0) transaction.
-    Plain {
-        nonce: near_primitives::types::Nonce,
-    },
-    /// Gas key: a nonce at a specific parallel-nonce index, builds a V1 transaction.
+    /// Ordinary access key: build a legacy V0 transaction.
+    Plain { nonce: near_kit::Nonce },
+    /// Gas key: build a V1 transaction with a parallel nonce index.
     GasKey {
-        nonce: near_primitives::types::Nonce,
-        nonce_index: near_primitives::types::NonceIndex,
+        nonce: near_kit::Nonce,
+        nonce_index: near_kit::NonceIndex,
     },
 }
 
 impl NonceResolution {
-    /// The nonce value, used to populate the intermediate `TransactionV0.nonce` field
-    /// (which is preserved as-is for the plain path and superseded for the gas-key path).
-    pub fn nonce(&self) -> near_primitives::types::Nonce {
+    pub fn nonce(&self) -> near_kit::Nonce {
         match self {
-            NonceResolution::Plain { nonce } | NonceResolution::GasKey { nonce, .. } => *nonce,
+            Self::Plain { nonce } | Self::GasKey { nonce, .. } => *nonce,
         }
     }
 }
 
-/// `interactive-clap` only implements `ToCli` for `u64`/`u128`, not `u16`, so the
-/// `--nonce-index` CLI field is collected as `u64` and narrowed here, bounded by the
-/// protocol limit `AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY`.
-pub fn nonce_index_from_cli(
-    nonce_index: u64,
-) -> color_eyre::eyre::Result<near_primitives::types::NonceIndex> {
-    let max = near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY;
+/// Narrow the interactive-clap `u64` nonce index to the protocol's `u16` type.
+pub fn nonce_index_from_cli(nonce_index: u64) -> color_eyre::eyre::Result<near_kit::NonceIndex> {
+    let max = near_kit::MAX_NONCES_FOR_GAS_KEY;
     if nonce_index >= u64::from(max) {
         color_eyre::eyre::bail!(
             "--nonce-index must be less than {max}, the maximum number of parallel nonces a gas key can have, got {nonce_index}"
         );
     }
-    Ok(nonce_index as near_primitives::types::NonceIndex)
+    Ok(nonce_index as near_kit::NonceIndex)
 }
 
 /// Returns `true` if the access key permission is a gas key.
-pub(crate) fn is_gas_key_permission(
-    permission: &near_primitives::views::AccessKeyPermissionView,
-) -> bool {
+pub(crate) fn is_gas_key_permission(permission: &near_kit::AccessKeyPermissionView) -> bool {
     matches!(
         permission,
-        near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. }
-            | near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+        near_kit::AccessKeyPermissionView::GasKeyFullAccess { .. }
+            | near_kit::AccessKeyPermissionView::GasKeyFunctionCall { .. }
     )
 }
 
-/// Online path: query the access key for `signer_id`/`public_key` and resolve the next
-/// nonce, the recent block hash and block height.
+/// Resolve the next nonce and recent block for an online signer.
 ///
-/// For an ordinary access key this is `access_key.nonce + 1` (unchanged behavior). For a
-/// gas key it queries `view_gas_key_nonces` and uses `nonces[nonce_index] + 1`; when no
-/// `--nonce-index` was given, index 0 is used.
+/// Ordinary keys use `access_key.nonce + 1`. Gas keys query their parallel
+/// nonce array and use `nonces[nonce_index] + 1`, defaulting to index zero.
 pub fn resolve_online_nonce(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    signer_id: &near_primitives::types::AccountId,
-    public_key: &near_crypto::PublicKey,
-    nonce_index: Option<near_primitives::types::NonceIndex>,
-    network_name: &str,
-) -> color_eyre::eyre::Result<(
-    NonceResolution,
-    near_primitives::hash::CryptoHash,
-    near_primitives::types::BlockHeight,
-)> {
-    use crate::common::JsonRpcClientExt;
-    use crate::common::RpcQueryResponseExt;
+    network_config: &crate::config::NetworkConfig,
+    signer_id: &near_kit::AccountId,
+    public_key: &near_kit::PublicKey,
+    nonce_index: Option<near_kit::NonceIndex>,
+) -> color_eyre::eyre::Result<(NonceResolution, near_kit::CryptoHash, u64)> {
+    use crate::common::{RpcResultExt, block_on};
     use color_eyre::eyre::WrapErr;
 
-    let rpc_query_response = json_rpc_client
-        .blocking_call_view_access_key(
-            signer_id,
-            public_key,
-            near_primitives::types::BlockReference::latest(),
+    let client = network_config.client();
+    let rpc = client.rpc();
+    let access_key = block_on(rpc.view_access_key(
+        signer_id,
+        public_key,
+        near_kit::BlockReference::optimistic(),
+    ))
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!(
+            "Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{}>",
+            network_config.network_name
         )
-        .wrap_err_with(|| {
-            format!("Cannot sign a transaction due to an error while fetching the most recent nonce value on network <{network_name}>")
-        })?;
-    let access_key = rpc_query_response
-        .access_key_view()
-        .wrap_err("Error current_nonce")?;
-    let block_hash = rpc_query_response.block_hash;
-    let block_height = rpc_query_response.block_height;
+    })?;
 
     let resolution = if is_gas_key_permission(&access_key.permission) {
         let nonce_index = nonce_index.unwrap_or(0);
-        let gas_key_nonces = json_rpc_client
-            .blocking_call_view_gas_key_nonces(
-                signer_id,
-                public_key,
-                near_primitives::types::BlockReference::latest(),
+        let gas_key_nonces = block_on(rpc.view_gas_key_nonces(
+            signer_id,
+            public_key,
+            near_kit::BlockReference::optimistic(),
+        ))
+        .into_eyre()
+        .wrap_err_with(|| {
+            format!(
+                "Cannot sign a transaction due to an error while fetching gas key nonces on network <{}>",
+                network_config.network_name
             )
-            .wrap_err_with(|| {
-                format!("Cannot sign a transaction due to an error while fetching gas key nonces on network <{network_name}>")
-            })?
-            .gas_key_nonces_view()?;
+        })?;
         let current = *gas_key_nonces
             .nonces
             .get(usize::from(nonce_index))
@@ -336,8 +345,6 @@ pub fn resolve_online_nonce(
         }
     } else {
         if let Some(nonce_index) = nonce_index {
-            // Refuse rather than silently sign with a plain nonce: the user asked
-            // for a specific gas-key parallel nonce, but this key isn't a gas key.
             color_eyre::eyre::bail!(
                 "--nonce-index {nonce_index} was provided, but access key {public_key} on {signer_id} is not a gas key. Only gas keys have parallel nonces; omit --nonce-index to sign with an ordinary access key."
             );
@@ -347,14 +354,13 @@ pub fn resolve_online_nonce(
         }
     };
 
-    Ok((resolution, block_hash, block_height))
+    Ok((resolution, access_key.block_hash, access_key.block_height))
 }
 
-/// Offline path: build the nonce resolution from a user-provided nonce and optional
-/// `--nonce-index` (a gas-key nonce when an index is given, otherwise a plain nonce).
+/// Resolve a user-provided offline nonce and optional gas-key nonce index.
 pub fn resolve_offline_nonce(
-    nonce: near_primitives::types::Nonce,
-    nonce_index: Option<near_primitives::types::NonceIndex>,
+    nonce: near_kit::Nonce,
+    nonce_index: Option<near_kit::NonceIndex>,
 ) -> NonceResolution {
     match nonce_index {
         Some(nonce_index) => NonceResolution::GasKey { nonce, nonce_index },
@@ -362,32 +368,17 @@ pub fn resolve_offline_nonce(
     }
 }
 
-/// Wrap a (post-`on_before_signing_callback`) [`TransactionV0`] into the right transaction
-/// version: V0 for an ordinary nonce, V1 with `TransactionNonce::GasKeyNonce` for a gas key.
-///
-/// All gas-key / versioning logic lives here so the signer modules stay version-agnostic.
+/// Wrap a post-callback V0 transaction in the correct wire transaction version.
 pub fn build_unsigned_transaction(
-    tx: near_primitives::transaction::TransactionV0,
+    mut transaction: near_kit::Transaction,
     resolution: NonceResolution,
-) -> near_primitives::transaction::Transaction {
+) -> near_kit::VersionedTransaction {
+    transaction.nonce = resolution.nonce();
     match resolution {
-        NonceResolution::Plain { .. } => near_primitives::transaction::Transaction::V0(tx),
-        NonceResolution::GasKey { nonce, nonce_index } => {
-            near_primitives::transaction::Transaction::V1(
-                near_primitives::transaction::TransactionV1 {
-                    signer_id: tx.signer_id,
-                    public_key: tx.public_key,
-                    nonce: near_primitives::transaction::TransactionNonce::GasKeyNonce {
-                        nonce,
-                        nonce_index,
-                    },
-                    receiver_id: tx.receiver_id,
-                    block_hash: tx.block_hash,
-                    actions: tx.actions,
-                    nonce_mode: near_primitives::transaction::NonceMode::default(),
-                },
-            )
-        }
+        NonceResolution::Plain { .. } => near_kit::VersionedTransaction::V0(transaction),
+        NonceResolution::GasKey { nonce_index, .. } => near_kit::VersionedTransaction::V1(
+            transaction.into_gas_key_v1(nonce_index, near_kit::TransactionNonceMode::default()),
+        ),
     }
 }
 
@@ -395,43 +386,40 @@ pub fn build_unsigned_transaction(
 mod tests {
     use super::*;
 
-    fn sample_tx_v0() -> near_primitives::transaction::TransactionV0 {
-        near_primitives::transaction::TransactionV0 {
+    fn sample_transaction() -> near_kit::Transaction {
+        near_kit::Transaction {
             signer_id: "alice.near".parse().unwrap(),
-            public_key: near_crypto::SecretKey::from_random(near_crypto::KeyType::ED25519)
-                .public_key(),
+            public_key: near_kit::SecretKey::generate_ed25519().public_key(),
             nonce: 1,
             receiver_id: "bob.near".parse().unwrap(),
-            block_hash: near_primitives::hash::CryptoHash::default(),
+            block_hash: near_kit::CryptoHash::default(),
             actions: vec![],
         }
     }
 
     #[test]
     fn nonce_index_from_cli_bounds() {
-        let max = u64::from(near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY);
-        // The largest valid index is `max - 1`; `max` and above are rejected.
+        let max = u64::from(near_kit::MAX_NONCES_FOR_GAS_KEY);
         assert!(nonce_index_from_cli(max - 1).is_ok());
         assert!(nonce_index_from_cli(max).is_err());
     }
 
     #[test]
     fn plain_transactions_may_be_delegated() {
-        let tx = build_unsigned_transaction(sample_tx_v0(), NonceResolution::Plain { nonce: 1 });
-        assert!(ensure_gas_key_not_delegated(&tx).is_ok());
+        let transaction =
+            build_unsigned_transaction(sample_transaction(), NonceResolution::Plain { nonce: 1 });
+        assert!(ensure_gas_key_not_delegated(&transaction).is_ok());
     }
 
     #[test]
     fn gas_key_transactions_cannot_be_delegated() {
-        // A gas-key nonce carries a nonce_index that a v1 DelegateAction can't
-        // encode, so meta-transactions must be refused up front.
-        let tx = build_unsigned_transaction(
-            sample_tx_v0(),
+        let transaction = build_unsigned_transaction(
+            sample_transaction(),
             NonceResolution::GasKey {
                 nonce: 1,
                 nonce_index: 0,
             },
         );
-        assert!(ensure_gas_key_not_delegated(&tx).is_err());
+        assert!(ensure_gas_key_not_delegated(&transaction).is_err());
     }
 }

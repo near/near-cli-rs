@@ -1,40 +1,20 @@
-use near_primitives::{borsh, borsh::BorshDeserialize};
+use base64::{Engine as _, engine::general_purpose::STANDARD};
+use borsh::BorshDeserialize;
 
 #[derive(Debug, Clone)]
 pub struct TransactionAsBase64 {
-    pub inner: near_primitives::transaction::TransactionV0,
+    pub inner: near_kit::Transaction,
 }
 
-impl From<TransactionAsBase64> for near_primitives::transaction::TransactionV0 {
+impl From<TransactionAsBase64> for near_kit::Transaction {
     fn from(transaction: TransactionAsBase64) -> Self {
         transaction.inner
     }
 }
 
-impl From<near_primitives::transaction::Transaction> for TransactionAsBase64 {
-    fn from(value: near_primitives::transaction::Transaction) -> Self {
-        Self {
-            inner: near_primitives::transaction::TransactionV0 {
-                public_key: value.public_key().clone(),
-                nonce: value.nonce().nonce(),
-                signer_id: value.signer_id().clone(),
-                receiver_id: value.receiver_id().clone(),
-                block_hash: *value.block_hash(),
-                actions: value.take_actions(),
-            },
-        }
-    }
-}
-
-impl From<near_primitives::transaction::TransactionV0> for TransactionAsBase64 {
-    fn from(value: near_primitives::transaction::TransactionV0) -> Self {
+impl From<near_kit::Transaction> for TransactionAsBase64 {
+    fn from(value: near_kit::Transaction) -> Self {
         Self { inner: value }
-    }
-}
-
-impl From<TransactionAsBase64> for near_primitives::transaction::Transaction {
-    fn from(transaction: TransactionAsBase64) -> Self {
-        Self::V0(transaction.inner)
     }
 }
 
@@ -46,8 +26,9 @@ impl std::str::FromStr for TransactionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            inner: near_primitives::transaction::TransactionV0::try_from_slice(
-                &near_primitives::serialize::from_base64(s)
+            inner: near_kit::Transaction::try_from_slice(
+                &STANDARD
+                    .decode(s)
                     .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?,
             )
             .map_err(|err| format!("transaction could not be parsed: {err}"))?,
@@ -57,10 +38,49 @@ impl std::str::FromStr for TransactionAsBase64 {
 
 impl std::fmt::Display for TransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let base64_unsigned_transaction = near_primitives::serialize::to_base64(
-            &borsh::to_vec(&self.inner)
+        let base64_unsigned_transaction = STANDARD.encode(
+            borsh::to_vec(&self.inner)
                 .expect("Transaction is not expected to fail on serialization"),
         );
         write!(f, "{base64_unsigned_transaction}")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_transaction() -> near_kit::Transaction {
+        let secret_key = near_kit::SecretKey::generate_ed25519();
+        near_kit::Transaction::new(
+            "alice.testnet".parse().unwrap(),
+            secret_key.public_key(),
+            7,
+            "bob.testnet".parse().unwrap(),
+            near_kit::CryptoHash::ZERO,
+            Vec::new(),
+        )
+    }
+
+    #[test]
+    fn round_trips_v0_wire_format() {
+        let transaction = sample_transaction();
+        let encoded = TransactionAsBase64::from(transaction.clone()).to_string();
+        let decoded: TransactionAsBase64 = encoded.parse().unwrap();
+
+        assert_eq!(decoded.inner, transaction);
+    }
+
+    #[test]
+    fn sign_later_versioned_v0_uses_bare_v0_wire_format() {
+        let transaction = sample_transaction();
+        let versioned = near_kit::VersionedTransaction::V0(transaction.clone());
+
+        let versioned_bytes = borsh::to_vec(&versioned).unwrap();
+        assert_eq!(versioned_bytes, borsh::to_vec(&transaction).unwrap());
+
+        let encoded = STANDARD.encode(versioned_bytes);
+        let decoded: TransactionAsBase64 = encoded.parse().unwrap();
+        assert_eq!(decoded.inner, transaction);
     }
 }

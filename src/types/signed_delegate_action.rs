@@ -1,8 +1,8 @@
-use near_primitives::{borsh, borsh::BorshDeserialize};
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 
 #[derive(Debug, Clone)]
 pub struct SignedDelegateActionAsBase64 {
-    inner: near_primitives::action::delegate::SignedDelegateAction,
+    inner: near_kit::SignedDelegateAction,
 }
 
 impl serde::Serialize for SignedDelegateActionAsBase64 {
@@ -15,8 +15,7 @@ impl serde::Serialize for SignedDelegateActionAsBase64 {
                 "The value could not be borsh encoded due to: {err}"
             ))
         })?;
-        let signed_delegate_action_as_base64 =
-            near_primitives::serialize::to_base64(&signed_delegate_action_borsh);
+        let signed_delegate_action_as_base64 = STANDARD.encode(&signed_delegate_action_borsh);
         serializer.serialize_str(&signed_delegate_action_as_base64)
     }
 }
@@ -28,22 +27,19 @@ impl<'de> serde::Deserialize<'de> for SignedDelegateActionAsBase64 {
     {
         let signed_delegate_action_as_base64 =
             <String as serde::Deserialize>::deserialize(deserializer)?;
-        let signed_delegate_action_borsh = near_primitives::serialize::from_base64(
-            &signed_delegate_action_as_base64,
-        )
-        .map_err(|err| {
-            serde::de::Error::custom(format!(
-                "The value could not decoded from base64 due to: {err}"
-            ))
-        })?;
-        let signed_delegate_action = borsh::from_slice::<
-            near_primitives::action::delegate::SignedDelegateAction,
-        >(&signed_delegate_action_borsh)
-        .map_err(|err| {
-            serde::de::Error::custom(format!(
-                "The value could not decoded from borsh due to: {err}"
-            ))
-        })?;
+        let signed_delegate_action_borsh = STANDARD
+            .decode(&signed_delegate_action_as_base64)
+            .map_err(|err| {
+                serde::de::Error::custom(format!(
+                    "The value could not decoded from base64 due to: {err}"
+                ))
+            })?;
+        let signed_delegate_action =
+            borsh::from_slice(&signed_delegate_action_borsh).map_err(|err| {
+                serde::de::Error::custom(format!(
+                    "The value could not decoded from borsh due to: {err}"
+                ))
+            })?;
         Ok(Self {
             inner: signed_delegate_action,
         })
@@ -53,20 +49,19 @@ impl<'de> serde::Deserialize<'de> for SignedDelegateActionAsBase64 {
 impl std::str::FromStr for SignedDelegateActionAsBase64 {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            inner: near_primitives::action::delegate::SignedDelegateAction::try_from_slice(
-                &near_primitives::serialize::from_base64(s)
-                .map_err(|err| format!("parsing of signed delegate action failed due to base64 sequence being invalid: {err}"))?,
-            )
-            .map_err(|err| format!("delegate action could not be deserialized from borsh: {err}"))?,
-        })
+        let bytes = STANDARD.decode(s)
+            .map_err(|err| format!("parsing of signed delegate action failed due to base64 sequence being invalid: {err}"))?;
+        let inner = borsh::from_slice(&bytes).map_err(|err| {
+            format!("delegate action could not be deserialized from borsh: {err}")
+        })?;
+        Ok(Self { inner })
     }
 }
 
 impl std::fmt::Display for SignedDelegateActionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let base64_signed_delegate_action = near_primitives::serialize::to_base64(
-            &borsh::to_vec(&self.inner)
+        let base64_signed_delegate_action = STANDARD.encode(
+            borsh::to_vec(&self.inner)
                 .expect("Signed Delegate Action serialization to borsh is not expected to fail"),
         );
         write!(f, "{base64_signed_delegate_action}")
@@ -77,18 +72,39 @@ impl interactive_clap::ToCli for SignedDelegateActionAsBase64 {
     type CliVariant = SignedDelegateActionAsBase64;
 }
 
-impl From<near_primitives::action::delegate::SignedDelegateAction>
-    for SignedDelegateActionAsBase64
-{
-    fn from(value: near_primitives::action::delegate::SignedDelegateAction) -> Self {
+impl From<near_kit::SignedDelegateAction> for SignedDelegateActionAsBase64 {
+    fn from(value: near_kit::SignedDelegateAction) -> Self {
         Self { inner: value }
     }
 }
 
-impl From<SignedDelegateActionAsBase64>
-    for near_primitives::action::delegate::SignedDelegateAction
-{
+impl From<SignedDelegateActionAsBase64> for near_kit::SignedDelegateAction {
     fn from(signed_delegate_action: SignedDelegateActionAsBase64) -> Self {
         signed_delegate_action.inner
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_trailing_borsh_bytes() {
+        let secret_key = near_kit::SecretKey::generate_ed25519();
+        let delegate_action = near_kit::DelegateAction {
+            sender_id: "alice.testnet".parse().unwrap(),
+            receiver_id: "bob.testnet".parse().unwrap(),
+            actions: Vec::new(),
+            nonce: 1,
+            max_block_height: 100,
+            public_key: secret_key.public_key(),
+        };
+        let signature = secret_key.sign(delegate_action.get_hash().as_bytes());
+        let signed_delegate_action = delegate_action.sign(signature);
+        let mut bytes = borsh::to_vec(&signed_delegate_action).unwrap();
+        bytes.push(0xff);
+        let encoded = STANDARD.encode(bytes);
+
+        assert!(encoded.parse::<SignedDelegateActionAsBase64>().is_err());
     }
 }

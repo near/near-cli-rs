@@ -3,7 +3,7 @@ mod sign_as;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TransactionFunctionArgs {
-    pub data: near_socialdb_client::types::socialdb_types::SocialDb,
+    pub data: crate::types::socialdb::SocialDb,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -19,7 +19,7 @@ pub struct UpdateSocialProfile {
 #[derive(Clone)]
 pub struct UpdateSocialProfileContext {
     pub global_context: crate::GlobalContext,
-    pub account_id: near_primitives::types::AccountId,
+    pub account_id: near_kit::AccountId,
 }
 
 impl UpdateSocialProfileContext {

@@ -16,7 +16,7 @@ pub type OnAfterGettingNetworkCallback =
 #[derive(Clone)]
 pub struct NetworkContext {
     pub config: crate::config::Config,
-    pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
+    pub interacting_with_account_ids: Vec<near_kit::AccountId>,
     pub on_after_getting_network_callback: OnAfterGettingNetworkCallback,
 }
 

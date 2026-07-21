@@ -1,7 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -41,22 +40,22 @@ impl PublicKeyFromLegacyKeychainContext {
                             return Ok(());
                         }
                         if signer_keychain_folder.exists() {
-                            let full_access_key_filenames = network_config
-                                .json_rpc_client()
-                                .blocking_call_view_access_key_list(
+                            let nk_list =
+                                block_on(network_config.client().rpc().view_access_key_list(
                                     &account_id.clone().into(),
-                                    near_primitives::types::Finality::Final.into(),
-                                )
+                                    near_kit::Finality::Final.into(),
+                                ))
+                                .into_eyre()
                                 .wrap_err_with(|| {
                                     format!("Failed to fetch access KeyList for {account_id}")
-                                })?
-                                .access_key_list_view()?
+                                })?;
+                            let full_access_key_filenames = nk_list
                                 .keys
                                 .iter()
                                 .filter(|access_key_info| {
                                     matches!(
                                         access_key_info.access_key.permission,
-                                        near_primitives::views::AccessKeyPermissionView::FullAccess
+                                        near_kit::AccessKeyPermissionView::FullAccess
                                     )
                                 })
                                 .map(|access_key_info| {

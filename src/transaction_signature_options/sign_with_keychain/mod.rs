@@ -1,10 +1,8 @@
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
-use near_primitives::transaction::TransactionV0;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -21,7 +19,7 @@ pub struct SignKeychain {
     block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    block_height: Option<near_primitives::types::BlockHeight>,
+    block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     nonce_index: Option<u64>,
@@ -71,16 +69,14 @@ impl SignKeychainContext {
         tracing::info!(target: "near_teach_me", "Signing the transaction with a key saved in the secure keychain ...");
 
         let network_config = previous_context.network_config.clone();
-
         let service_name = std::borrow::Cow::Owned(format!(
             "near-{}-{}",
             network_config.network_name,
             previous_context.prepopulated_transaction.signer_id.as_str()
         ));
 
-        // A `--nonce-index` means the user wants to sign with a gas key, so select
-        // one from the keychain (gas keys are excluded from the ordinary
-        // full-access selection); otherwise keep the full-access-only behavior.
+        // A nonce index selects gas-key credentials; ordinary signing remains
+        // restricted to full-access keys.
         let want_gas_key = scope.nonce_index.is_some();
 
         let password = if previous_context.global_context.offline {
@@ -109,19 +105,17 @@ impl SignKeychainContext {
                 }
             }
         } else {
-            let access_key_list = network_config
-                .json_rpc_client()
-                .blocking_call_view_access_key_list(
-                    &previous_context.prepopulated_transaction.signer_id,
-                    near_primitives::types::Finality::Final.into(),
+            let access_key_list = block_on(network_config.client().rpc().view_access_key_list(
+                &previous_context.prepopulated_transaction.signer_id,
+                near_kit::Finality::Final.into(),
+            ))
+            .into_eyre()
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to fetch access key list for {}",
+                    previous_context.prepopulated_transaction.signer_id
                 )
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch access key list for {}",
-                        previous_context.prepopulated_transaction.signer_id
-                    )
-                })?
-                .access_key_list_view()?;
+            })?;
 
             let res = access_key_list
                 .keys
@@ -132,7 +126,7 @@ impl SignKeychainContext {
                     } else {
                         matches!(
                             key.access_key.permission,
-                            near_primitives::views::AccessKeyPermissionView::FullAccess
+                            near_kit::AccessKeyPermissionView::FullAccess
                         )
                     }
                 })
@@ -152,7 +146,6 @@ impl SignKeychainContext {
             match res {
                 Some(password) => password,
                 None => {
-                    // no access keys found, try the legacy keychain
                     warning_message("no access keys found in keychain, trying legacy keychain");
                     return from_legacy_keychain(previous_context, scope);
                 }
@@ -186,15 +179,14 @@ impl SignKeychainContext {
                 )
             } else {
                 super::resolve_online_nonce(
-                    &network_config.json_rpc_client(),
+                    &network_config,
                     &previous_context.prepopulated_transaction.signer_id,
                     &account_json.public_key,
                     nonce_index,
-                    &network_config.network_name,
                 )?
             };
 
-        let mut unsigned_transaction = TransactionV0 {
+        let mut unsigned_transaction = near_kit::Transaction {
             public_key: account_json.public_key.clone(),
             block_hash,
             nonce: nonce_resolution.nonce(),
@@ -204,20 +196,17 @@ impl SignKeychainContext {
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
         let unsigned_transaction =
             super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
-
         let signature = account_json
             .private_key
-            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
+            .sign(unsigned_transaction.get_hash().as_bytes());
 
         if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
                 + scope
                     .meta_transaction_valid_for
                     .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
-
             let signed_delegate_action = super::get_signed_delegate_action(
                 unsigned_transaction,
                 &account_json.public_key,
@@ -238,18 +227,17 @@ impl SignKeychainContext {
             });
         }
 
-        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-            signature.clone(),
-            unsigned_transaction,
-        );
+        let mut signed_transaction = near_kit::SignedTransactionV1 {
+            transaction: unsigned_transaction,
+            signature: signature.clone(),
+        };
 
         tracing::info!(
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
                 "\nPublic key: {}\nSignature:  {}\n ",
-                account_json.public_key,
-                signature
+                account_json.public_key, signature
             ))
         );
 
@@ -358,13 +346,10 @@ impl SignKeychain {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)
