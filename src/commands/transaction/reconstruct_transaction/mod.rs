@@ -275,9 +275,7 @@ fn action_transformation(
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
-            let code_hash = near_kit::CryptoHash::try_from(action.code.as_slice()).map_err(|_| {
-                color_eyre::Report::msg("Internal error: Failed to calculate code hash from the deploy global contract action code.".to_string())
-            })?;
+            let code_hash = near_kit::CryptoHash::hash(&action.code);
             let contract_type = match action.deploy_mode {
                 near_kit::GlobalContractDeployMode::AccountId => {
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId {
