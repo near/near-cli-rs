@@ -81,6 +81,6 @@ pub enum TokensActions {
     /// View the balance of FT tokens
     ViewFtBalance(self::view_ft_balance::ViewFtBalance),
     #[strum_discriminants(strum(message = "view-nft-assets   - View the balance of NFT tokens"))]
-    /// View the balance of NFT tokens
+    /// View NFT token assets
     ViewNftAssets(self::view_nft_assets::ViewNftAssets),
 }
