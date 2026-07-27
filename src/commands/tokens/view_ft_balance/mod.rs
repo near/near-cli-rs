@@ -1,5 +1,4 @@
 use color_eyre::eyre::Context;
-use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde_json::json;
 
 use crate::common::CallResultExt;
@@ -143,22 +142,64 @@ pub fn get_ft_balance(
         })
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 struct FTCalculatedValue {
     ft: FTInventory,
-    tokens_scaled: Decimal,
-    usd_value: Decimal,
+    tokens_scaled: String, // Exact formatted string for values of any scale
+    usd_value: f64,        // Used strictly for sorting and filtering
+}
+
+fn parse_raw_amount_to_string(amount_str: &str, decimals: u8) -> Option<String> {
+    let decimals = decimals as usize;
+
+    if amount_str.is_empty() || !amount_str.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+
+    if decimals == 0 {
+        return Some(amount_str.to_string());
+    }
+
+    let min_len = decimals + 1;
+    let padded = if amount_str.len() < min_len {
+        format!("{:0>width$}", amount_str, width = min_len)
+    } else {
+        amount_str.to_string()
+    };
+
+    let split_pos = padded.len() - decimals;
+    let (integer_str, fraction_str) = padded.split_at(split_pos);
+
+    let trimmed_fraction = fraction_str.trim_end_matches('0');
+
+    if trimmed_fraction.is_empty() {
+        Some(integer_str.to_string())
+    } else {
+        Some(format!("{integer_str}.{trimmed_fraction}"))
+    }
+}
+
+fn calculate_usd_value_f64(amount_str: &str, decimals: u8, price: f64) -> Option<f64> {
+    if amount_str.is_empty() || !amount_str.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+
+    let raw_amount: f64 = amount_str.parse().ok()?;
+    let divisor = 10.0_f64.powi(decimals as i32);
+    let usd = (raw_amount / divisor) * price;
+
+    if usd.is_finite() && usd >= 0.0 {
+        Some(usd)
+    } else {
+        None
+    }
 }
 
 fn calculate_ft_usd_value(ft: &FTInventory) -> Option<FTCalculatedValue> {
-    let tokens = ft.amount.parse::<u128>().ok()?;
     let price = ft.ft_meta.price?;
-    let decimals = ft.ft_meta.decimals as u32;
 
-    let tokens_decimal = Decimal::from_u128(tokens)?;
-    let divisor = Decimal::from_u128(10u128.checked_pow(decimals)?)?;
-    let tokens_scaled = tokens_decimal.checked_div(divisor)?;
-    let usd_value = tokens_scaled.checked_mul(price)?;
+    let usd_value = calculate_usd_value_f64(&ft.amount, ft.ft_meta.decimals, price)?;
+    let tokens_scaled = parse_raw_amount_to_string(&ft.amount, ft.ft_meta.decimals)?;
 
     Some(FTCalculatedValue {
         ft: ft.clone(),
@@ -173,7 +214,7 @@ fn print_fts_inventory(
     verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     let inventory = get_account_ft_inventory(network_config, account_id)?;
-    let min_usd = Decimal::new(10, 2); // $0.10
+    let min_usd = 0.1; // $0.10
 
     let mut fts = inventory
         .fts()
@@ -191,7 +232,11 @@ fn print_fts_inventory(
         return Ok(());
     }
 
-    fts.sort_by_key(|a| std::cmp::Reverse(a.usd_value));
+    fts.sort_by(|a, b| {
+        b.usd_value
+            .partial_cmp(&a.usd_value)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     let output = fts
         .iter()
@@ -219,7 +264,7 @@ mod tests {
     use std::str::FromStr;
 
     // Helper function for quickly creating test objects
-    fn create_test_ft(amount: &str, decimals: u8, price: Option<Decimal>) -> FTInventory {
+    fn create_test_ft(amount: &str, decimals: u8, price: Option<f64>) -> FTInventory {
         FTInventory {
             amount: amount.to_string(),
             ft_contract_account_id: near_primitives::types::AccountId::from_str("test.near")
@@ -236,92 +281,91 @@ mod tests {
     #[test]
     fn test_normal_calculation() {
         // Case: 100.5 tokens (2 decimals), price $2.50
-        // 10050 base units / 10^2 = 100.50 tokens. 100.50 * 2.50 = 251.25
-        let ft = create_test_ft("10050", 2, Some(Decimal::new(250, 2)));
-        let result = calculate_ft_usd_value(&ft);
+        // 10050 base units / 10^2 = 100.5 tokens. 100.5 * 2.50 = 251.25
+        let ft = create_test_ft("10050", 2, Some(2.50));
+        let result = calculate_ft_usd_value(&ft).unwrap();
 
-        let expected = FTCalculatedValue {
-            ft: ft.clone(),
-            tokens_scaled: Decimal::new(10050, 2), // 100.50
-            usd_value: Decimal::new(25125, 2),     // 251.25
-        };
-
-        assert_eq!(result, Some(expected));
+        assert_eq!(result.tokens_scaled, "100.5");
+        assert!((result.usd_value - 251.25).abs() < 1e-6);
     }
 
     #[test]
-    fn test_missing_price() {
-        // Case: price is missing (None).
-        // The function should safely return None
-        let ft = create_test_ft("5000000", 6, None);
+    fn test_amount_exceeding_decimal_max_with_tiny_price() {
+        // Case: amount string is vastly larger than u128::MAX and Decimal::MAX, but price is tiny (10^-10).
+        // String-based tokens_scaled retains exact precision for CLI output, while f64 calculates estimated USD.
+        let crazy_amount = "34028236692093846346337460743176821145600000";
+        let tiny_price = Some(0.0000000001); // 10^-10
+
+        let ft = create_test_ft(crazy_amount, 2, tiny_price);
         let result = calculate_ft_usd_value(&ft);
 
-        assert_eq!(result, None);
+        assert!(result.is_some());
+        let val = result.unwrap();
+
+        // Preserves full exact string without truncation or overflow
+        assert_eq!(
+            val.tokens_scaled,
+            "34028236692093846346337460743176821145600"
+        );
+        assert!(val.usd_value > 0.0);
     }
 
     #[test]
-    fn test_zero_price() {
-        // Case: price is present and equals $0.00 (Some(0)).
-        // Should calculate normally and return $0.00 value
-        let ft = create_test_ft("1000000", 6, Some(Decimal::ZERO));
-        let result = calculate_ft_usd_value(&ft);
+    fn test_padded_small_amounts() {
+        // Case 1: Small balance where amount_str length < (decimals + 1)
+        // 5 base units with 6 decimals -> 0.000005
+        assert_eq!(
+            parse_raw_amount_to_string("5", 6),
+            Some("0.000005".to_string())
+        );
 
-        let expected = FTCalculatedValue {
-            ft: ft.clone(),
-            tokens_scaled: Decimal::ONE,
-            usd_value: Decimal::ZERO,
-        };
-        assert_eq!(result, Some(expected));
+        // Case 2: Small balance with trailing zeros
+        // 500 base units with 6 decimals -> 0.000500 -> trimmed to 0.0005
+        assert_eq!(
+            parse_raw_amount_to_string("500", 6),
+            Some("0.0005".to_string())
+        );
+
+        // Case 3: Edge case - zero balance
+        assert_eq!(parse_raw_amount_to_string("0", 2), Some("0".to_string()));
+
+        // Case 4: High decimals token (e.g., NEAR / ETH with 24 decimals)
+        // 1000 base units with 24 decimals -> 0.0000000000000000000001
+        assert_eq!(
+            parse_raw_amount_to_string("1000", 24),
+            Some("0.0000000000000000000001".to_string())
+        );
     }
 
     #[test]
-    fn test_amount_parsing_overflow() {
-        // Case: amount string contains a number larger than u128::MAX
-        // The string won't parse due to parse::<u128>().ok()?, returning None
-        let crazy_amount = "34028236692093846346337460743176821145600000"; // u128::MAX + extra zeroes
-        let ft = create_test_ft(crazy_amount, 6, Some(Decimal::new(55, 1)));
-        let result = calculate_ft_usd_value(&ft);
-
-        assert_eq!(result, None);
+    fn test_negative_amount_returns_none() {
+        // Case: API returns a negative number like "-100"
+        // Rejected immediately during ASCII digit validation
+        let ft = create_test_ft("-100", 6, Some(1.0));
+        assert!(calculate_ft_usd_value(&ft).is_none());
     }
 
     #[test]
     fn test_invalid_amount_string() {
-        // Case: amount contains an invalid string or negative value
-        let ft = create_test_ft("not_a_number", 6, Some(Decimal::ONE));
-        let result = calculate_ft_usd_value(&ft);
-
-        assert_eq!(result, None);
+        // Case: API returns non-numeric characters
+        let ft = create_test_ft("not_a_number", 6, Some(1.0));
+        assert!(calculate_ft_usd_value(&ft).is_none());
     }
 
     #[test]
-    fn test_decimals_overflow_checked_pow() {
-        // Case: decimals value is too large (40), breaking 10u128.checked_pow(40)
-        let ft = create_test_ft("1000000", 40, Some(Decimal::new(1, 0)));
-        let result = calculate_ft_usd_value(&ft);
-
-        assert_eq!(result, None);
+    fn test_missing_price() {
+        // Case: price is missing (None)
+        let ft = create_test_ft("5000000", 6, None);
+        assert!(calculate_ft_usd_value(&ft).is_none());
     }
 
     #[test]
-    fn test_decimal_type_overflow_by_divisor() {
-        // Case: decimals = 30. 10^30 exceeds the limits of Decimal (28 digits)
-        let ft = create_test_ft("1000000", 30, Some(Decimal::new(1, 0)));
-        let result = calculate_ft_usd_value(&ft);
+    fn test_zero_price() {
+        // Case: price is present and equals $0.00
+        let ft = create_test_ft("1000000", 6, Some(0.0));
+        let result = calculate_ft_usd_value(&ft).unwrap();
 
-        assert_eq!(result, None);
-    }
-
-    #[test]
-    fn test_multiplication_overflow() {
-        // Case: Multiplication result exceeds Decimal::MAX
-        let ft = create_test_ft(
-            "79228162514264337593543950335",
-            0,
-            Some(Decimal::new(10, 0)),
-        );
-        let result = calculate_ft_usd_value(&ft);
-
-        assert_eq!(result, None);
+        assert_eq!(result.tokens_scaled, "1");
+        assert_eq!(result.usd_value, 0.0);
     }
 }

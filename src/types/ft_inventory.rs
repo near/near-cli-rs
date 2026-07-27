@@ -1,4 +1,3 @@
-use rust_decimal::Decimal;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,7 +46,7 @@ impl Inventory {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub struct FTInventory {
     pub amount: String,
     #[serde(rename = "contract")]
@@ -55,11 +54,11 @@ pub struct FTInventory {
     pub ft_meta: FTMeta,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Deserialize)]
 pub struct FTMeta {
     pub decimals: u8,
     pub name: String,
-    pub price: Option<Decimal>,
+    pub price: Option<f64>,
     pub symbol: String,
 }
 
