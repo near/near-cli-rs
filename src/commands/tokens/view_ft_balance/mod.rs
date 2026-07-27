@@ -302,10 +302,10 @@ mod tests {
         assert!(result.is_some());
         let val = result.unwrap();
 
-        // Preserves full exact string without truncation or overflow
+        // 44 digits total minus 2 decimals = ends with 3 zeros (...456000)
         assert_eq!(
             val.tokens_scaled,
-            "34028236692093846346337460743176821145600"
+            "340282366920938463463374607431768211456000"
         );
         assert!(val.usd_value > 0.0);
     }
@@ -330,10 +330,10 @@ mod tests {
         assert_eq!(parse_raw_amount_to_string("0", 2), Some("0".to_string()));
 
         // Case 4: High decimals token (e.g., NEAR / ETH with 24 decimals)
-        // 1000 base units with 24 decimals -> 0.0000000000000000000001
+        // 1000 base units with decimals = 24 -> 1000 / 10^24 = 10^-21 -> 0. (20 zeros) 1
         assert_eq!(
             parse_raw_amount_to_string("1000", 24),
-            Some("0.0000000000000000000001".to_string())
+            Some("0.000000000000000000001".to_string())
         );
     }
 
