@@ -207,8 +207,7 @@ impl Config {
             let config: Config = config_version.into();
 
             if !is_latest_version {
-                config.write_backup_config_toml()?;
-                config.clone().write_config_toml()?;
+                Self::write_config_toml(config.clone())?;
             }
 
             Ok(config)
@@ -232,36 +231,6 @@ impl Config {
             .wrap_err_with(|| format!("Failed to write to file: {path_config_toml:?}"))?;
 
         eprintln!("Note: `near` CLI configuration is stored in {path_config_toml:?}");
-
-        Ok(())
-    }
-
-    /// Backup existing config.toml (if present)
-    pub fn write_backup_config_toml(&self) -> CliResult {
-        let mut path_config_toml =
-            dirs::config_dir().wrap_err("Impossible to get your config dir!")?;
-
-        path_config_toml.push("near-cli");
-        std::fs::create_dir_all(&path_config_toml)?;
-        path_config_toml.push("config.toml");
-
-        if path_config_toml.is_file() {
-            let mut candidate = path_config_toml.clone();
-            let mut idx: usize = 0;
-            loop {
-                let file_name = if idx == 0 {
-                    "config_backup.toml".to_string()
-                } else {
-                    format!("config_backup-{}.toml", idx)
-                };
-                candidate.set_file_name(&file_name);
-                if !candidate.exists() {
-                    break;
-                }
-                idx += 1;
-            }
-            std::fs::rename(&path_config_toml, &candidate)?;
-        }
 
         Ok(())
     }
