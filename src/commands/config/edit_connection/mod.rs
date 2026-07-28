@@ -143,6 +143,32 @@ impl ParameterContext {
                     Some(scope.value.parse()?)
                 };
             }
+            "mpc_contract_account_id" => {
+                network_config.mpc_contract_account_id = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
+            "tx_wait_until" => {
+                network_config.tx_wait_until = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(
+                        scope
+                            .value
+                            .parse::<crate::types::tx_execution_status::TxExecutionStatus>()
+                            .map_err(|err| color_eyre::eyre::eyre!(err))?,
+                    )
+                };
+            }
+            "nearblocks_url" => {
+                network_config.nearblocks_url = if &scope.value == "null" {
+                    None
+                } else {
+                    Some(scope.value.parse()?)
+                };
+            }
             _ => {
                 return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
                     "Configuration key <{}> not found",

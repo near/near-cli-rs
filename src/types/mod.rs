@@ -5,6 +5,7 @@ pub mod base64_bytes;
 pub mod contract_properties;
 pub mod crypto_hash;
 pub mod file_bytes;
+pub mod ft_inventory;
 pub mod ft_properties;
 pub mod json;
 pub mod near_allowance;
