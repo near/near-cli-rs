@@ -1,0 +1,4 @@
+[advisories]
+ignore = [
+    "RUSTSEC-2026-0235", # rkyv: optional dep of rust_decimal, feature not enabled
+]
