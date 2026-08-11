@@ -1008,6 +1008,15 @@ impl GeneratedKeyPair {
     }
 }
 
+pub fn format_ml_dsa_65_pubkey_handle(
+    ml_dsa_65_public_key: &near_crypto::MlDsa65PublicKey,
+) -> String {
+    format!(
+        "ml-dsa-65-hash:{}",
+        bs58::encode(ml_dsa_65_public_key.to_public_key_handle().0).into_string()
+    )
+}
+
 pub fn print_full_signed_transaction(
     transaction: near_primitives::transaction::SignedTransaction,
 ) -> String {
@@ -1031,6 +1040,13 @@ pub fn print_full_unsigned_transaction(
         "public_key:",
         transaction.public_key()
     ));
+    if let near_crypto::PublicKey::MLDSA65(pub_key) = transaction.public_key() {
+        info_str.push_str(&format!(
+            "\n{:<13} {}",
+            "pub key hash:",
+            format_ml_dsa_65_pubkey_handle(pub_key)
+        ));
+    }
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "nonce:",
@@ -1141,6 +1157,14 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", stake_action.public_key
                 ));
+                if let near_crypto::PublicKey::MLDSA65(pub_key) = &stake_action.public_key {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "",
+                        "pub key hash:",
+                        format_ml_dsa_65_pubkey_handle(pub_key)
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "",
@@ -1154,6 +1178,14 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", add_key_action.public_key
                 ));
+                if let near_crypto::PublicKey::MLDSA65(pub_key) = &add_key_action.public_key {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "",
+                        "pub key hash:",
+                        format_ml_dsa_65_pubkey_handle(pub_key)
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "", "nonce:", add_key_action.access_key.nonce
@@ -1169,6 +1201,14 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", delete_key_action.public_key
                 ));
+                if let near_crypto::PublicKey::MLDSA65(pub_key) = &delete_key_action.public_key {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "",
+                        "pub key hash:",
+                        format_ml_dsa_65_pubkey_handle(pub_key)
+                    ));
+                }
             }
             near_primitives::transaction::Action::DeleteAccount(delete_account_action) => {
                 info_str.push_str(&format!(
@@ -1268,6 +1308,14 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", transfer_to_gas_key.public_key
                 ));
+                if let near_crypto::PublicKey::MLDSA65(pub_key) = &transfer_to_gas_key.public_key {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "",
+                        "pub key hash:",
+                        format_ml_dsa_65_pubkey_handle(pub_key)
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "",
@@ -1281,6 +1329,15 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", withdraw_from_gas_key.public_key
                 ));
+                if let near_crypto::PublicKey::MLDSA65(pub_key) = &withdraw_from_gas_key.public_key
+                {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "",
+                        "pub key hash:",
+                        format_ml_dsa_65_pubkey_handle(pub_key)
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "",
