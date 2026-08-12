@@ -150,7 +150,7 @@ impl PublicKeyList {
         let formatter: MultiOptionFormatter<'_, AccessKeyInfo> = &|a| {
             let public_key_list = a
                 .iter()
-                .map(|list_option| list_option.value.to_string())
+                .map(|list_option| list_option.value.detailed_description())
                 .collect::<Vec<_>>();
             public_key_list.join("\n").to_string()
         };
@@ -190,17 +190,29 @@ struct AccessKeyInfo {
     network_name: String,
 }
 
-impl std::fmt::Display for AccessKeyInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl AccessKeyInfo {
+    fn permission_summary(&self) -> String {
         match &self.permission {
             near_primitives::views::AccessKeyPermissionView::FullAccess => {
-                write!(
-                    f,
-                    "{} {}\t{}",
-                    self.network_name.blue(),
-                    self.public_key.yellow(),
-                    "full access".yellow()
-                )
+                "full access".to_string()
+            }
+            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                receiver_id, ..
+            } => format!("call → {receiver_id}"),
+            near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall {
+                receiver_id,
+                ..
+            } => format!("gas → {receiver_id}"),
+            near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. } => {
+                "gas: full access".to_string()
+            }
+        }
+    }
+
+    fn permission_details(&self) -> String {
+        match &self.permission {
+            near_primitives::views::AccessKeyPermissionView::FullAccess => {
+                "full access".to_string()
             }
             near_primitives::views::AccessKeyPermissionView::FunctionCall {
                 allowance,
@@ -212,26 +224,10 @@ impl std::fmt::Display for AccessKeyInfo {
                     None => "with no limit".to_string(),
                 };
                 if method_names.is_empty() {
-                    write!(
-                        f,
-                        "{} {}\t{} {} {}",
-                        self.network_name.blue(),
-                        self.public_key.green(),
-                        "call any function on".green(),
-                        receiver_id.green(),
-                        allowance_message.green()
-                    )
+                    format!("call any function on {receiver_id} {allowance_message}")
                 } else {
-                    write!(
-                        f,
-                        "{} {}\t{} {:?} {} {} {}",
-                        self.network_name.blue(),
-                        self.public_key.green(),
-                        "call".green(),
-                        method_names.green(),
-                        "function(s) on".green(),
-                        receiver_id.green(),
-                        allowance_message.green()
+                    format!(
+                        "call {method_names:?} function(s) on {receiver_id} {allowance_message}"
                     )
                 }
             }
@@ -246,30 +242,73 @@ impl std::fmt::Display for AccessKeyInfo {
                 } else {
                     format!("{method_names:?}")
                 };
-                write!(
-                    f,
-                    "{} {}\t{} ({}, {})",
-                    self.network_name.blue(),
-                    self.public_key.cyan(),
-                    "gas key for function calls".cyan(),
-                    format!("on {receiver_id} {methods}").cyan(),
-                    format!("balance: {}", balance.exact_amount_display()).cyan()
+                format!(
+                    "gas key for function calls (on {receiver_id} {methods}, balance: {})",
+                    balance.exact_amount_display()
                 )
             }
             near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess {
                 balance,
                 num_nonces,
-            } => {
-                write!(
-                    f,
-                    "{} {}\t{} ({}, {})",
-                    self.network_name.blue(),
-                    self.public_key.cyan(),
-                    "gas key with full access".cyan(),
-                    format!("balance: {}", balance.exact_amount_display()).cyan(),
-                    format!("nonces: {num_nonces}").cyan()
-                )
-            }
+            } => format!(
+                "gas key with full access (balance: {}, nonces: {num_nonces})",
+                balance.exact_amount_display()
+            ),
+        }
+    }
+
+    fn detailed_description(&self) -> String {
+        let details = self.permission_details();
+        match &self.permission {
+            near_primitives::views::AccessKeyPermissionView::FullAccess => format!(
+                "{} {}  {}",
+                self.network_name.blue(),
+                self.public_key.yellow(),
+                details.yellow()
+            ),
+            near_primitives::views::AccessKeyPermissionView::FunctionCall { .. } => format!(
+                "{} {}  {}",
+                self.network_name.blue(),
+                self.public_key.green(),
+                details.green()
+            ),
+            near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+            | near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. } => format!(
+                "{} {}  {}",
+                self.network_name.blue(),
+                self.public_key.cyan(),
+                details.cyan()
+            ),
+        }
+    }
+}
+
+impl std::fmt::Display for AccessKeyInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let summary = self.permission_summary();
+        match &self.permission {
+            near_primitives::views::AccessKeyPermissionView::FullAccess => write!(
+                f,
+                "{} {}  {}",
+                self.network_name.blue(),
+                self.public_key.yellow(),
+                summary.yellow()
+            ),
+            near_primitives::views::AccessKeyPermissionView::FunctionCall { .. } => write!(
+                f,
+                "{} {}  {}",
+                self.network_name.blue(),
+                self.public_key.green(),
+                summary.green()
+            ),
+            near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+            | near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. } => write!(
+                f,
+                "{} {}  {}",
+                self.network_name.blue(),
+                self.public_key.cyan(),
+                summary.cyan()
+            ),
         }
     }
 }
@@ -281,4 +320,44 @@ fn get_multi_select_render_config() -> RenderConfig<'static> {
     render_config.scroll_up_prefix = Styled::new("↑").with_fg(Color::DarkGrey);
     render_config.scroll_down_prefix = Styled::new("↓").with_fg(Color::DarkGrey);
     render_config
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AccessKeyInfo;
+
+    fn function_call_key() -> AccessKeyInfo {
+        AccessKeyInfo {
+            public_key: "ed25519:DyZNbPPVPFjKobtEQxM8tNcdnA5E7WNsrpmNfkvqoyeV"
+                .parse()
+                .unwrap(),
+            permission: near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                allowance: Some(near_token::NearToken::from_near(1)),
+                receiver_id: "dev.everything.near".to_string(),
+                method_names: vec!["__fastdata_kv".to_string()],
+            },
+            network_name: "mainnet".to_string(),
+        }
+    }
+
+    #[test]
+    fn picker_row_is_compact_and_contains_no_cursor_control_characters() {
+        let picker_row = function_call_key().to_string();
+
+        assert!(picker_row.contains("call → dev.everything.near"));
+        assert!(!picker_row.contains("__fastdata_kv"));
+        for control_character in ['\t', '\n', '\r'] {
+            assert!(!picker_row.contains(control_character));
+        }
+    }
+
+    #[test]
+    fn submitted_answer_retains_permission_details() {
+        let details = function_call_key().detailed_description();
+
+        assert!(details.contains("__fastdata_kv"));
+        assert!(details.contains("dev.everything.near"));
+        assert!(details.contains("1.00 NEAR"));
+        assert!(!details.contains('\t'));
+    }
 }
