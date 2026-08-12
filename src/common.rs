@@ -727,6 +727,160 @@ fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
+#[derive(Debug, Clone)]
+pub struct AccessKeyInfo {
+    pub public_key: near_crypto::PublicKey,
+    pub permission: near_primitives::views::AccessKeyPermissionView,
+    pub network_name: String,
+}
+
+impl std::fmt::Display for AccessKeyInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.permission {
+            near_primitives::views::AccessKeyPermissionView::FullAccess => {
+                write!(
+                    f,
+                    "{} {}\t{}",
+                    self.network_name.blue(),
+                    self.public_key.yellow(),
+                    "full access".yellow()
+                )
+            }
+            near_primitives::views::AccessKeyPermissionView::FunctionCall {
+                allowance,
+                receiver_id,
+                method_names,
+            } => {
+                let allowance_message = match allowance {
+                    Some(amount) => format!("with a remaining fee allowance of {amount}"),
+                    None => "with no limit".to_string(),
+                };
+                if method_names.is_empty() {
+                    write!(
+                        f,
+                        "{} {}\t{} {} {}",
+                        self.network_name.blue(),
+                        self.public_key.green(),
+                        "call any function on".green(),
+                        receiver_id.green(),
+                        allowance_message.green()
+                    )
+                } else {
+                    write!(
+                        f,
+                        "{} {}\t{} {:?} {} {} {}",
+                        self.network_name.blue(),
+                        self.public_key.green(),
+                        "call".green(),
+                        method_names.green(),
+                        "function(s) on".green(),
+                        receiver_id.green(),
+                        allowance_message.green()
+                    )
+                }
+            }
+            near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall {
+                balance,
+                receiver_id,
+                method_names,
+                ..
+            } => {
+                let methods = if method_names.is_empty() {
+                    "any methods".to_string()
+                } else {
+                    format!("{method_names:?}")
+                };
+                write!(
+                    f,
+                    "{} {}\t{} ({}, {})",
+                    self.network_name.blue(),
+                    self.public_key.cyan(),
+                    "gas key for function calls".cyan(),
+                    format!("on {receiver_id} {methods}").cyan(),
+                    format!("balance: {}", balance.exact_amount_display()).cyan()
+                )
+            }
+            near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess {
+                balance,
+                num_nonces,
+            } => {
+                write!(
+                    f,
+                    "{} {}\t{} ({}, {})",
+                    self.network_name.blue(),
+                    self.public_key.cyan(),
+                    "gas key with full access".cyan(),
+                    format!("balance: {}", balance.exact_amount_display()).cyan(),
+                    format!("nonces: {num_nonces}").cyan()
+                )
+            }
+        }
+    }
+}
+
+pub fn get_public_keys_from_network_config(
+    global_context: &crate::GlobalContext,
+    owner_account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<(Vec<AccessKeyInfo>, Vec<String>)> {
+    if global_context.offline {
+        return Ok((
+            vec![],
+            vec!["Cannot fetch public keys in offline mode".to_string()],
+        ));
+    }
+
+    if global_context.config.network_connection.is_empty() {
+        return Ok((
+            vec![],
+            vec!["Network connection config is empty".to_string()],
+        ));
+    }
+
+    let mut access_key_list: Vec<AccessKeyInfo> = vec![];
+    let mut processed_networks: Vec<String> = vec![];
+    let mut errors: Vec<String> = vec![];
+
+    for (_, network_config) in global_context.config.network_connection.iter() {
+        if processed_networks.contains(&network_config.network_name) {
+            continue;
+        }
+
+        match network_config
+            .json_rpc_client()
+            .blocking_call_view_access_key_list(
+                owner_account_id,
+                near_primitives::types::Finality::Final.into(),
+            ) {
+            Ok(rpc_query_response) => {
+                let access_key_list_for_network = rpc_query_response.access_key_list_view()?;
+                access_key_list.extend(access_key_list_for_network.keys.iter().filter_map(
+                    |access_key_info_view| {
+                        // In 2.13 the access-key list returns a `PublicKeyHandle`.
+                        // ML-DSA-65 keys are stored on-chain only as a hash, so the
+                        // full public key needed to build a actions can't be
+                        // recovered here; `full_pubkey()` returns `None` for them and
+                        // they are skipped from the interactive picker.
+                        access_key_info_view
+                            .public_key
+                            .full_pubkey()
+                            .map(|public_key| AccessKeyInfo {
+                                public_key,
+                                permission: access_key_info_view.access_key.permission.clone(),
+                                network_name: network_config.network_name.clone(),
+                            })
+                    },
+                ));
+                processed_networks.push(network_config.network_name.to_string());
+            }
+            Err(err) => {
+                errors.push(err.to_string());
+            }
+        }
+    }
+
+    Ok((access_key_list, errors))
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
