@@ -99,7 +99,23 @@ impl WithdrawFromGasKeyDetails {
             &context.owner_account_id,
         )?;
 
-        let access_key_list: Vec<AccessKeyInfo> = access_key_list
+        if access_key_list.is_empty() {
+            if errors.is_empty() {
+                return Err(color_eyre::eyre::eyre!(
+                    "No access keys found for <{}> on [{}] network(s).",
+                    context.owner_account_id,
+                    context.global_context.config.network_names().join(", ")
+                ));
+            }
+            return Err(color_eyre::eyre::eyre!(
+                "Failed to fetch access keys for <{}> on [{}] network(s):\n{}",
+                context.owner_account_id,
+                context.global_context.config.network_names().join(", "),
+                errors.join("\n")
+            ));
+        }
+
+        let filtered_access_key_list: Vec<AccessKeyInfo> = access_key_list
             .iter()
             .filter(|info| {
                 matches!(
@@ -111,12 +127,12 @@ impl WithdrawFromGasKeyDetails {
             .cloned()
             .collect();
 
-        if access_key_list.is_empty() {
+        if filtered_access_key_list.is_empty() {
             for error in errors {
                 println!("WARNING! {error}");
             }
             println!(
-                "Automatic search of gas keys for <{}> is not possible on [{}] network(s).\nYou can enter gas key to withdraw funds from manually.",
+                "No gas keys found for <{}> on [{}] network(s).\nYou can enter a gas key to withdraw from manually.",
                 context.owner_account_id,
                 context.global_context.config.network_names().join(", ")
             );
@@ -127,7 +143,7 @@ impl WithdrawFromGasKeyDetails {
 
         let selected_public_key = Select::new(
             "Select the GasKey you want to withdraw from:",
-            access_key_list,
+            filtered_access_key_list,
         )
         .with_formatter(formatter)
         .prompt()?;
