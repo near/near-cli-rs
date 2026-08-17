@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.0](https://github.com/near/near-cli-rs/compare/v0.29.0...v0.30.0) - 2026-08-17
+
+### Added
+
+- fetch gas keys from network and allow user to choose them ([#641](https://github.com/near/near-cli-rs/pull/641))
+- display `ml-dsa-65-hash` when displaying ml-dsa-65 pubkey ([#640](https://github.com/near/near-cli-rs/pull/640))
+- Added the ability to view FT for all contracts in the account ([#620](https://github.com/near/near-cli-rs/pull/620))
+
+### Other
+
+- document Homebrew installation ([#642](https://github.com/near/near-cli-rs/pull/642))
+- bump actions/checkout ([#639](https://github.com/near/near-cli-rs/pull/639))
+- *(ci)* fix workflows and upd deps ([#638](https://github.com/near/near-cli-rs/pull/638))
+
 ## [0.29.0](https://github.com/near/near-cli-rs/compare/v0.28.0...v0.29.0) - 2026-07-17
 
 ### Other
