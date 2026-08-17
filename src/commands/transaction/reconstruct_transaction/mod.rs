@@ -397,7 +397,7 @@ fn get_access_key_permission(
                         }
                     },
                     contract_account_id: Some(receiver_id.parse()?),
-                    function_names: Some(crate::types::vec_string::VecString(method_names)),
+                    function_names: Some(method_names.into()),
                     access_key_mode: Some(add_key::CliAccessKeyMode::UseManuallyProvidedPublicKey(
                         add_key::use_public_key::CliAddAccessKeyAction {
                             public_key: Some(public_key.into()),

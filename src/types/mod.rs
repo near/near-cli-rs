@@ -7,6 +7,7 @@ pub mod crypto_hash;
 pub mod file_bytes;
 pub mod ft_inventory;
 pub mod ft_properties;
+pub mod function_names;
 pub mod json;
 pub mod near_allowance;
 pub mod near_token;
