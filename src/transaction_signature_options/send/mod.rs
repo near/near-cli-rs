@@ -95,7 +95,7 @@ impl SendContext {
                 .is_some() =>
             {
                 match sending_delegate_action(
-                    signed_delegate_action,
+                    signed_delegate_action.into(),
                     previous_context.network_config
                         .meta_transaction_relayer_url
                         .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
@@ -114,7 +114,35 @@ impl SendContext {
                     Err(report) => return Err(color_eyre::Report::msg(report)),
                 };
             }
-            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(..) => {
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateActionV2(
+                signed_delegate_action,
+            ) if previous_context
+                .network_config
+                .meta_transaction_relayer_url
+                .is_some() =>
+            {
+                match sending_delegate_action(
+                    signed_delegate_action.into(),
+                    previous_context.network_config
+                        .meta_transaction_relayer_url
+                        .expect("Internal error: Meta-transaction relayer URL must be Some() at this point"),
+                ){
+                    Ok(relayer_response) => {
+                        if relayer_response.status().is_success() {
+                            let response_text = relayer_response.text().map_err(color_eyre::Report::msg)?;
+                            eprintln!("\nRelayer Response text: {response_text}");
+                        } else {
+                            eprintln!(
+                                "\nRequest failed with status code: {}",
+                                relayer_response.status()
+                            );
+                        }
+                    }
+                    Err(report) => return Err(color_eyre::Report::msg(report)),
+                };
+            }
+            super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(..)
+            | super::SignedTransactionOrSignedDelegateAction::SignedDelegateActionV2(..) => {
                 // Fallback to `display` command when `meta_transaction_relayer_url` is not configured.
                 super::display::DisplayContext::from_previous_context(
                     previous_context.clone(),
@@ -195,7 +223,7 @@ pub fn sleep_before_retry(context_message: String) {
 
 #[tracing::instrument(name = "Broadcasting delegate action via a relayer url", skip_all)]
 fn sending_delegate_action(
-    signed_delegate_action: near_primitives::action::delegate::SignedDelegateAction,
+    signed_delegate_action: crate::types::signed_delegate_action::SignedDelegateActionAsBase64,
     meta_transaction_relayer_url: url::Url,
 ) -> Result<reqwest::blocking::Response, reqwest::Error> {
     tracing::Span::current().pb_set_message(meta_transaction_relayer_url.as_str());
@@ -203,9 +231,7 @@ fn sending_delegate_action(
 
     let client = reqwest::blocking::Client::new();
     let request_payload = serde_json::json!({
-        "signed_delegate_action": crate::types::signed_delegate_action::SignedDelegateActionAsBase64::from(
-            signed_delegate_action
-        ).to_string()
+        "signed_delegate_action": signed_delegate_action.to_string()
     });
     tracing::info!(
         target: "near_teach_me",
