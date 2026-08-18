@@ -44,6 +44,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
         },
     );
     network_connection.insert(
@@ -63,6 +64,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
         },
     );
     network_connection.insert(
@@ -82,6 +84,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
         },
     );
     network_connection.insert(
@@ -105,6 +108,7 @@ fn create_test_context_with_failed_rpc_on_testnet() -> GlobalContext {
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
         },
     );
 
@@ -140,6 +144,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
         },
     );
     network_connection.insert(
@@ -163,6 +168,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
         },
     );
     network_connection.insert(
@@ -184,6 +190,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
         },
     );
     network_connection.insert(
@@ -205,6 +212,7 @@ fn create_test_context_with_failed_rpc_on_mainnet() -> GlobalContext {
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
         },
     );
 
@@ -240,6 +248,7 @@ fn create_test_context_with_failed_rpc() -> GlobalContext {
             coingecko_url: Some("https://api.coingecko.com/".parse().unwrap()),
             mpc_contract_account_id: Some("v1.signer".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api.nearblocks.io/".parse().unwrap()),
         },
     );
     network_connection.insert(
@@ -263,6 +272,7 @@ fn create_test_context_with_failed_rpc() -> GlobalContext {
             coingecko_url: None,
             mpc_contract_account_id: Some("v1.signer-prod.testnet".parse().unwrap()),
             tx_wait_until: None,
+            nearblocks_url: Some("https://api-testnet.nearblocks.io/".parse().unwrap()),
         },
     );
 

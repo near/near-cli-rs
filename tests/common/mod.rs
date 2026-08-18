@@ -45,9 +45,9 @@ pub async fn prepare_tests() -> Result<TestContext, Box<dyn std::error::Error>> 
     // Format the RPC URL properly
     let rpc_url = format!("{}/", sandbox.rpc_addr);
 
-    // Write a V4 config to avoid migration issues
+    // Write a V5 config to avoid migration issues
     let config_content = format!(
-        r#"version = "4"
+        r#"version = "5"
 credentials_home_dir = "{}"
 
 [network_connection.sandbox]

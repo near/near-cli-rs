@@ -621,6 +621,161 @@ fn need_check_account(message: String) -> color_eyre::eyre::Result<bool> {
     Ok(select_choose_input == ConfirmOptions::Yes)
 }
 
+#[derive(Debug, Clone)]
+pub struct AccessKeyInfo {
+    pub public_key: near_kit::PublicKey,
+    pub permission: near_kit::AccessKeyPermissionView,
+    pub network_name: String,
+}
+
+impl std::fmt::Display for AccessKeyInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.permission {
+            near_kit::AccessKeyPermissionView::FullAccess => {
+                write!(
+                    f,
+                    "{} {}\t{}",
+                    self.network_name.blue(),
+                    self.public_key.yellow(),
+                    "full access".yellow()
+                )
+            }
+            near_kit::AccessKeyPermissionView::FunctionCall {
+                allowance,
+                receiver_id,
+                method_names,
+            } => {
+                let allowance_message = match allowance {
+                    Some(amount) => format!("with a remaining fee allowance of {amount}"),
+                    None => "with no limit".to_string(),
+                };
+                if method_names.is_empty() {
+                    write!(
+                        f,
+                        "{} {}\t{} {} {}",
+                        self.network_name.blue(),
+                        self.public_key.green(),
+                        "call any function on".green(),
+                        receiver_id.green(),
+                        allowance_message.green()
+                    )
+                } else {
+                    write!(
+                        f,
+                        "{} {}\t{} {:?} {} {} {}",
+                        self.network_name.blue(),
+                        self.public_key.green(),
+                        "call".green(),
+                        method_names.green(),
+                        "function(s) on".green(),
+                        receiver_id.green(),
+                        allowance_message.green()
+                    )
+                }
+            }
+            near_kit::AccessKeyPermissionView::GasKeyFunctionCall {
+                balance,
+                receiver_id,
+                method_names,
+                ..
+            } => {
+                let methods = if method_names.is_empty() {
+                    "any methods".to_string()
+                } else {
+                    format!("{method_names:?}")
+                };
+                write!(
+                    f,
+                    "{} {}\t{} ({}, {})",
+                    self.network_name.blue(),
+                    self.public_key.cyan(),
+                    "gas key for function calls".cyan(),
+                    format!("on {receiver_id} {methods}").cyan(),
+                    format!("balance: {}", balance.exact_amount_display()).cyan()
+                )
+            }
+            near_kit::AccessKeyPermissionView::GasKeyFullAccess {
+                balance,
+                num_nonces,
+            } => {
+                write!(
+                    f,
+                    "{} {}\t{} ({}, {})",
+                    self.network_name.blue(),
+                    self.public_key.cyan(),
+                    "gas key with full access".cyan(),
+                    format!("balance: {}", balance.exact_amount_display()).cyan(),
+                    format!("nonces: {num_nonces}").cyan()
+                )
+            }
+        }
+    }
+}
+
+pub fn get_public_keys_from_network_config(
+    global_context: &crate::GlobalContext,
+    owner_account_id: &near_kit::AccountId,
+) -> color_eyre::eyre::Result<(Vec<AccessKeyInfo>, Vec<String>)> {
+    if global_context.offline {
+        return Ok((
+            vec![],
+            vec!["Cannot fetch public keys in offline mode".to_string()],
+        ));
+    }
+
+    if global_context.config.network_connection.is_empty() {
+        return Ok((
+            vec![],
+            vec!["Network connection config is empty".to_string()],
+        ));
+    }
+
+    let mut access_key_list: Vec<AccessKeyInfo> = vec![];
+    let mut processed_networks: Vec<String> = vec![];
+    let mut errors: Vec<String> = vec![];
+
+    for (_, network_config) in global_context.config.network_connection.iter() {
+        if processed_networks.contains(&network_config.network_name) {
+            continue;
+        }
+
+        match block_on(
+            network_config
+                .client()
+                .rpc()
+                .view_access_key_list(owner_account_id, near_kit::Finality::Final.into()),
+        )
+        .into_eyre()
+        {
+            Ok(access_key_list_for_network) => {
+                // ML-DSA-65 access keys are returned by view RPCs as hash handles
+                // (`ml-dsa-65-hash:...`). The full public key needed to build an
+                // action cannot be recovered from the handle, so those keys are
+                // skipped from the interactive picker.
+                access_key_list.extend(
+                    access_key_list_for_network
+                        .keys
+                        .iter()
+                        .filter(|access_key_info_view| {
+                            !access_key_info_view.public_key.is_ml_dsa65_hash()
+                        })
+                        .map(|access_key_info_view| AccessKeyInfo {
+                            public_key: access_key_info_view.public_key.clone(),
+                            permission: access_key_info_view.access_key.permission.clone(),
+                            network_name: network_config.network_name.clone(),
+                        }),
+                );
+                processed_networks.push(network_config.network_name.to_string());
+            }
+            Err(err) => {
+                errors.push(err.to_string());
+            }
+        }
+    }
+
+    Ok((access_key_list, errors))
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct KeyPairProperties {
     pub seed_phrase_hd_path: crate::types::slip10::BIP32Path,
@@ -903,6 +1058,17 @@ impl GeneratedKeyPair {
     }
 }
 
+/// The on-chain `ml-dsa-65-hash:` handle for a full ML-DSA-65 public key.
+///
+/// Returns `None` for other key types (and for keys that are already a hash
+/// handle, which are printed as-is by their `Display` impl).
+pub fn ml_dsa_65_pubkey_handle(public_key: &near_kit::PublicKey) -> Option<near_kit::PublicKey> {
+    match public_key {
+        near_kit::PublicKey::MlDsa65(_) => public_key.to_ml_dsa65_hash(),
+        _ => None,
+    }
+}
+
 pub fn print_full_signed_transaction(transaction: &near_kit::SignedTransactionV1) -> String {
     let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
     info_str.push_str(&format!(
@@ -952,6 +1118,9 @@ pub fn print_full_unsigned_transaction(transaction: &near_kit::VersionedTransact
         "public_key:",
         transaction.public_key()
     ));
+    if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(transaction.public_key()) {
+        info_str.push_str(&format!("\n{:<13} {}", "pub key hash:", pub_key_hash));
+    }
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "nonce:",
@@ -1074,6 +1243,12 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", stake_action.public_key
                 ));
+                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&stake_action.public_key) {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "", "pub key hash:", pub_key_hash
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "",
@@ -1087,6 +1262,12 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", add_key_action.public_key
                 ));
+                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&add_key_action.public_key) {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "", "pub key hash:", pub_key_hash
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "", "nonce:", add_key_action.access_key.nonce
@@ -1102,6 +1283,12 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", delete_key_action.public_key
                 ));
+                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&delete_key_action.public_key) {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "", "pub key hash:", pub_key_hash
+                    ));
+                }
             }
             near_kit::Action::DeleteAccount(delete_account_action) => {
                 info_str.push_str(&format!(
@@ -1223,6 +1410,13 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", transfer_to_gas_key.public_key
                 ));
+                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&transfer_to_gas_key.public_key)
+                {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "", "pub key hash:", pub_key_hash
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "",
@@ -1236,6 +1430,14 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", withdraw_from_gas_key.public_key
                 ));
+                if let Some(pub_key_hash) =
+                    ml_dsa_65_pubkey_handle(&withdraw_from_gas_key.public_key)
+                {
+                    info_str.push_str(&format!(
+                        "\n{:>18} {:<13} {}",
+                        "", "pub key hash:", pub_key_hash
+                    ));
+                }
                 info_str.push_str(&format!(
                     "\n{:>18} {:<13} {}",
                     "",

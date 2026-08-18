@@ -1,28 +1,37 @@
+use inquire::{CustomType, Select, formatter::OptionFormatter};
+
+use crate::common::AccessKeyInfo;
+
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = FundGasKeyContext)]
+#[interactive_clap(output_context = FundGasKeyCommandContext)]
 pub struct FundGasKeyCommand {
     #[interactive_clap(skip_default_input_arg)]
     /// Which account owns the gas key you want to fund?
     owner_account_id: crate::types::account_id::AccountId,
-    /// Enter the public key of the gas key:
-    public_key: crate::types::public_key::PublicKey,
-    /// How much NEAR do you want to transfer into the gas key balance? (example: 1 NEAR or 0.5 NEAR or 10000 yoctonear)
-    amount: crate::types::near_token::NearToken,
-    #[interactive_clap(named_arg)]
-    /// Select network
-    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+    #[interactive_clap(subargs)]
+    /// Input Fund GasKey details
+    fund_gas_key_details: FundGasKeyDetails,
 }
 
 #[derive(Debug, Clone)]
-pub struct FundGasKeyContext {
+pub struct FundGasKeyCommandContext {
     global_context: crate::GlobalContext,
     owner_account_id: near_kit::AccountId,
-    public_key: crate::types::public_key::PublicKey,
-    amount: crate::types::near_token::NearToken,
 }
 
-impl FundGasKeyContext {
+impl FundGasKeyCommand {
+    pub fn input_owner_account_id(
+        context: &crate::GlobalContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_signer_account_id_from_used_account_list(
+            &context.config.credentials_home_dir,
+            "Which account owns the gas key you want to fund?",
+        )
+    }
+}
+
+impl FundGasKeyCommandContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
         scope: &<FundGasKeyCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
@@ -30,14 +39,121 @@ impl FundGasKeyContext {
         Ok(Self {
             global_context: previous_context,
             owner_account_id: scope.owner_account_id.clone().into(),
-            public_key: scope.public_key.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = FundGasKeyCommandContext)]
+#[interactive_clap(output_context = FundGasKeyDetailsContext)]
+pub struct FundGasKeyDetails {
+    #[interactive_clap(skip_default_input_arg)]
+    /// Enter the public key of the gas key:
+    public_key: crate::types::public_key::PublicKey,
+
+    /// How much NEAR do you want to transfer into the gas key balance? (example: 1 NEAR or 0.5 NEAR or 10000 yoctonear)
+    amount: crate::types::near_token::NearToken,
+
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: crate::network_for_transaction::NetworkForTransactionArgs,
+}
+
+#[derive(Debug, Clone)]
+pub struct FundGasKeyDetailsContext {
+    global_context: crate::GlobalContext,
+    owner_account_id: near_kit::AccountId,
+    public_key: near_kit::PublicKey,
+    amount: crate::types::near_token::NearToken,
+}
+
+impl FundGasKeyDetailsContext {
+    pub fn from_previous_context(
+        previous_context: FundGasKeyCommandContext,
+        scope: &<FundGasKeyDetails as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context.global_context,
+            owner_account_id: previous_context.owner_account_id,
+            public_key: scope.public_key.clone().into(),
             amount: scope.amount,
         })
     }
 }
 
-impl From<FundGasKeyContext> for crate::commands::ActionContext {
-    fn from(item: FundGasKeyContext) -> Self {
+impl FundGasKeyDetails {
+    pub fn input_public_key_manually()
+    -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
+        Ok(Some(CustomType::new("Enter a GasKey public key you want to fund (for example, ed25519:FAXX...RUQa or ed25519:FgVF...oSWJ):").prompt()?))
+    }
+
+    pub fn input_public_key(
+        context: &FundGasKeyCommandContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
+        if context.global_context.offline {
+            return Self::input_public_key_manually();
+        }
+
+        let (access_key_list, errors) = crate::common::get_public_keys_from_network_config(
+            &context.global_context,
+            &context.owner_account_id,
+        )?;
+
+        if access_key_list.is_empty() {
+            if errors.is_empty() {
+                return Err(color_eyre::eyre::eyre!(
+                    "No access keys found for <{}> on [{}] network(s).",
+                    context.owner_account_id,
+                    context.global_context.config.network_names().join(", ")
+                ));
+            }
+            return Err(color_eyre::eyre::eyre!(
+                "Failed to fetch access keys for <{}> on [{}] network(s):\n{}",
+                context.owner_account_id,
+                context.global_context.config.network_names().join(", "),
+                errors.join("\n")
+            ));
+        }
+
+        let filtered_access_key_list: Vec<AccessKeyInfo> = access_key_list
+            .iter()
+            .filter(|info| {
+                matches!(
+                    info.permission,
+                    near_kit::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+                        | near_kit::AccessKeyPermissionView::GasKeyFullAccess { .. }
+                )
+            })
+            .cloned()
+            .collect();
+
+        if filtered_access_key_list.is_empty() {
+            for error in errors {
+                println!("WARNING! {error}");
+            }
+            println!(
+                "No gas keys found for <{}> on [{}] network(s).\nYou can enter a gas key to fund manually.",
+                context.owner_account_id,
+                context.global_context.config.network_names().join(", ")
+            );
+            return Self::input_public_key_manually();
+        }
+
+        let formatter: OptionFormatter<'_, AccessKeyInfo> = &|a| a.to_string();
+
+        let selected_public_key = Select::new(
+            "Select the GasKey you want to fund:",
+            filtered_access_key_list,
+        )
+        .with_formatter(formatter)
+        .prompt()?;
+
+        Ok(Some(selected_public_key.public_key.clone().into()))
+    }
+}
+
+impl From<FundGasKeyDetailsContext> for crate::commands::ActionContext {
+    fn from(item: FundGasKeyDetailsContext) -> Self {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let owner_account_id = item.owner_account_id.clone();
@@ -50,7 +166,7 @@ impl From<FundGasKeyContext> for crate::commands::ActionContext {
                         receiver_id: owner_account_id.clone(),
                         actions: vec![near_kit::Action::TransferToGasKey(
                             near_kit::TransferToGasKeyAction {
-                                public_key: public_key.clone().into(),
+                                public_key: public_key.clone(),
                                 deposit: amount.into(),
                             },
                         )],
@@ -74,16 +190,5 @@ impl From<FundGasKeyContext> for crate::commands::ActionContext {
             sign_as_delegate_action: false,
             on_sending_delegate_action_callback: None,
         }
-    }
-}
-
-impl FundGasKeyCommand {
-    pub fn input_owner_account_id(
-        context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_signer_account_id_from_used_account_list(
-            &context.config.credentials_home_dir,
-            "Which account owns the gas key you want to fund?",
-        )
     }
 }
