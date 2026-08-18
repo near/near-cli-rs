@@ -275,7 +275,14 @@ impl NetworkConfig {
     pub fn client(&self) -> near_kit::Near {
         tracing::Span::current().pb_set_message(self.rpc_url.as_str());
         tracing::info!(target: "near_teach_me", "Connecting to near-kit RPC {}", self.rpc_url.as_str());
-        let builder = near_kit::Near::custom(self.rpc_url.as_str(), self.network_name.as_str());
+        let builder = near_kit::Near::custom(self.rpc_url.as_str(), self.network_name.as_str())
+            // The CLI owns its retry loops (and its error reporting for
+            // non-retryable failures such as an invalid nonce), so disable
+            // near-kit's built-in RPC retries.
+            .retry_config(near_kit::RetryConfig {
+                max_retries: 0,
+                ..Default::default()
+            });
         let builder = match &self.rpc_api_key {
             Some(api_key) => {
                 let mut value = api_key
