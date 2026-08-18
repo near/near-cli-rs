@@ -89,7 +89,10 @@ near-token = { version = "0.3", features = [
     "interactive-clap",
 ] }
 
-near-kit = { version = "0.15.0", features = ["interactive-clap"] }
+near-kit = { version = "0.15.0", default-features = false, features = [
+    "rpc",
+    "interactive-clap",
+] }
 # ML-DSA-65 keys are exported in the expanded (4032-byte) form for
 # interoperability with nearcore-based tooling; see `common::GeneratedKeyPair`.
 ml-dsa = "0.1"
