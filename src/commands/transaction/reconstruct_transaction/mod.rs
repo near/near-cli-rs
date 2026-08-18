@@ -48,7 +48,11 @@ impl TransactionInfoContext {
                             .into_iter()
                             .map(action_view_to_action)
                             .collect::<Result<Vec<near_kit::Action>, _>>()
-                            .expect("Internal error: can not convert the action_view to action."),
+                            .map_err(|err| {
+                                color_eyre::eyre::eyre!(
+                                    "Failed to convert an action of the transaction {tx_hash} into a reconstructable action: {err}"
+                                )
+                            })?,
                     };
 
                     tracing::info!(
@@ -218,7 +222,7 @@ fn action_transformation(
                 network_config,
                 block_reference,
                 &file_path,
-                &near_kit::CryptoHash::hash(&deploy_contract_action.code)
+                &code_hash_from_deploy_action_view(&deploy_contract_action.code)?
             )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
@@ -275,17 +279,17 @@ fn action_transformation(
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
-            let code_hash = near_kit::CryptoHash::hash(&action.code);
+            let code_hash = code_hash_from_deploy_action_view(&action.code)?;
             let contract_type = match action.deploy_mode {
                 near_kit::GlobalContractDeployMode::AccountId => {
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId {
                         account_id: receiver_id.clone(),
-                        code_hash: Some(near_kit::CryptoHash::from_bytes(*code_hash.as_bytes()))
+                        code_hash: Some(code_hash)
                     }
                 }
                 near_kit::GlobalContractDeployMode::CodeHash => {
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByCodeHash(
-                        near_kit::CryptoHash::from_bytes(*code_hash.as_bytes())
+                        code_hash
                     )
                 }
             };
@@ -419,6 +423,26 @@ fn get_access_key_permission(
     }
 }
 
+/// Extract the contract code hash from the `code` field of a deploy action
+/// produced by [`action_view_to_action`].
+///
+/// The RPC's `ActionView::DeployContract` / `DeployGlobalContract*` do NOT carry
+/// the contract code: nearcore replaces it with the SHA-256 hash of the code
+/// (base64-encoded, 32 bytes once decoded). So `Action.code` here already *is*
+/// the code hash and must not be hashed again — the actual code is fetched
+/// from an archival node in [`download_code`] and verified against this hash.
+fn code_hash_from_deploy_action_view(
+    code: &[u8],
+) -> color_eyre::eyre::Result<near_kit::CryptoHash> {
+    let hash_bytes: [u8; 32] = code.try_into().map_err(|_| {
+        color_eyre::eyre::eyre!(
+            "Internal error: expected a 32-byte code hash in the deploy action view, got {} bytes",
+            code.len()
+        )
+    })?;
+    Ok(near_kit::CryptoHash::from_bytes(hash_bytes))
+}
+
 fn download_code(
     contract_type: &crate::commands::contract::download_wasm::ContractType,
     network_config: &crate::config::NetworkConfig,
@@ -475,6 +499,9 @@ fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action,
 
     match view {
         ActionView::CreateAccount => Ok(Action::CreateAccount(CreateAccountAction)),
+        // NOTE: for deploy actions the view's `code` is the base64 of the
+        // *code hash* (32 bytes), not the wasm itself; see
+        // `code_hash_from_deploy_action_view`.
         ActionView::DeployContract { code } => Ok(Action::DeployContract(DeployContractAction {
             code: decode_b64(&code)?,
         })),
@@ -508,7 +535,30 @@ fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action,
                     receiver_id,
                     method_names,
                 }),
-                _ => return Err("Unsupported access key permission type".to_string()),
+                AccessKeyPermissionView::GasKeyFunctionCall {
+                    balance,
+                    num_nonces,
+                    allowance,
+                    receiver_id,
+                    method_names,
+                } => AccessKeyPermission::GasKeyFunctionCall(
+                    GasKeyInfo {
+                        balance,
+                        num_nonces,
+                    },
+                    FunctionCallPermission {
+                        allowance,
+                        receiver_id,
+                        method_names,
+                    },
+                ),
+                AccessKeyPermissionView::GasKeyFullAccess {
+                    balance,
+                    num_nonces,
+                } => AccessKeyPermission::GasKeyFullAccess(GasKeyInfo {
+                    balance,
+                    num_nonces,
+                }),
             };
             Ok(Action::AddKey(AddKeyAction {
                 public_key,
@@ -645,5 +695,77 @@ fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action,
                 amount,
             }))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deploy_action_view_code_is_the_code_hash() {
+        use base64::Engine as _;
+
+        // nearcore puts sha256(code) — not the code — into the deploy action view.
+        let code_hash = near_kit::CryptoHash::hash(b"some wasm bytes");
+        let view = near_kit::ActionView::DeployContract {
+            code: base64::engine::general_purpose::STANDARD.encode(code_hash.as_bytes()),
+        };
+
+        let near_kit::Action::DeployContract(action) = action_view_to_action(view).unwrap() else {
+            panic!("expected a DeployContract action");
+        };
+        assert_eq!(
+            code_hash_from_deploy_action_view(&action.code).unwrap(),
+            code_hash
+        );
+
+        let view = near_kit::ActionView::DeployGlobalContract {
+            code: base64::engine::general_purpose::STANDARD.encode(code_hash.as_bytes()),
+        };
+        let near_kit::Action::DeployGlobalContract(action) = action_view_to_action(view).unwrap()
+        else {
+            panic!("expected a DeployGlobalContract action");
+        };
+        assert_eq!(
+            code_hash_from_deploy_action_view(&action.code).unwrap(),
+            code_hash
+        );
+    }
+
+    #[test]
+    fn deploy_action_view_code_with_wrong_length_is_an_error() {
+        let err = code_hash_from_deploy_action_view(&[0u8; 31]).unwrap_err();
+        assert!(err.to_string().contains("expected a 32-byte code hash"));
+    }
+
+    #[test]
+    fn gas_key_permissions_are_converted() {
+        let public_key: near_kit::PublicKey =
+            "ed25519:5387nnYC7uiWrrPevw7FAopaL8hfr6dZVJqpg6HPrPKr"
+                .parse()
+                .unwrap();
+        let view = near_kit::ActionView::AddKey {
+            public_key: public_key.clone(),
+            access_key: near_kit::AccessKeyDetails {
+                nonce: 7,
+                permission: near_kit::AccessKeyPermissionView::GasKeyFullAccess {
+                    balance: near_kit::NearToken::from_near(1),
+                    num_nonces: 5,
+                },
+            },
+        };
+        let near_kit::Action::AddKey(action) = action_view_to_action(view).unwrap() else {
+            panic!("expected an AddKey action");
+        };
+        assert_eq!(action.public_key, public_key);
+        assert_eq!(action.access_key.nonce, 7);
+        assert_eq!(
+            action.access_key.permission,
+            near_kit::AccessKeyPermission::GasKeyFullAccess(near_kit::GasKeyInfo {
+                balance: near_kit::NearToken::from_near(1),
+                num_nonces: 5,
+            })
+        );
     }
 }
