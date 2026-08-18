@@ -135,7 +135,7 @@ fn call_view_function(
             account_id,
             function_name,
             &args,
-            block_reference.clone(),
+            *block_reference,
         ),
     )
     .into_eyre()

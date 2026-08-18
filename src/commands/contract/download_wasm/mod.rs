@@ -103,7 +103,7 @@ impl DownloadContractContext {
                         &contract_type,
                         &file_path,
                         network_config,
-                        block_reference.clone(),
+                        *block_reference,
                     )
                 });
 
@@ -359,15 +359,14 @@ pub fn get_code(
         ),
     };
 
-    let block =
-        crate::common::block_on(network_config.client().rpc().block(block_reference.clone()))
-            .into_eyre()
-            .wrap_err_with(|| {
-                format!(
-                    "Failed to fetch block info for block reference {:?} on network <{}>",
-                    block_reference, network_config.network_name
-                )
-            })?;
+    let block = crate::common::block_on(network_config.client().rpc().block(block_reference))
+        .into_eyre()
+        .wrap_err_with(|| {
+            format!(
+                "Failed to fetch block info for block reference {:?} on network <{}>",
+                block_reference, network_config.network_name
+            )
+        })?;
 
     let start_block_height = block.header.height;
     let number_of_shards = block.chunks.len() as u64;

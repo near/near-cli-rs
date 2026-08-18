@@ -190,8 +190,7 @@ pub async fn get_account_transfer_allowance(
     block_reference: BlockReference,
 ) -> color_eyre::eyre::Result<AccountTransferAllowance> {
     tracing::info!(target: "near_teach_me", "Getting the transfer allowance for the account ...");
-    let account_state =
-        get_account_state(network_config, &account_id, block_reference.clone()).await;
+    let account_state = get_account_state(network_config, &account_id, block_reference).await;
     let account_view = match account_state {
         Ok(account_view) => account_view,
         Err(ViewAccountError::UnknownAccount { .. })
@@ -538,7 +537,7 @@ fn classify_view_account_error(
     account_id: &near_kit::AccountId,
 ) -> ViewAccountError {
     match &err {
-        near_kit::RpcError::AccountNotFound(_) => ViewAccountError::UnknownAccount {
+        near_kit::RpcError::AccountNotFound { .. } => ViewAccountError::UnknownAccount {
             account_id: account_id.clone(),
         },
         near_kit::RpcError::Http(_)
@@ -566,14 +565,14 @@ pub async fn get_account_state(
         account_id
     );
 
-    let nk_block_ref = block_reference.clone();
+    let nk_block_ref = block_reference;
 
     let mut retries_left = (0..5).rev();
     loop {
         let result = network_config
             .client()
             .rpc()
-            .view_account(account_id, nk_block_ref.clone())
+            .view_account(account_id, nk_block_ref)
             .await;
 
         match result {
@@ -2686,8 +2685,10 @@ async fn get_staking_pool_info(
             "Failed to parse return value of view function call for RewardFeeFraction.",
         )?),
         Err(
-            near_kit::RpcError::ContractNotDeployed(_)
-            | near_kit::RpcError::ContractExecution { .. },
+            near_kit::RpcError::ContractNotDeployed { .. }
+            | near_kit::RpcError::ContractExecution { .. }
+            | near_kit::RpcError::MethodNotFound { .. }
+            | near_kit::RpcError::ContractPanic { .. },
         ) => None,
         Err(err) => return Err(err.into()),
     };
@@ -2707,8 +2708,10 @@ async fn get_staking_pool_info(
                 .wrap_err("Failed to parse return value of view function call for u64.")?,
         ),
         Err(
-            near_kit::RpcError::ContractNotDeployed(_)
-            | near_kit::RpcError::ContractExecution { .. },
+            near_kit::RpcError::ContractNotDeployed { .. }
+            | near_kit::RpcError::ContractExecution { .. }
+            | near_kit::RpcError::MethodNotFound { .. }
+            | near_kit::RpcError::ContractPanic { .. },
         ) => None,
         Err(err) => return Err(err.into()),
     };

@@ -33,7 +33,7 @@ impl ViewGasKeyNoncesContext {
                     network_config.client().rpc().view_gas_key_nonces(
                         &account_id,
                         &public_key,
-                        block_reference.clone(),
+                        *block_reference,
                     ),
                 )
                     .into_eyre()

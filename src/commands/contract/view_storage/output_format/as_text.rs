@@ -23,7 +23,7 @@ impl AsTextContext {
 
             move |network_config, block_reference| {
                 let result =
-                    super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
+                    super::get_contract_state(&contract_account_id, prefix.clone(), network_config, *block_reference)?;
 
                 let mut info_str = String::new();
                 for value in &result.values {

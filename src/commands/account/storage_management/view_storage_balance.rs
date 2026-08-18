@@ -92,7 +92,7 @@ fn get_storage_balance(
             &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id.to_string(),
             }))?,
-            block_reference.clone(),
+            *block_reference,
         ),
     )
     .into_eyre()

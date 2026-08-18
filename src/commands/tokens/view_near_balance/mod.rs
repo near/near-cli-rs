@@ -23,7 +23,7 @@ impl ViewNearBalanceContext {
                     crate::common::get_account_transfer_allowance(
                         network_config,
                         owner_account_id.clone(),
-                        block_reference.clone(),
+                        *block_reference,
                     ),
                 )?;
 

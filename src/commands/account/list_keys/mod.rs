@@ -29,7 +29,7 @@ impl ViewListKeysContext {
                 let nk_list = block_on(
                     network_config.client().rpc().view_access_key_list(
                         &account_id,
-                        block_reference.clone(),
+                        *block_reference,
                     ),
                 )
                 .into_eyre()

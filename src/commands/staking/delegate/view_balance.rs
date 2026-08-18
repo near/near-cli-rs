@@ -137,7 +137,7 @@ pub fn get_user_staked_balance(
             &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
             }))?,
-            block_reference.clone(),
+            *block_reference,
         ),
     )
     .into_eyre()
@@ -168,7 +168,7 @@ pub fn get_user_unstaked_balance(
             &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
             }))?,
-            block_reference.clone(),
+            *block_reference,
         ),
     )
     .into_eyre()
@@ -199,7 +199,7 @@ pub fn get_user_total_balance(
             &serde_json::to_vec(&serde_json::json!({
                 "account_id": account_id,
             }))?,
-            block_reference.clone(),
+            *block_reference,
         ),
     )
     .into_eyre()

@@ -68,10 +68,10 @@ pub fn get_account_inquiry(
         network_config
             .client()
             .rpc()
-            .view_account(account_id, block_reference.clone()),
+            .view_account(account_id, *block_reference),
     )
     .map_err(|err| match err {
-        near_kit::RpcError::AccountNotFound(_) => {
+        near_kit::RpcError::AccountNotFound { .. } => {
             color_eyre::eyre::eyre!("account {account_id} does not exist while viewing")
         }
         err => color_eyre::eyre::eyre!(err),
@@ -86,7 +86,7 @@ pub fn get_account_inquiry(
         network_config
             .client()
             .rpc()
-            .view_access_key_list(account_id, block_reference.clone()),
+            .view_access_key_list(account_id, *block_reference),
     )
     .map_err(|err| {
         tracing::warn!(
@@ -121,7 +121,7 @@ pub fn get_account_inquiry(
 
     let client = network_config.client();
     let rpc = client.rpc();
-    let nk_block_ref = block_reference.clone();
+    let nk_block_ref = *block_reference;
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -227,7 +227,7 @@ async fn get_delegated_staked_balance(
             staking_pool_account_id,
             "get_account_staked_balance",
             &args,
-            block_reference.clone(),
+            *block_reference,
         )
         .await
     {
@@ -238,8 +238,10 @@ async fn get_delegated_staked_balance(
                 .parse::<u128>()?,
         )),
         Err(
-            near_kit::RpcError::ContractNotDeployed(_)
-            | near_kit::RpcError::ContractExecution { .. },
+            near_kit::RpcError::ContractNotDeployed { .. }
+            | near_kit::RpcError::ContractExecution { .. }
+            | near_kit::RpcError::MethodNotFound { .. }
+            | near_kit::RpcError::ContractPanic { .. },
         ) => Ok(near_token::NearToken::from_yoctonear(0)),
         Err(err) => Err(err.into()),
     }
@@ -260,7 +262,7 @@ fn get_account_profile(
                 &serde_json::to_vec(&serde_json::json!({
                     "keys": vec![format!("{account_id}/profile/**")],
                 }))?,
-                block_reference.clone(),
+                *block_reference,
             ),
         )
         .into_eyre()

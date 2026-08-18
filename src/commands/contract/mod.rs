@@ -84,7 +84,7 @@ pub async fn get_contract_abi(
         let result = network_config
             .client()
             .rpc()
-            .view_function(account_id, "__contract_abi", &[], nk_block_ref.clone())
+            .view_function(account_id, "__contract_abi", &[], *nk_block_ref)
             .await;
 
         match result {
@@ -98,9 +98,7 @@ pub async fn get_contract_abi(
             {
                 return Err(FetchAbiError::AbiNotSupported);
             }
-            Err(near_kit::RpcError::FunctionCall { panic, .. })
-                if panic.as_deref().unwrap_or("").contains("MethodNotFound") =>
-            {
+            Err(near_kit::RpcError::MethodNotFound { .. }) => {
                 return Err(FetchAbiError::AbiNotSupported);
             }
             Err(err) => {

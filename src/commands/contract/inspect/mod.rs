@@ -431,7 +431,7 @@ async fn get_account_view(
         let result = network_config
             .client()
             .rpc()
-            .view_account(account_id, block_reference.clone())
+            .view_account(account_id, *block_reference)
             .await;
 
         match result {
@@ -469,7 +469,7 @@ async fn get_access_keys(
         let result = network_config
             .client()
             .rpc()
-            .view_access_key_list(account_id, block_reference.clone())
+            .view_access_key_list(account_id, *block_reference)
             .await;
 
         match result {
@@ -537,7 +537,7 @@ pub async fn get_contract_source_metadata(
                 account_id,
                 "contract_source_metadata",
                 &[],
-                block_reference.clone(),
+                *block_reference,
             )
             .await;
 
@@ -559,9 +559,7 @@ pub async fn get_contract_source_metadata(
             {
                 return Err(FetchContractSourceMetadataError::ContractSourceMetadataNotSupported);
             }
-            Err(near_kit::RpcError::FunctionCall { panic, .. })
-                if panic.as_deref().unwrap_or("").contains("MethodNotFound") =>
-            {
+            Err(near_kit::RpcError::MethodNotFound { .. }) => {
                 return Err(FetchContractSourceMetadataError::ContractSourceMetadataNotSupported);
             }
             Err(err) => {
