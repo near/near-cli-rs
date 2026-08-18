@@ -31,13 +31,9 @@ impl SignLaterContext {
         previous_context: crate::commands::TransactionContext,
         scope: &<SignLater as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let nk_public_key: near_kit::PublicKey = {
-            let nc_pk: near_kit::PublicKey = scope.signer_public_key.clone().into();
-            nc_pk
-        };
         let unsigned_transaction = near_kit::VersionedTransaction::V0(near_kit::Transaction {
             signer_id: previous_context.prepopulated_transaction.signer_id,
-            public_key: nk_public_key,
+            public_key: scope.signer_public_key.clone().into(),
             nonce: scope.nonce,
             receiver_id: previous_context.prepopulated_transaction.receiver_id,
             block_hash: scope.block_hash.0,

@@ -274,11 +274,7 @@ fn sign_transaction_with_usb(
                 .wrap_err("Delegate action is not expected to fail on serialization")?,
             seed_phrase_hd_path_raw.clone(),
         ) {
-            Ok(signature) => near_kit::Signature::ed25519_from_bytes(
-                signature
-                    .try_into()
-                    .expect("Ledger ED25519 signature should be 64 bytes"),
-            ),
+            Ok(signature) => ed25519_signature_from_ledger_bytes(&signature)?,
             Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
                 return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
             }
@@ -311,11 +307,7 @@ fn sign_transaction_with_usb(
             .wrap_err("Transaction is not expected to fail on serialization")?,
         seed_phrase_hd_path_raw,
     ) {
-        Ok(signature) => near_kit::Signature::ed25519_from_bytes(
-            signature
-                .try_into()
-                .expect("Ledger ED25519 signature should be 64 bytes"),
-        ),
+        Ok(signature) => ed25519_signature_from_ledger_bytes(&signature)?,
         Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
             return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
         }
@@ -534,11 +526,7 @@ fn sign_transaction_with_ble(
                 .wrap_err("Delegate action is not expected to fail on serialization")?,
             seed_phrase_hd_path_raw.clone(),
         ) {
-            Ok(signature) => near_kit::Signature::ed25519_from_bytes(
-                signature
-                    .try_into()
-                    .expect("Ledger ED25519 signature should be 64 bytes"),
-            ),
+            Ok(signature) => ed25519_signature_from_ledger_bytes(&signature)?,
             Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
                 return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
             }
@@ -571,11 +559,7 @@ fn sign_transaction_with_ble(
             .wrap_err("Transaction is not expected to fail on serialization")?,
         seed_phrase_hd_path_raw.clone(),
     ) {
-        Ok(signature) => near_kit::Signature::ed25519_from_bytes(
-            signature
-                .try_into()
-                .expect("Ledger ED25519 signature should be 64 bytes"),
-        ),
+        Ok(signature) => ed25519_signature_from_ledger_bytes(&signature)?,
         Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
             return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
         }
@@ -673,4 +657,18 @@ pub fn input_seed_phrase_hd_path()
             .with_starting_input("44'/397'/0'/0'/1'")
             .prompt()?,
     ))
+}
+
+/// Convert the raw signature bytes returned by the Ledger app into an ed25519
+/// signature, failing (instead of panicking) on an unexpected device response.
+fn ed25519_signature_from_ledger_bytes(
+    signature: &[u8],
+) -> color_eyre::eyre::Result<near_kit::Signature> {
+    let bytes: [u8; 64] = signature.try_into().wrap_err_with(|| {
+        format!(
+            "Ledger returned an ED25519 signature of {} bytes, expected 64",
+            signature.len()
+        )
+    })?;
+    Ok(near_kit::Signature::ed25519_from_bytes(bytes))
 }

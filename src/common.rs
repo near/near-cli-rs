@@ -1298,13 +1298,8 @@ pub fn print_unsigned_transaction(
                         .delegate_action
                         .actions
                         .iter()
-                        .map(|nda| {
-                            // NonDelegateAction wraps Action with identical borsh encoding
-                            let bytes = borsh::to_vec(nda)
-                                .expect("NonDelegateAction borsh serialization should not fail");
-                            borsh::from_slice::<near_kit::Action>(&bytes)
-                                .expect("Action borsh deserialization should not fail")
-                        })
+                        .cloned()
+                        .map(near_kit::Action::from)
                         .collect(),
                 };
                 info_str.push_str(&print_unsigned_transaction(&prepopulated_transaction));
