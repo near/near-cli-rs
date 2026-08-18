@@ -1,3 +1,4 @@
+use color_eyre::eyre::Context;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -67,10 +68,16 @@ pub struct TransactionStatusResponse {
 
 impl TransactionStatusResponse {
     /// Extract the final execution outcome.
-    pub fn final_execution_outcome(&self) -> Option<near_kit::FinalExecutionOutcome> {
-        serde_json::from_value::<near_kit::RawTransactionResponse>(self.json.clone())
-            .ok()?
-            .outcome
+    ///
+    /// Returns `Ok(None)` when the node has not produced an outcome (yet);
+    /// a response that cannot be deserialized is an error.
+    pub fn final_execution_outcome(
+        &self,
+    ) -> color_eyre::eyre::Result<Option<near_kit::FinalExecutionOutcome>> {
+        let response =
+            serde_json::from_value::<near_kit::RawTransactionResponse>(self.json.clone())
+                .wrap_err("Failed to parse the transaction status response from the RPC")?;
+        Ok(response.outcome)
     }
 }
 
@@ -147,7 +154,7 @@ mod tests {
             }),
         };
 
-        let outcome = response.final_execution_outcome().unwrap();
+        let outcome = response.final_execution_outcome().unwrap().unwrap();
         assert!(outcome.is_success());
         assert_eq!(outcome.transaction.signer_id.as_str(), "alice.near");
     }

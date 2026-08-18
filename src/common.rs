@@ -2123,7 +2123,7 @@ pub fn print_transaction_status(
                     )?;
 
                 if let Some(final_execution_outcome) =
-                    rpc_transaction_response.final_execution_outcome()
+                    rpc_transaction_response.final_execution_outcome()?
                 {
                     status = final_execution_outcome.status;
                 }
