@@ -78,13 +78,12 @@ pub async fn get_contract_abi(
     account_id: &near_kit::AccountId,
 ) -> Result<near_abi::AbiRoot, FetchAbiError> {
     tracing::info!(target: "near_teach_me", "Obtaining the ABI for the contract ...");
-    let nk_block_ref = block_reference;
+    let client = network_config.client();
     let mut retries_left = (0..5).rev();
     loop {
-        let result = network_config
-            .client()
+        let result = client
             .rpc()
-            .view_function(account_id, "__contract_abi", &[], *nk_block_ref)
+            .view_function(account_id, "__contract_abi", &[], *block_reference)
             .await;
 
         match result {

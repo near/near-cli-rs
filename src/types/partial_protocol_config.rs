@@ -1,3 +1,7 @@
+use color_eyre::eyre::Context;
+
+use crate::common::RpcResultExt;
+
 #[derive(Debug, serde::Deserialize)]
 pub struct PartialProtocolConfigView {
     pub runtime_config: PartialRuntimeConfigView,
@@ -21,5 +25,6 @@ pub async fn get_partial_protocol_config(
         .rpc()
         .call("EXPERIMENTAL_protocol_config", params)
         .await
-        .map_err(|_| color_eyre::eyre::eyre!("Failed to get protocol config."))
+        .into_eyre()
+        .wrap_err("Failed to get protocol config.")
 }

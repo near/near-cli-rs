@@ -427,9 +427,9 @@ async fn get_account_view(
 ) -> color_eyre::eyre::Result<near_kit::AccountView> {
     tracing::Span::current().pb_set_message(&format!("{account_id} ..."));
     tracing::info!(target: "near_teach_me", "Getting information about {account_id} ...");
+    let client = network_config.client();
     for _ in 0..5 {
-        let result = network_config
-            .client()
+        let result = client
             .rpc()
             .view_account(account_id, *block_reference)
             .await;
@@ -465,9 +465,9 @@ async fn get_access_keys(
 ) -> color_eyre::eyre::Result<Vec<near_kit::AccessKeyInfoView>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
+    let client = network_config.client();
     for _ in 0..5 {
-        let result = network_config
-            .client()
+        let result = client
             .rpc()
             .view_access_key_list(account_id, *block_reference)
             .await;
@@ -528,10 +528,10 @@ pub async fn get_contract_source_metadata(
             account_id
     );
 
+    let client = network_config.client();
     let mut retries_left = (0..5).rev();
     loop {
-        let result = network_config
-            .client()
+        let result = client
             .rpc()
             .view_function(
                 account_id,

@@ -359,7 +359,8 @@ pub fn get_code(
         ),
     };
 
-    let block = crate::common::block_on(network_config.client().rpc().block(block_reference))
+    let client = network_config.client();
+    let block = crate::common::block_on(client.rpc().block(block_reference))
         .into_eyre()
         .wrap_err_with(|| {
             format!(
@@ -385,12 +386,9 @@ pub fn get_code(
             map.insert("block_id".to_string(), serde_json::json!(block_height));
         }
 
-        let Ok(view_code_json) = rt.block_on(
-            network_config
-                .client()
-                .rpc()
-                .call::<_, serde_json::Value>("query", params),
-        ) else {
+        let Ok(view_code_json) =
+            rt.block_on(client.rpc().call::<_, serde_json::Value>("query", params))
+        else {
             continue;
         };
 

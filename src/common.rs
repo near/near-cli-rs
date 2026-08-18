@@ -242,8 +242,9 @@ pub fn verify_account_access_key(
     network_config: crate::config::NetworkConfig,
 ) -> color_eyre::eyre::Result<near_kit::AccessKeyView, AccountStateError> {
     tracing::info!(target: "near_teach_me", "Account access key verification ...");
+    let client = network_config.client();
     loop {
-        match block_on(network_config.client().rpc().view_access_key(
+        match block_on(client.rpc().view_access_key(
             &account_id,
             &public_key,
             near_kit::BlockReference::optimistic(),
@@ -565,15 +566,10 @@ pub async fn get_account_state(
         account_id
     );
 
-    let nk_block_ref = block_reference;
-
+    let client = network_config.client();
     let mut retries_left = (0..5).rev();
     loop {
-        let result = network_config
-            .client()
-            .rpc()
-            .view_account(account_id, nk_block_ref)
-            .await;
+        let result = client.rpc().view_account(account_id, block_reference).await;
 
         match result {
             Ok(account_view) => {
