@@ -955,6 +955,29 @@ pub fn input_signature_scheme() -> color_eyre::eyre::Result<Option<SignatureSche
     }))
 }
 
+/// Generate a random ML-DSA-65 secret key in the expanded (FIPS-204 `skEncode`,
+/// 4032-byte) form.
+///
+/// near-kit generates ML-DSA-65 keys as 32-byte seeds and prints them as
+/// `ml-dsa-65:<bs58 of 32 bytes>`. nearcore / near-crypto based tooling (and
+/// older near CLI releases) only parse the 4032-byte expanded form, so the
+/// credentials the CLI writes and prints use that form to stay interoperable.
+pub fn generate_ml_dsa65_expanded_secret_key() -> color_eyre::eyre::Result<near_kit::SecretKey> {
+    let seed_key = near_kit::SecretKey::generate_ml_dsa65();
+    let seed = ml_dsa::B32::try_from(seed_key.as_bytes())
+        .map_err(|_| color_eyre::eyre::eyre!("Internal error: ML-DSA-65 seed must be 32 bytes"))?;
+    let signing_key = ml_dsa::ExpandedSigningKey::<ml_dsa::MlDsa65>::from_seed(&seed);
+    // `to_expanded` is deprecated in the `ml-dsa` crate in favor of seeds, but
+    // the expanded form is what NEAR tooling exchanges.
+    #[allow(deprecated)]
+    let expanded = signing_key.to_expanded();
+    let expanded: Box<[u8; near_kit::ML_DSA_65_SECRET_KEY_LENGTH]> = Box::new(<[u8;
+        near_kit::ML_DSA_65_SECRET_KEY_LENGTH]>::try_from(
+        expanded.as_slice(),
+    )?);
+    Ok(near_kit::SecretKey::ml_dsa65_from_expanded(expanded)?)
+}
+
 /// A freshly generated key pair for either supported signature scheme. The
 /// Ed25519 variant keeps the full [`KeyPairProperties`] (seed phrase, HD path,
 /// implicit account id); ML-DSA-65 keys are random and carry only the key
@@ -973,7 +996,7 @@ impl GeneratedKeyPair {
         match signature_scheme {
             SignatureScheme::Ed25519 => Ok(Self::Ed25519(generate_keypair()?)),
             SignatureScheme::MlDsa65 => {
-                let private_key = near_kit::SecretKey::generate_ml_dsa65();
+                let private_key = generate_ml_dsa65_expanded_secret_key()?;
                 Ok(Self::MlDsa65 {
                     public_key: private_key.public_key().to_string(),
                     private_key: private_key.to_string(),
@@ -3458,4 +3481,54 @@ pub fn parse_borsh_base64_state_init(
     use borsh::BorshDeserialize;
     near_kit::StateInit::try_from_slice(bytes)
         .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
+}
+
+#[cfg(test)]
+mod ml_dsa65_key_generation_tests {
+    use super::*;
+
+    #[test]
+    fn generated_ml_dsa65_secret_key_is_in_expanded_form() {
+        let secret_key = generate_ml_dsa65_expanded_secret_key().unwrap();
+        assert_eq!(secret_key.key_type(), near_kit::KeyType::MlDsa65);
+        assert_eq!(
+            secret_key.as_bytes().len(),
+            near_kit::ML_DSA_65_SECRET_KEY_LENGTH
+        );
+
+        // The printed form round-trips through near-kit's parser as a 4032-byte
+        // expanded key (the only form nearcore-based tooling accepts) and yields
+        // the same public key.
+        let printed = secret_key.to_string();
+        let (prefix, data) = printed.split_once(':').unwrap();
+        assert_eq!(prefix, "ml-dsa-65");
+        assert_eq!(
+            bs58::decode(data).into_vec().unwrap().len(),
+            near_kit::ML_DSA_65_SECRET_KEY_LENGTH
+        );
+        let reparsed = near_kit::SecretKey::from_str(&printed).unwrap();
+        assert_eq!(reparsed.public_key(), secret_key.public_key());
+        assert!(matches!(
+            secret_key.public_key(),
+            near_kit::PublicKey::MlDsa65(_)
+        ));
+    }
+
+    #[test]
+    fn generated_key_pair_ml_dsa65_uses_expanded_secret_key() {
+        let key_pair = GeneratedKeyPair::generate(&SignatureScheme::MlDsa65).unwrap();
+        let GeneratedKeyPair::MlDsa65 {
+            public_key,
+            private_key,
+        } = key_pair
+        else {
+            panic!("expected an ML-DSA-65 key pair");
+        };
+        let secret_key = near_kit::SecretKey::from_str(&private_key).unwrap();
+        assert_eq!(
+            secret_key.as_bytes().len(),
+            near_kit::ML_DSA_65_SECRET_KEY_LENGTH
+        );
+        assert_eq!(secret_key.public_key().to_string(), public_key);
+    }
 }

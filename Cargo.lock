@@ -2635,6 +2635,7 @@ dependencies = [
  "interactive-clap-derive",
  "keyring",
  "linked-hash-map",
+ "ml-dsa",
  "near-abi",
  "near-gas",
  "near-kit",

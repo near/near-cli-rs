@@ -90,6 +90,9 @@ near-token = { version = "0.3", features = [
 ] }
 
 near-kit = { version = "0.15.0", features = ["interactive-clap"] }
+# ML-DSA-65 keys are exported in the expanded (4032-byte) form for
+# interoperability with nearcore-based tooling; see `common::GeneratedKeyPair`.
+ml-dsa = "0.1"
 near-abi = "0.4.2"
 
 zstd = "0.13"
