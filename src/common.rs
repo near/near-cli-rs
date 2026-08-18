@@ -1070,39 +1070,7 @@ pub fn ml_dsa_65_pubkey_handle(public_key: &near_kit::PublicKey) -> Option<near_
 
 pub fn print_full_signed_transaction(transaction: &near_kit::SignedTransactionV1) -> String {
     let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
-    info_str.push_str(&format!(
-        "\nunsigned transaction hash (Base58-encoded SHA-256 hash): {}",
-        transaction.transaction.get_hash()
-    ));
-    info_str.push_str(&format!(
-        "\n{:<13} {}",
-        "public_key:",
-        transaction.transaction.public_key()
-    ));
-    info_str.push_str(&format!(
-        "\n{:<13} {}",
-        "nonce:",
-        transaction.transaction.nonce().nonce()
-    ));
-    info_str.push_str(&format!(
-        "\n{:<13} {}",
-        "block_hash:",
-        transaction.transaction.block_hash()
-    ));
-    if let Some(nonce_index) = transaction.transaction.nonce().nonce_index() {
-        info_str.push_str(&format!("\n{:<13} {}", "nonce_index:", nonce_index));
-        info_str.push_str(&format!(
-            "\n{:<13} {:?}",
-            "nonce_mode:",
-            transaction.transaction.nonce_mode()
-        ));
-    }
-    let prepopulated = crate::commands::PrepopulatedTransaction {
-        signer_id: transaction.transaction.signer_id().clone(),
-        receiver_id: transaction.transaction.receiver_id().clone(),
-        actions: transaction.transaction.actions().to_vec(),
-    };
-    info_str.push_str(&print_unsigned_transaction(&prepopulated));
+    info_str.push_str(&print_full_unsigned_transaction(&transaction.transaction));
     info_str
 }
 
