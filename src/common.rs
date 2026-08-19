@@ -2690,35 +2690,77 @@ pub fn fetch_historically_delegated_staking_pools(
         .collect())
 }
 
+/// Number of entries requested per `view_state` page. The node additionally caps
+/// every page at ~50 KB, so the effective page size is usually smaller.
+const VIEW_STATE_PAGE_ITEMS: std::num::NonZeroU32 = std::num::NonZeroU32::new(10_000).unwrap();
+
+/// Fetches the contract state of `account_id` under `prefix`, transparently
+/// following the `view_state` pagination cursor.
+///
+/// A non-paginated `view_state` request is rejected by most RPC nodes once the
+/// account's state exceeds ~50 KB (`TOO_LARGE_CONTRACT_STATE`). Paginated
+/// requests (nearcore 2.13+) skip that limit, so this helper always requests
+/// pages and follows `last_key` until the listing is complete. Every page after
+/// the first is read at the block the first page resolved to, so the result is a
+/// consistent snapshot even when `block_reference` is a moving finality.
+///
+/// Nodes that predate pagination ignore the paging fields and return the whole
+/// (size-capped) state without a cursor, so the loop ends after the first page.
+pub fn fetch_contract_state(
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    account_id: &near_primitives::types::AccountId,
+    prefix: near_primitives::types::StoreKey,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::Result<Vec<near_primitives::views::StateItem>> {
+    let mut block_reference = block_reference;
+    let mut after_key = None;
+    let mut values = Vec::new();
+    loop {
+        let response = json_rpc_client
+            .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::ViewState {
+                    account_id: account_id.clone(),
+                    prefix: prefix.clone(),
+                    include_proof: false,
+                    after_key,
+                    limit: Some(VIEW_STATE_PAGE_ITEMS),
+                },
+            })
+            .wrap_err_with(|| format!("Failed to fetch query ViewState for <{account_id}>"))?;
+        let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(page) =
+            response.kind
+        else {
+            return Err(color_eyre::Report::msg("Error call result".to_string()));
+        };
+        values.extend(page.values);
+        match page.last_key {
+            Some(last_key) => {
+                after_key = Some(last_key);
+                block_reference = near_primitives::types::BlockReference::BlockId(
+                    near_primitives::types::BlockId::Hash(response.block_hash),
+                );
+            }
+            None => return Ok(values),
+        }
+    }
+}
+
 #[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
     staking_pools_factory_account_id: &near_primitives::types::AccountId,
 ) -> color_eyre::Result<std::collections::BTreeSet<near_primitives::types::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
-    let query_view_method_response = json_rpc_client
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::ViewState {
-                account_id: staking_pools_factory_account_id.clone(),
-                prefix: near_primitives::types::StoreKey::from(b"se".to_vec()),
-                include_proof: false,
-                after_key: None,
-                limit: None,
-            },
-        })
-        .map_err(color_eyre::Report::msg)?;
-    if let near_jsonrpc_primitives::types::query::QueryResponseKind::ViewState(result) =
-        query_view_method_response.kind
-    {
-        Ok(result
-            .values
-            .into_iter()
-            .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
-            .collect())
-    } else {
-        Err(color_eyre::Report::msg("Error call result".to_string()))
-    }
+    Ok(fetch_contract_state(
+        json_rpc_client,
+        staking_pools_factory_account_id,
+        near_primitives::types::StoreKey::from(b"se".to_vec()),
+        near_primitives::types::Finality::Final.into(),
+    )?
+    .into_iter()
+    .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
+    .collect())
 }
 
 #[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
