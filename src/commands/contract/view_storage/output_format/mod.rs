@@ -1,8 +1,6 @@
 use color_eyre::eyre::Context;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use crate::common::JsonRpcClientExt;
-
 mod as_json;
 mod as_text;
 
@@ -27,24 +25,18 @@ pub fn get_contract_state(
     prefix: near_primitives::types::StoreKey,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_jsonrpc_client::methods::query::RpcQueryResponse> {
+) -> color_eyre::eyre::Result<Vec<near_primitives::views::StateItem>> {
     tracing::info!(target: "near_teach_me", "Obtaining the state of the contract ...");
-    network_config
-        .json_rpc_client()
-        .blocking_call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewState {
-                account_id: contract_account_id.clone(),
-                prefix,
-                include_proof: false,
-                after_key: None,
-                limit: None,
-            },
-        })
-        .wrap_err_with(|| {
-            format!(
-                "Failed to fetch query ViewState for <{contract_account_id}> on network <{}>",
-                network_config.network_name
-            )
-        })
+    crate::common::fetch_contract_state(
+        &network_config.json_rpc_client(),
+        contract_account_id,
+        prefix,
+        block_reference,
+    )
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query ViewState for <{contract_account_id}> on network <{}>",
+            network_config.network_name
+        )
+    })
 }
