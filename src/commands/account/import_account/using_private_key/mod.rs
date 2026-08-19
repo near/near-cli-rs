@@ -25,7 +25,7 @@ impl LoginFromPrivateKeyContext {
         let public_key: near_crypto::PublicKey = private_key.public_key();
         let key_store_property = super::key_store_prop::PrimitiveKey {
             secret_key: private_key.clone(),
-            public_key: public_key,
+            public_key,
         };
 
         Ok(Self {
@@ -45,7 +45,7 @@ impl From<LoginFromPrivateKeyContext> for super::network::NetworkForImportAccoun
 
                     // TODO: prompt if user wants to check if account exists
 
-                    return Ok(super::key_store_prop::KeyStorePropertyType::Primitive(key_store_property));
+                    Ok(super::key_store_prop::KeyStorePropertyType::Primitive(key_store_property))
                 }
             });
 

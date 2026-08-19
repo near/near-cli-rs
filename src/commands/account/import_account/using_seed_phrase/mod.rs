@@ -24,7 +24,7 @@ impl LoginFromSeedPhraseContext {
         previous_context: super::ImportAccountCommandContext,
         scope: &<LoginFromSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let master_seed_mnemonic = bip39::Mnemonic::parse(&scope.master_seed_phrase.clone())?;
+        let master_seed_mnemonic = bip39::Mnemonic::parse(scope.master_seed_phrase.clone())?;
         let master_seed = master_seed_mnemonic.clone().to_seed("");
         let derived_private_key = near_slip10::derive_key_from_path(
             &master_seed,
@@ -69,7 +69,7 @@ impl From<LoginFromSeedPhraseContext> for super::network::NetworkForImportAccoun
 
                     // TODO: prompt if user wants to check if account exists
 
-                    return Ok(super::key_store_prop::KeyStorePropertyType::Recoverable(key_store_property));
+                    Ok(super::key_store_prop::KeyStorePropertyType::Recoverable(key_store_property))
                 }
             });
 

@@ -64,50 +64,6 @@ pub enum ImportAccountActions {
     UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
-// #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-// #[interactive_clap(input_context = ImportAccountKeyContext)]
-// #[interactive_clap(output_context = ImportAccountDetailsContext)]
-// pub struct ImportAccountDetails {
-//     #[interactive_clap(named_arg)]
-//     /// Select network:
-//     network: network::NetworkForImportAccountArgs,
-// }
-//
-// #[derive(Debug, Clone)]
-// pub struct ImportAccountDetailsContext {
-//     global_context: crate::GlobalContext,
-//     key_pair_properties_buf: key_store_prop::KeyPairProperty,
-//     public_key_str: String,
-//     account_id: near_primitives::types::AccountId,
-// }
-//
-// impl ImportAccountDetailsContext {
-//     pub fn from_previous_context(
-//         previous_context: ImportAccountKeyContext,
-//         scope: &<ImportAccountDetails as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-//     ) -> color_eyre::eyre::Result<Self> {
-//         Ok(Self {
-//             global_context: previous_context.global_context,
-//             key_pair_properties_buf: previous_context.key_pair_properties_buf,
-//             public_key_str: previous_context.public_key_str,
-//             account_id: scope.account_id.clone().into(),
-//         })
-//     }
-// }
-
-// impl From<ImportAccountKeyContext> for crate::network::NetworkContext {
-//     fn from(item: ImportAccountKeyContext) -> Self {
-//         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-//             std::sync::Arc::new({ move |network_config| Ok(()) });
-//
-//         Self {
-//             config: item.global_context.config,
-//             interacting_with_account_ids: vec![item.account_id],
-//             on_after_getting_network_callback,
-//         }
-//     }
-// }
-
 pub fn login(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,

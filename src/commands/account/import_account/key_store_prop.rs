@@ -29,13 +29,13 @@ pub enum KeyStorePropertyType {
 }
 
 impl KeyStorePropertyType {
-    pub fn to_public_key_str(self) -> String {
+    pub fn to_public_key_str(&self) -> String {
         match self {
             Self::Recoverable(prop) => {
-                near_crypto::PublicKeyHandle::from(prop.public_key).to_string()
+                near_crypto::PublicKeyHandle::from(prop.public_key.clone()).to_string()
             }
             Self::Primitive(prop) => {
-                near_crypto::PublicKeyHandle::from(prop.public_key).to_string()
+                near_crypto::PublicKeyHandle::from(prop.public_key.clone()).to_string()
             }
         }
     }

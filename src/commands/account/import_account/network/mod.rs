@@ -96,6 +96,9 @@ impl NetworkForImportAccount {
     fn input_network_name(
         context: &NetworkForImportAccountContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
-        crate::common::input_network_name(&context.config, &vec![context.account_id.clone()])
+        crate::common::input_network_name(
+            &context.config,
+            std::slice::from_ref(&context.account_id),
+        )
     }
 }
