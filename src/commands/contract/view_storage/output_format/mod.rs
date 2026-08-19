@@ -27,13 +27,12 @@ pub fn get_contract_state(
     prefix: Vec<u8>,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_kit::BlockReference,
-) -> color_eyre::eyre::Result<near_kit::ViewStateResult> {
+) -> color_eyre::eyre::Result<Vec<near_kit::StateItem>> {
     tracing::info!(target: "near_teach_me", "Obtaining the state of the contract ...");
-    crate::common::block_on(network_config.client().rpc().view_state(
+    crate::common::block_on(network_config.client().rpc().view_state_all(
         contract_account_id,
         &prefix,
-        None,
-        None,
+        crate::common::VIEW_STATE_PAGE_ITEMS,
         block_reference,
     ))
     .into_eyre()

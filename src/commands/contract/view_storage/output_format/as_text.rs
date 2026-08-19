@@ -22,11 +22,11 @@ impl AsTextContext {
             let prefix = previous_context.prefix;
 
             move |network_config, block_reference| {
-                let result =
+                let values =
                     super::get_contract_state(&contract_account_id, prefix.clone(), network_config, *block_reference)?;
 
                 let mut info_str = String::new();
-                for value in &result.values {
+                for value in &values {
                     info_str.push_str(&format!(
                         "\n\tkey:   {}",
                         key_value_to_string(&value.key)?.green()

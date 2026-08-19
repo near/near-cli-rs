@@ -2590,6 +2590,15 @@ pub fn fetch_historically_delegated_staking_pools(
         .collect())
 }
 
+/// Entries requested per `view_state` page when reading contract state.
+///
+/// A `view_state` request without `limit` (or `after_key`) is not treated as
+/// paginated by the node, so it is subject to the ~50 KB per-account cap that
+/// most public RPCs enforce (`TOO_LARGE_CONTRACT_STATE`). Always requesting
+/// pages avoids that; the node additionally caps every page at ~50 KB, so the
+/// effective page size is usually smaller than this.
+pub const VIEW_STATE_PAGE_ITEMS: u32 = 10_000;
+
 #[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
     network_config: &crate::config::NetworkConfig,
@@ -2600,7 +2609,7 @@ pub fn fetch_currently_active_staking_pools(
     let values = block_on(network_config.client().rpc().view_state_all(
         staking_pools_factory_account_id,
         b"se",
-        0,
+        VIEW_STATE_PAGE_ITEMS,
         near_kit::BlockReference::final_(),
     ))
     .into_eyre()?;

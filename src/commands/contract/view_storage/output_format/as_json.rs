@@ -22,11 +22,8 @@ impl AsJsonContext {
             let prefix = previous_context.prefix;
 
             move |network_config, block_reference| {
-                let result =
-                    super::get_contract_state(&contract_account_id, prefix.clone(), network_config, *block_reference)?;
-
-                let values = result
-                    .values
+                let values =
+                    super::get_contract_state(&contract_account_id, prefix.clone(), network_config, *block_reference)?
                     .iter()
                     .map(|value| {
                         serde_json::json!({
