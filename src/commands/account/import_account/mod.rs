@@ -1,5 +1,4 @@
-#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
-use std::{str::FromStr, vec};
+use std::str::FromStr;
 
 use color_eyre::eyre::Context;
 use inquire::{CustomType, Select};
@@ -7,27 +6,52 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 use near_primitives::account::id::AccountType;
 
+pub mod key_store_prop;
+mod network;
 mod using_private_key;
 mod using_seed_phrase;
 mod using_web_wallet;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(output_context = ImportAccountCommandContext)]
 pub struct ImportAccountCommand {
+    /// Enter account ID to import:
+    account_id: crate::types::account_id::AccountId,
+
     #[interactive_clap(subcommand)]
+    /// How would you like to import the account?
     import_account_actions: ImportAccountActions,
 }
 
+#[derive(Debug, Clone)]
+pub struct ImportAccountCommandContext {
+    global_context: crate::GlobalContext,
+    account_id: near_primitives::types::AccountId,
+}
+
+impl ImportAccountCommandContext {
+    pub fn from_previous_context(
+        previous_context: crate::GlobalContext,
+        scope: &<ImportAccountCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        Ok(Self {
+            global_context: previous_context,
+            account_id: scope.account_id.clone().into(),
+        })
+    }
+}
+
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = crate::GlobalContext)]
+#[interactive_clap(context = ImportAccountCommandContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// How would you like to import the account?
 pub enum ImportAccountActions {
-    #[strum_discriminants(strum(
-        message = "using-web-wallet          - Import existing account using NEAR Wallet (a.k.a. \"sign in\")"
-    ))]
-    /// Import existing account using NEAR Wallet (a.k.a. "sign in")
-    UsingWebWallet(self::using_web_wallet::LoginFromWebWallet),
+    // #[strum_discriminants(strum(
+    //     message = "using-web-wallet          - Import existing account using NEAR Wallet (a.k.a. \"sign in\")"
+    // ))]
+    // /// Import existing account using NEAR Wallet (a.k.a. "sign in")
+    // UsingWebWallet(self::using_web_wallet::LoginFromWebWallet),
     #[strum_discriminants(strum(
         message = "using-seed-phrase         - Import existing account using a seed phrase"
     ))]
@@ -39,6 +63,50 @@ pub enum ImportAccountActions {
     /// Import existing account using a private key
     UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
+
+// #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+// #[interactive_clap(input_context = ImportAccountKeyContext)]
+// #[interactive_clap(output_context = ImportAccountDetailsContext)]
+// pub struct ImportAccountDetails {
+//     #[interactive_clap(named_arg)]
+//     /// Select network:
+//     network: network::NetworkForImportAccountArgs,
+// }
+//
+// #[derive(Debug, Clone)]
+// pub struct ImportAccountDetailsContext {
+//     global_context: crate::GlobalContext,
+//     key_pair_properties_buf: key_store_prop::KeyPairProperty,
+//     public_key_str: String,
+//     account_id: near_primitives::types::AccountId,
+// }
+//
+// impl ImportAccountDetailsContext {
+//     pub fn from_previous_context(
+//         previous_context: ImportAccountKeyContext,
+//         scope: &<ImportAccountDetails as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+//     ) -> color_eyre::eyre::Result<Self> {
+//         Ok(Self {
+//             global_context: previous_context.global_context,
+//             key_pair_properties_buf: previous_context.key_pair_properties_buf,
+//             public_key_str: previous_context.public_key_str,
+//             account_id: scope.account_id.clone().into(),
+//         })
+//     }
+// }
+
+// impl From<ImportAccountKeyContext> for crate::network::NetworkContext {
+//     fn from(item: ImportAccountKeyContext) -> Self {
+//         let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
+//             std::sync::Arc::new({ move |network_config| Ok(()) });
+//
+//         Self {
+//             config: item.global_context.config,
+//             interacting_with_account_ids: vec![item.account_id],
+//             on_after_getting_network_callback,
+//         }
+//     }
+// }
 
 pub fn login(
     network_config: crate::config::NetworkConfig,
