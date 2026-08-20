@@ -4,9 +4,10 @@
 pub struct LoginFromPrivateKey {
     /// Enter your private (secret) key:
     private_key: crate::types::secret_key::SecretKey,
+
     #[interactive_clap(named_arg)]
-    /// Select network
-    network_config: super::network::NetworkForImportAccount,
+    /// Select network:
+    network: super::network::NetworkForImportAccount,
 }
 
 #[derive(Debug, Clone)]
@@ -43,14 +44,14 @@ impl From<LoginFromPrivateKeyContext> for super::network::NetworkForImportAccoun
                 move |_network_config| {
                     let key_store_property = item.key_store_property.clone();
 
-                    // TODO: prompt if user wants to check if account exists
+                    // super::prompt_check_account_id(&global_context, network_config, &account_id, &key_store_property.public_key)?;
 
                     Ok(super::key_store_prop::KeyStorePropertyType::Primitive(key_store_property))
                 }
             });
 
         Self {
-            config: item.global_context.config,
+            global_context: item.global_context,
             account_id: item.account_id,
             get_key_store_property_after_getting_network_callback,
         }

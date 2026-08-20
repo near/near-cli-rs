@@ -11,17 +11,40 @@ impl PrintKeypairToTerminalContext {
         previous_context: super::NetworkForImportAccountOutputContext,
         _scope: &<PrintKeypairToTerminal as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        // TODO: need to make a better display in general
+        let mut display_string = String::new();
+        display_string.push_str("Imported account:");
 
-        println!("Imported account keystore:");
-        println!("    account_id:     {}", previous_context.account_id);
-        println!(
-            "    network:        {}",
-            previous_context.chosen_network_config.network_name
-        );
-        println!(
-            "    keychain props:\n{}",
-            serde_json::to_string_pretty(&previous_context.key_store_property)?
+        let mut display_info = String::new();
+        display_info.push_str(&format!(
+            "{:<13} {}",
+            "account id:", previous_context.account_id
+        ));
+
+        display_info.push_str(&format!(
+            "\n{:<13} {}",
+            "network:", previous_context.chosen_network_config.network_name
+        ));
+
+        display_info.push_str(&format!(
+            "\n{:<13} {}",
+            "keychain props:",
+            format!(
+                "\n{}",
+                crate::common::indent_payload(&serde_json::to_string_pretty(
+                    &previous_context.key_store_property,
+                )?)
+            )
+        ));
+
+        display_string.push_str(&format!(
+            "\n{}",
+            crate::common::indent_payload(&display_info)
+        ));
+
+        tracing::info!(
+             parent: &tracing::Span::none(),
+             "{}",
+             display_string
         );
 
         Ok(Self)
