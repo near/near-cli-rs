@@ -1,5 +1,3 @@
-use color_eyre::eyre::WrapErr;
-use near_crypto::Signature;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -67,11 +65,11 @@ impl UsbSignNep413Context {
             ))
         })?;
 
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(
             near_ledger::get_public_key(seed_phrase_hd_path.clone().into())
                 .map_err(|err| color_eyre::eyre::eyre!("Ledger get_public_key error: {err:?}"))?
                 .to_bytes(),
-        ));
+        );
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -85,8 +83,10 @@ impl UsbSignNep413Context {
         )
         .map_err(|err| color_eyre::eyre::eyre!("Ledger signing error: {:?}", err))?;
 
-        let signature = Signature::from_parts(near_crypto::KeyType::ED25519, &signature_bytes)
-            .wrap_err("Signature is not expected to fail on deserialization")?;
+        let signature =
+            near_kit::Signature::ed25519_from_bytes(signature_bytes.try_into().map_err(|_| {
+                color_eyre::eyre::eyre!("Ed25519 signature must be exactly 64 bytes")
+            })?);
 
         let signed_message = super::super::SignedMessage {
             account_id: previous_context.final_context.signer_id.to_string(),
@@ -123,12 +123,12 @@ impl BleSignNep413Context {
                 previous_context.final_context.payload.into(),
             )?;
 
-        let public_key = near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey::from(
-            verifying_key.to_bytes(),
-        ));
+        let public_key = near_kit::PublicKey::ed25519_from_bytes(verifying_key.to_bytes());
 
-        let signature = Signature::from_parts(near_crypto::KeyType::ED25519, &signature_bytes)
-            .wrap_err("Signature is not expected to fail on deserialization")?;
+        let signature =
+            near_kit::Signature::ed25519_from_bytes(signature_bytes.try_into().map_err(|_| {
+                color_eyre::eyre::eyre!("Ed25519 signature must be exactly 64 bytes")
+            })?);
 
         let signed_message = super::super::SignedMessage {
             account_id: previous_context.final_context.signer_id.to_string(),

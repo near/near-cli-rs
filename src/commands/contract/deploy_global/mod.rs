@@ -63,7 +63,7 @@ pub enum DeployGlobalMode {
 pub struct DeployGlobalModeContext {
     pub global_context: crate::GlobalContext,
     pub code: Vec<u8>,
-    pub mode: near_primitives::action::GlobalContractDeployMode,
+    pub mode: near_kit::GlobalContractDeployMode,
 }
 
 impl DeployGlobalModeContext {
@@ -76,10 +76,10 @@ impl DeployGlobalModeContext {
             code: previous_context.code,
             mode: match scope {
                 DeployGlobalModeDiscriminants::AsGlobalHash => {
-                    near_primitives::action::GlobalContractDeployMode::CodeHash
+                    near_kit::GlobalContractDeployMode::CodeHash
                 }
                 DeployGlobalModeDiscriminants::AsGlobalAccountId => {
-                    near_primitives::action::GlobalContractDeployMode::AccountId
+                    near_kit::GlobalContractDeployMode::AccountId
                 }
             },
         })
@@ -104,12 +104,8 @@ impl DeployGlobalResult {
         context: &DeployGlobalModeContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
         let question = match context.mode {
-            near_primitives::action::GlobalContractDeployMode::CodeHash => {
-                "What is the signer account ID?"
-            }
-            near_primitives::action::GlobalContractDeployMode::AccountId => {
-                "What is the contract account ID?"
-            }
+            near_kit::GlobalContractDeployMode::CodeHash => "What is the signer account ID?",
+            near_kit::GlobalContractDeployMode::AccountId => "What is the contract account ID?",
         };
         crate::common::input_signer_account_id_from_used_account_list(
             &context.global_context.config.credentials_home_dir,
@@ -121,8 +117,8 @@ impl DeployGlobalResult {
 pub struct DeployGlobalResultContext {
     pub global_context: crate::GlobalContext,
     pub code: Vec<u8>,
-    pub mode: near_primitives::action::GlobalContractDeployMode,
-    pub account_id: near_primitives::types::AccountId,
+    pub mode: near_kit::GlobalContractDeployMode,
+    pub account_id: near_kit::AccountId,
 }
 
 impl DeployGlobalResultContext {
@@ -148,9 +144,9 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.account_id.clone(),
                     receiver_id: item.account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::DeployGlobalContract(
-                        near_primitives::action::DeployGlobalContractAction {
-                            code: item.code.clone().into(),
+                    actions: vec![near_kit::Action::DeployGlobalContract(
+                        near_kit::DeployGlobalContractAction {
+                            code: item.code.clone(),
                             deploy_mode: item.mode.clone(),
                         },
                     )],

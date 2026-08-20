@@ -4,10 +4,8 @@ use std::str::FromStr;
 
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::{CustomType, Select};
-use near_primitives::transaction::TransactionV0;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::commands::TransactionContext)]
@@ -24,7 +22,7 @@ pub struct SignLegacyKeychain {
     pub block_hash: Option<crate::types::crypto_hash::CryptoHash>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    pub block_height: Option<near_primitives::types::BlockHeight>,
+    pub block_height: Option<u64>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_interactive_input)]
     nonce_index: Option<u64>,
@@ -61,10 +59,6 @@ impl SignLegacyKeychainContext {
         tracing::info!(target: "near_teach_me", "Signing the transaction with a key saved in legacy keychain ...");
 
         let network_config = previous_context.network_config.clone();
-
-        // A `--nonce-index` means the user wants to sign with a gas key, so match
-        // gas-key credential files (gas keys are excluded from the ordinary
-        // full-access selection); otherwise keep the full-access-only behavior.
         let want_gas_key = scope.nonce_index.is_some();
 
         let keychain_folder = previous_context
@@ -88,19 +82,18 @@ impl SignLegacyKeychainContext {
                         .replace(':', "_")
                 ))
             } else if signer_keychain_folder.exists() {
-                let full_access_key_filenames = network_config
-                    .json_rpc_client()
-                    .blocking_call_view_access_key_list(
+                let full_access_key_filenames =
+                    block_on(network_config.client().rpc().view_access_key_list(
                         &previous_context.prepopulated_transaction.signer_id,
-                        near_primitives::types::Finality::Final.into(),
-                    )
+                        near_kit::Finality::Final.into(),
+                    ))
+                    .into_eyre()
                     .wrap_err_with(|| {
                         format!(
                             "Failed to fetch access KeyList for {}",
                             previous_context.prepopulated_transaction.signer_id
                         )
                     })?
-                    .access_key_list_view()?
                     .keys
                     .iter()
                     .filter(|access_key_info| {
@@ -109,14 +102,14 @@ impl SignLegacyKeychainContext {
                         } else {
                             matches!(
                                 access_key_info.access_key.permission,
-                                near_primitives::views::AccessKeyPermissionView::FullAccess
+                                near_kit::AccessKeyPermissionView::FullAccess
                             )
                         }
                     })
                     .map(|access_key_info| {
                         format!(
                             "{}.json",
-                            access_key_info.public_key.to_string().replace(":", "_")
+                            access_key_info.public_key.to_string().replace(':', "_")
                         )
                         .into()
                     })
@@ -139,12 +132,14 @@ impl SignLegacyKeychainContext {
                 ))
             }
         };
+
         let signer_access_key_json =
             std::fs::read(&signer_access_key_file_path).wrap_err_with(|| {
                 format!(
                     "Access key file for account <{}> on network <{}> not found! \nSearch location: {:?}",
                     previous_context.prepopulated_transaction.signer_id,
-                    network_config.network_name, signer_access_key_file_path
+                    network_config.network_name,
+                    signer_access_key_file_path
                 )
             })?;
         let signer_access_key: super::AccountKeyPair =
@@ -179,15 +174,14 @@ impl SignLegacyKeychainContext {
                 )
             } else {
                 super::resolve_online_nonce(
-                    &network_config.json_rpc_client(),
+                    &network_config,
                     &previous_context.prepopulated_transaction.signer_id,
                     &signer_access_key.public_key,
                     nonce_index,
-                    &network_config.network_name,
                 )?
             };
 
-        let mut unsigned_transaction = TransactionV0 {
+        let mut unsigned_transaction = near_kit::Transaction {
             public_key: signer_access_key.public_key.clone(),
             block_hash,
             nonce: nonce_resolution.nonce(),
@@ -197,16 +191,17 @@ impl SignLegacyKeychainContext {
         };
 
         (previous_context.on_before_signing_callback)(&mut unsigned_transaction, &network_config)?;
-
         let unsigned_transaction =
             super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
+        let signature = signer_access_key
+            .private_key
+            .sign(unsigned_transaction.get_hash().as_bytes());
 
         if previous_context.sign_as_delegate_action {
             let max_block_height = block_height
                 + scope
                     .meta_transaction_valid_for
                     .unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
-
             let signed_delegate_action = super::get_signed_delegate_action(
                 unsigned_transaction,
                 &signer_access_key.public_key,
@@ -227,22 +222,17 @@ impl SignLegacyKeychainContext {
             });
         }
 
-        let signature = signer_access_key
-            .private_key
-            .sign(unsigned_transaction.get_hash_and_size().0.as_ref());
-
-        let mut signed_transaction = near_primitives::transaction::SignedTransaction::new(
-            signature.clone(),
-            unsigned_transaction,
-        );
+        let mut signed_transaction = near_kit::SignedTransactionV1 {
+            transaction: unsigned_transaction,
+            signature: signature.clone(),
+        };
 
         tracing::info!(
             parent: &tracing::Span::none(),
             "Your transaction was signed successfully.{}",
             crate::common::indent_payload(&format!(
                 "\nPublic key: {}\nSignature:  {}\n ",
-                signer_access_key.public_key,
-                signature
+                signer_access_key.public_key, signature
             ))
         );
 
@@ -285,24 +275,18 @@ impl SignLegacyKeychain {
     ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
         if context.global_context.offline {
             let network_config = context.network_config.clone();
-
             let mut path =
                 std::path::PathBuf::from(&context.global_context.config.credentials_home_dir);
-
-            let dir_name = network_config.network_name;
-            path.push(&dir_name);
-
+            path.push(network_config.network_name);
             path.push(context.prepopulated_transaction.signer_id.to_string());
 
-            let signer_dir = path.read_dir()?;
-
-            let key_list = signer_dir
+            let key_list = path
+                .read_dir()?
                 .filter_map(|entry| entry.ok())
                 .filter_map(|entry| entry.file_name().into_string().ok())
                 .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
                 .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
                 .collect::<Vec<_>>();
-
             let selected_input = Select::new("Choose a public key:", key_list).prompt()?;
 
             return Ok(Some(crate::types::public_key::PublicKey::from_str(
@@ -339,13 +323,10 @@ impl SignLegacyKeychain {
 
     fn input_block_height(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<near_primitives::types::BlockHeight>> {
+    ) -> color_eyre::eyre::Result<Option<u64>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<near_primitives::types::BlockHeight>::new(
-                    "Enter recent block height:",
-                )
-                .prompt()?,
+                CustomType::<u64>::new("Enter recent block height:").prompt()?,
             ));
         }
         Ok(None)

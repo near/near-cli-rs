@@ -23,7 +23,7 @@ pub struct NewAccount {
 #[derive(Debug, Clone)]
 pub struct NewAccountContext {
     global_context: crate::GlobalContext,
-    new_account_id: near_primitives::types::AccountId,
+    new_account_id: near_kit::AccountId,
     initial_balance: crate::types::near_token::NearToken,
 }
 
@@ -117,9 +117,7 @@ impl NewAccount {
                     );
                     let parent_account_id =
                         account_id.clone().get_parent_account_id_from_sub_account();
-                    if !near_primitives::types::AccountId::from(parent_account_id.clone())
-                        .is_top_level()
-                    {
+                    if !near_kit::AccountId::from(parent_account_id.clone()).is_top_level() {
                         let network_where_account_exist =
                             match crate::common::find_network_where_account_exist(
                                 context,
@@ -182,7 +180,7 @@ pub struct AccountPropertiesContext {
 
 #[derive(Debug, Clone)]
 pub struct AccountProperties {
-    pub new_account_id: near_primitives::types::AccountId,
-    pub public_key: near_crypto::PublicKey,
+    pub new_account_id: near_kit::AccountId,
+    pub public_key: near_kit::PublicKey,
     pub initial_balance: crate::types::near_token::NearToken,
 }

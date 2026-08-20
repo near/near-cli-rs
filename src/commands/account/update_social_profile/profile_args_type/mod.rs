@@ -29,6 +29,6 @@ pub enum ProfileArgsType {
 #[derive(Clone)]
 pub struct ArgsContext {
     pub global_context: crate::GlobalContext,
-    pub account_id: near_primitives::types::AccountId,
+    pub account_id: near_kit::AccountId,
     pub data: Vec<u8>,
 }

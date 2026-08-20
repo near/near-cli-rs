@@ -21,8 +21,12 @@ impl SignKeychainContext {
                 let on_after_signing = previous_context.on_after_signing_callback.clone();
                 move |network_config| {
                     let key_pair = crate::commands::account::export_account::get_account_key_pair_from_keychain(network_config, &signer_id)?;
-                    let signature =
-                        super::super::sign_nep413_payload(&payload, &key_pair.private_key)?;
+                    let secret_key: near_kit::SecretKey = key_pair
+                        .private_key
+                        .to_string()
+                        .parse()
+                        .map_err(color_eyre::eyre::Report::msg)?;
+                    let signature = super::super::sign_nep413_payload(&payload, &secret_key)?;
 
                     let signed_message = super::super::SignedMessage {
                         account_id: signer_id.to_string(),

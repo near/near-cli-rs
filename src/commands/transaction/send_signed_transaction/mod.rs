@@ -31,7 +31,7 @@ pub enum SignedTransactionType {
 #[derive(Debug, Clone)]
 pub struct SignedTransactionContext {
     global_context: crate::GlobalContext,
-    signed_transaction: near_primitives::transaction::SignedTransaction,
+    signed_transaction: near_kit::SignedTransactionV1,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -83,7 +83,7 @@ pub struct FileWithBase64SignedTransactionContext(SignedTransactionContext);
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct FileSignedTransaction {
     #[serde(rename = "signed_transaction_as_base64")]
-    pub signed_transaction: near_primitives::transaction::SignedTransaction,
+    pub signed_transaction: crate::types::signed_transaction::SignedTransactionAsBase64,
 }
 
 impl FileWithBase64SignedTransactionContext {
@@ -100,7 +100,7 @@ impl FileWithBase64SignedTransactionContext {
 
         Ok(Self(SignedTransactionContext {
             global_context: previous_context,
-            signed_transaction,
+            signed_transaction: signed_transaction.inner,
         }))
     }
 }

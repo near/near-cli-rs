@@ -15,7 +15,7 @@ pub struct DeleteAccount {
 #[derive(Debug, Clone)]
 pub struct DeleteAccountContext {
     pub global_context: crate::GlobalContext,
-    pub account_id: near_primitives::types::AccountId,
+    pub account_id: near_kit::AccountId,
 }
 
 impl DeleteAccountContext {
@@ -56,8 +56,8 @@ pub struct BeneficiaryAccount {
 #[derive(Debug, Clone)]
 pub struct BeneficiaryAccountContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
-    beneficiary_account_id: near_primitives::types::AccountId,
+    account_id: near_kit::AccountId,
+    beneficiary_account_id: near_kit::AccountId,
 }
 
 impl BeneficiaryAccountContext {
@@ -65,7 +65,7 @@ impl BeneficiaryAccountContext {
         previous_context: DeleteAccountContext,
         scope: &<BeneficiaryAccount as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let beneficiary_account_id: near_primitives::types::AccountId =
+        let beneficiary_account_id: near_kit::AccountId =
             scope.beneficiary_account_id.clone().into();
 
         if previous_context.account_id == beneficiary_account_id {
@@ -94,8 +94,8 @@ impl From<BeneficiaryAccountContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: account_id.clone(),
                         receiver_id: account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::DeleteAccount(
-                            near_primitives::transaction::DeleteAccountAction {
+                        actions: vec![near_kit::Action::DeleteAccount(
+                            near_kit::DeleteAccountAction {
                                 beneficiary_id: beneficiary_account_id.clone(),
                             },
                         )],
@@ -148,7 +148,7 @@ impl BeneficiaryAccount {
 
 pub fn validate_beneficiary_in_network(
     network_config: &crate::config::NetworkConfig,
-    beneficiary_account_id: &near_primitives::types::AccountId,
+    beneficiary_account_id: &near_kit::AccountId,
     offline_mode: bool,
 ) -> crate::CliResult {
     if offline_mode {
@@ -172,18 +172,16 @@ pub fn validate_beneficiary_in_network(
         .block_on(crate::common::get_account_state(
             network_config,
             beneficiary_account_id,
-            near_primitives::types::BlockReference::latest(),
+            near_kit::BlockReference::optimistic(),
         )) {
         Ok(_) => Ok(()),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
-            ),
-        )) => Err(color_eyre::eyre::eyre!(
-            "Account <{}> does not exist on the {}. Please specify an existing account as a beneficiary to avoid losing your funds.",
-            &beneficiary_account_id,
-            &network_config.network_name
-        )),
+        Err(crate::common::ViewAccountError::UnknownAccount { .. }) => {
+            Err(color_eyre::eyre::eyre!(
+                "Account <{}> does not exist on the {}. Please specify an existing account as a beneficiary to avoid losing your funds.",
+                &beneficiary_account_id,
+                &network_config.network_name
+            ))
+        }
         Err(err) => Err(err.into()),
     }
 }

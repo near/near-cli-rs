@@ -14,7 +14,7 @@ impl PublicKeyFromPlaintextPrivateKeyContext {
         previous_context: crate::GlobalContext,
         scope: &<PublicKeyFromPlaintextPrivateKey as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let private_key: near_crypto::SecretKey = scope.private_key.clone().into();
+        let private_key: near_kit::SecretKey = scope.private_key.clone().into();
         let public_key = private_key.public_key();
 
         if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =

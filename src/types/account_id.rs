@@ -1,16 +1,16 @@
 use std::str::FromStr;
 
 #[derive(Eq, Ord, Hash, Clone, Debug, PartialEq, PartialOrd)]
-pub struct AccountId(pub near_primitives::types::AccountId);
+pub struct AccountId(pub near_kit::AccountId);
 
-impl From<AccountId> for near_primitives::types::AccountId {
+impl From<AccountId> for near_kit::AccountId {
     fn from(account_id: AccountId) -> Self {
         account_id.0
     }
 }
 
-impl From<near_primitives::types::AccountId> for AccountId {
-    fn from(account_id: near_primitives::types::AccountId) -> Self {
+impl From<near_kit::AccountId> for AccountId {
+    fn from(account_id: near_kit::AccountId) -> Self {
         Self(account_id)
     }
 }
@@ -22,10 +22,10 @@ impl std::fmt::Display for AccountId {
 }
 
 impl std::str::FromStr for AccountId {
-    type Err = <near_primitives::types::AccountId as std::str::FromStr>::Err;
+    type Err = <near_kit::AccountId as std::str::FromStr>::Err;
 
     fn from_str(account_id: &str) -> Result<Self, Self::Err> {
-        let account_id = near_primitives::types::AccountId::from_str(account_id)?;
+        let account_id = near_kit::AccountId::from_str(account_id)?;
         Ok(Self(account_id))
     }
 }
@@ -36,8 +36,8 @@ impl AsRef<str> for AccountId {
     }
 }
 
-impl AsRef<near_primitives::types::AccountId> for AccountId {
-    fn as_ref(&self) -> &near_primitives::types::AccountId {
+impl AsRef<near_kit::AccountId> for AccountId {
+    fn as_ref(&self) -> &near_kit::AccountId {
         &self.0
     }
 }

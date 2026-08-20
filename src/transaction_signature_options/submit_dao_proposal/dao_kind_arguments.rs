@@ -1,5 +1,5 @@
 use color_eyre::eyre::{Context, eyre};
-use near_primitives::action::Action;
+use near_kit::Action;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
 
@@ -17,14 +17,14 @@ pub struct ActionCall {
 pub struct TransferArgs {
     #[serde(default)]
     token_id: String,
-    receiver_id: near_primitives::types::AccountId,
+    receiver_id: near_kit::AccountId,
     amount: crate::types::near_token::NearToken,
     msg: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FunctionCallArgs {
-    receiver_id: near_primitives::types::AccountId,
+    receiver_id: near_kit::AccountId,
     actions: Vec<ActionCall>,
 }
 

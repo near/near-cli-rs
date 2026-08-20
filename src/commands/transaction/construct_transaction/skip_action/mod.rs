@@ -30,13 +30,13 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
                 move |network_config| {
                     // The first found DeleteAccount action must be the last action in the transaction.
                     if let Some((delete_account_idx, action)) = actions.iter().enumerate().find(|(_, action)| {
-                        matches!(action, near_primitives::action::Action::DeleteAccount(_))
+                        matches!(action, near_kit::Action::DeleteAccount(_))
                     }) {
                         if delete_account_idx != actions.len() - 1 {
                             color_eyre::eyre::bail!("Delete account action should be the last action in the transaction");
                         }
-                        if let near_primitives::action::Action::DeleteAccount(
-                            near_primitives::transaction::DeleteAccountAction { beneficiary_id },
+                        if let near_kit::Action::DeleteAccount(
+                            near_kit::DeleteAccountAction { beneficiary_id },
                         ) = action
                         {
                             crate::commands::account::delete_account::validate_beneficiary_in_network(

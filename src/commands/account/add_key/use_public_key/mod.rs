@@ -12,8 +12,8 @@ pub struct AddAccessKeyAction {
 #[derive(Debug, Clone)]
 pub struct AddAccessKeyActionContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    signer_account_id: near_kit::AccountId,
+    permission: near_kit::AccessKeyPermission,
     public_key: crate::types::public_key::PublicKey,
 }
 
@@ -41,15 +41,15 @@ impl From<AddAccessKeyActionContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: signer_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::AddKey(Box::new(
-                            near_primitives::transaction::AddKeyAction {
-                                public_key: item.public_key.clone().into(),
-                                access_key: near_primitives::account::AccessKey {
+                        actions: vec![near_kit::Action::AddKey(
+                            near_kit::AddKeyAction {
+                                public_key: item.public_key.clone().0,
+                                access_key: near_kit::AccessKey {
                                     nonce: 0,
                                     permission: item.permission.clone(),
                                 },
                             },
-                        ))],
+                        )],
                     })
                 }
             });

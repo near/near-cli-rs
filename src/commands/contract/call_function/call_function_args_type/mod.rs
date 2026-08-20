@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use std::str::FromStr;
 
 use color_eyre::eyre::Context;
@@ -98,7 +99,8 @@ pub fn function_args(
         }
         super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.into_bytes()),
         super::call_function_args_type::FunctionArgsType::Base64Args => {
-            Ok(near_primitives::serialize::from_base64(&args)
+            Ok(base64::engine::general_purpose::STANDARD
+                .decode(&args)
                 .map_err(|_| color_eyre::eyre::eyre!("Data cannot be decoded with base64"))?)
         }
         super::call_function_args_type::FunctionArgsType::FileArgs => {

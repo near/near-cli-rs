@@ -5,8 +5,8 @@ use inquire::{CustomType, Select, Text};
 #[derive(Debug, Clone)]
 pub struct AccessTypeContext {
     pub global_context: crate::GlobalContext,
-    pub signer_account_id: near_primitives::types::AccountId,
-    pub permission: near_primitives::account::AccessKeyPermission,
+    pub signer_account_id: near_kit::AccountId,
+    pub permission: near_kit::AccessKeyPermission,
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -20,8 +20,8 @@ pub struct FullAccessType {
 #[derive(Debug, Clone)]
 pub struct FullAccessTypeContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    signer_account_id: near_kit::AccountId,
+    permission: near_kit::AccessKeyPermission,
 }
 
 impl FullAccessTypeContext {
@@ -32,7 +32,7 @@ impl FullAccessTypeContext {
         Ok(Self {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.owner_account_id.into(),
-            permission: near_primitives::account::AccessKeyPermission::FullAccess,
+            permission: near_kit::AccessKeyPermission::FullAccess,
         })
     }
 }
@@ -67,7 +67,7 @@ pub struct FunctionCallType {
 #[derive(Debug, Clone)]
 pub struct FunctionCallTypeContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
+    signer_account_id: near_kit::AccountId,
     allowance: Option<crate::types::near_token::NearToken>,
     contract_account_id: crate::types::account_id::AccountId,
     function_names: crate::types::vec_string::VecString,
@@ -93,10 +93,10 @@ impl From<FunctionCallTypeContext> for AccessTypeContext {
         Self {
             global_context: item.global_context,
             signer_account_id: item.signer_account_id,
-            permission: near_primitives::account::AccessKeyPermission::FunctionCall(
-                near_primitives::account::FunctionCallPermission {
+            permission: near_kit::AccessKeyPermission::FunctionCall(
+                near_kit::FunctionCallPermission {
                     allowance: item.allowance.map(Into::into),
-                    receiver_id: item.contract_account_id.to_string(),
+                    receiver_id: item.contract_account_id.into(),
                     method_names: item.function_names.into(),
                 },
             ),
@@ -159,7 +159,7 @@ impl FunctionCallType {
 /// context builder, where it is also bounded by the protocol limit
 /// `AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY`.
 fn input_num_nonces() -> color_eyre::eyre::Result<u64> {
-    let max = near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY;
+    let max = near_kit::MAX_NONCES_FOR_GAS_KEY;
     let num_nonces: u64 = CustomType::new(&format!(
         "How many parallel nonces should this gas key have (1..={max})?"
     ))
@@ -169,16 +169,14 @@ fn input_num_nonces() -> color_eyre::eyre::Result<u64> {
 }
 
 /// Narrow a CLI-provided `u64` nonce count to a protocol-valid `NonceIndex`.
-fn validate_num_nonces(
-    num_nonces: u64,
-) -> color_eyre::eyre::Result<near_primitives::types::NonceIndex> {
-    let max = near_primitives::account::AccessKeyPermission::MAX_NONCES_FOR_GAS_KEY;
+fn validate_num_nonces(num_nonces: u64) -> color_eyre::eyre::Result<near_kit::NonceIndex> {
+    let max = near_kit::MAX_NONCES_FOR_GAS_KEY;
     if num_nonces == 0 || num_nonces > u64::from(max) {
         color_eyre::eyre::bail!(
             "A gas key must have between 1 and {max} parallel nonces, got {num_nonces}"
         );
     }
-    Ok(num_nonces as near_primitives::types::NonceIndex)
+    Ok(num_nonces as near_kit::NonceIndex)
 }
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -195,8 +193,8 @@ pub struct GasKeyFullAccessType {
 #[derive(Debug, Clone)]
 pub struct GasKeyFullAccessTypeContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    signer_account_id: near_kit::AccountId,
+    permission: near_kit::AccessKeyPermission,
 }
 
 impl GasKeyFullAccessTypeContext {
@@ -209,12 +207,10 @@ impl GasKeyFullAccessTypeContext {
             signer_account_id: previous_context.owner_account_id.into(),
             // Gas keys must be created empty: the protocol rejects an AddKey that
             // sets a non-zero gas-key balance. Fund it afterwards with `fund-gas-key`.
-            permission: near_primitives::account::AccessKeyPermission::GasKeyFullAccess(
-                near_primitives::account::GasKeyInfo {
-                    balance: near_token::NearToken::from_yoctonear(0),
-                    num_nonces: validate_num_nonces(scope.num_nonces)?,
-                },
-            ),
+            permission: near_kit::AccessKeyPermission::GasKeyFullAccess(near_kit::GasKeyInfo {
+                balance: near_kit::NearToken::from_yoctonear(0),
+                num_nonces: validate_num_nonces(scope.num_nonces)?,
+            }),
         })
     }
 }
@@ -260,8 +256,8 @@ pub struct GasKeyFunctionCallType {
 #[derive(Debug, Clone)]
 pub struct GasKeyFunctionCallTypeContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    signer_account_id: near_kit::AccountId,
+    permission: near_kit::AccessKeyPermission,
 }
 
 impl GasKeyFunctionCallTypeContext {
@@ -274,16 +270,16 @@ impl GasKeyFunctionCallTypeContext {
             signer_account_id: previous_context.owner_account_id.into(),
             // Gas keys must be created empty: the protocol rejects an AddKey that
             // sets a non-zero gas-key balance. Fund it afterwards with `fund-gas-key`.
-            permission: near_primitives::account::AccessKeyPermission::GasKeyFunctionCall(
-                near_primitives::account::GasKeyInfo {
-                    balance: near_token::NearToken::from_yoctonear(0),
+            permission: near_kit::AccessKeyPermission::GasKeyFunctionCall(
+                near_kit::GasKeyInfo {
+                    balance: near_kit::NearToken::from_yoctonear(0),
                     num_nonces: validate_num_nonces(scope.num_nonces)?,
                 },
-                near_primitives::account::FunctionCallPermission {
+                near_kit::FunctionCallPermission {
                     // Always `None`: the protocol rejects a gas-key function-call
                     // key that carries an allowance (see the struct field above).
                     allowance: None,
-                    receiver_id: scope.contract_account_id.to_string(),
+                    receiver_id: scope.contract_account_id.clone().into(),
                     method_names: scope.function_names.clone().into(),
                 },
             ),
