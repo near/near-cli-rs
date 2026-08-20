@@ -89,13 +89,14 @@ near-token = { version = "0.3", features = [
     "interactive-clap",
 ] }
 
-near-kit = { version = "0.15.0", default-features = false, features = [
+# `default-features = false` drops the `keyring`/`file-signer`/`wasi-http`
+# extras the CLI does not use; `tracing` is safe to enable since near-kit 0.16
+# logs returned RPC errors at DEBUG instead of ERROR.
+near-kit = { version = "0.17.0", default-features = false, features = [
     "rpc",
     "interactive-clap",
+    "tracing",
 ] }
-# ML-DSA-65 keys are exported in the expanded (4032-byte) form for
-# interoperability with nearcore-based tooling; see `common::GeneratedKeyPair`.
-ml-dsa = "0.1"
 near-abi = "0.4.2"
 
 zstd = "0.13"

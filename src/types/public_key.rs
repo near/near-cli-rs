@@ -3,22 +3,13 @@ pub struct PublicKey(pub near_kit::PublicKey);
 
 /// Parse a user-provided public key.
 ///
-/// Rejects `ml-dsa-65-hash:...` strings: that is the on-chain handle of an
-/// ML-DSA-65 access key (what `list-keys` and view RPCs print), not a public
-/// key. A handle cannot be put into a transaction or an action, so accepting
-/// it here would only fail later (at signing/serialization time) with a much
-/// less helpful error.
+/// `ml-dsa-65-hash:...` strings (the on-chain handle of an ML-DSA-65 access
+/// key, which `list-keys` and view RPCs print) are rejected by near-kit itself
+/// with [`near_kit::error::ParseKeyError::MlDsa65HashHandle`], which already
+/// tells the user to supply the full `ml-dsa-65:` key instead.
 pub fn parse_public_key(s: &str) -> color_eyre::eyre::Result<near_kit::PublicKey> {
-    let public_key = s
-        .parse::<near_kit::PublicKey>()
-        .map_err(color_eyre::eyre::Report::msg)?;
-    if public_key.is_ml_dsa65_hash() {
-        return Err(color_eyre::eyre::eyre!(
-            "`{public_key}` is the on-chain handle (hash) of an ML-DSA-65 key, not a public key. \
-             Please provide the full `ml-dsa-65:...` public key instead."
-        ));
-    }
-    Ok(public_key)
+    s.parse::<near_kit::PublicKey>()
+        .map_err(color_eyre::eyre::Report::msg)
 }
 
 impl std::fmt::Display for PublicKey {
@@ -68,12 +59,16 @@ mod tests {
 
     #[test]
     fn rejects_ml_dsa_65_hash_handle() {
+        // near-kit refuses to parse the on-chain hash handle as a public key;
+        // this pins that its error (with the "supply the full key" guidance)
+        // surfaces to the user unchanged.
         let err = "ml-dsa-65-hash:11111111111111111111111111111111"
             .parse::<PublicKey>()
             .unwrap_err();
+        let message = err.to_string();
         assert!(
-            err.to_string()
-                .contains("handle (hash) of an ML-DSA-65 key, not a public key"),
+            message.contains("handle (hash) of an ML-DSA-65 key, not a public key")
+                && message.contains("supply the full 'ml-dsa-65:' key"),
             "unexpected error: {err}"
         );
     }

@@ -92,11 +92,6 @@ pub async fn get_contract_abi(
                     "Transport error.\nPlease wait. The next try to send this query is happening right now ..."
                 );
             }
-            Err(near_kit::RpcError::ContractExecution { message, .. })
-                if message.contains("MethodNotFound") =>
-            {
-                return Err(FetchAbiError::AbiNotSupported);
-            }
             Err(near_kit::RpcError::MethodNotFound { .. }) => {
                 return Err(FetchAbiError::AbiNotSupported);
             }

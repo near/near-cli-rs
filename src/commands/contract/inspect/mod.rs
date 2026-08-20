@@ -1,4 +1,3 @@
-use base64::Engine as _;
 use std::fmt::Write;
 
 use color_eyre::{
@@ -69,33 +68,17 @@ impl From<ContractContext> for crate::network_view_at_block::ArgsForViewContext 
     }
 }
 
-#[derive(serde::Deserialize)]
-struct ViewCodeResponse {
-    code_base64: String,
-    block_height: u64,
-    block_hash: near_kit::CryptoHash,
-}
-
 #[tracing::instrument(name = "Obtaining the contract code ...", skip_all)]
 async fn get_contract_code(
     account_id: &near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
     block_reference: &near_kit::BlockReference,
-) -> color_eyre::eyre::Result<ViewCodeResponse> {
+) -> color_eyre::eyre::Result<near_kit::ContractCodeView> {
     tracing::info!(target: "near_teach_me", "Obtaining the contract code ...");
-    let mut params = serde_json::json!({
-        "request_type": "view_code",
-        "account_id": account_id.to_string(),
-    });
-    if let serde_json::Value::Object(block_params) = block_reference.to_rpc_params()
-        && let serde_json::Value::Object(map) = &mut params
-    {
-        map.extend(block_params);
-    }
     network_config
         .client()
         .rpc()
-        .call::<_, ViewCodeResponse>("query", params)
+        .view_code(account_id, *block_reference)
         .await
         .into_eyre()
         .wrap_err_with(|| {
@@ -114,9 +97,7 @@ async fn display_inspect_contract(
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Contract inspection ...");
     let view_code_response = get_contract_code(account_id, network_config, block_reference).await?;
-    let code_bytes = base64::engine::general_purpose::STANDARD
-        .decode(view_code_response.code_base64)
-        .wrap_err("Failed to decode contract code returned by RPC")?;
+    let code_bytes = view_code_response.code;
 
     let account_view = get_account_view(
         &network_config.network_name,
@@ -553,11 +534,6 @@ pub async fn get_contract_source_metadata(
                 } else {
                     return Err(FetchContractSourceMetadataError::RpcError(err.to_string()));
                 }
-            }
-            Err(near_kit::RpcError::ContractExecution { message, .. })
-                if message.contains("MethodNotFound") =>
-            {
-                return Err(FetchContractSourceMetadataError::ContractSourceMetadataNotSupported);
             }
             Err(near_kit::RpcError::MethodNotFound { .. }) => {
                 return Err(FetchContractSourceMetadataError::ContractSourceMetadataNotSupported);

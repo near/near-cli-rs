@@ -279,10 +279,7 @@ impl NetworkConfig {
             // The CLI owns its retry loops (and its error reporting for
             // non-retryable failures such as an invalid nonce), so disable
             // near-kit's built-in RPC retries.
-            .retry_config(near_kit::RetryConfig {
-                max_retries: 0,
-                ..Default::default()
-            });
+            .retry_config(near_kit::RetryConfig::none());
         let builder = match &self.rpc_api_key {
             Some(api_key) => {
                 let mut value = api_key

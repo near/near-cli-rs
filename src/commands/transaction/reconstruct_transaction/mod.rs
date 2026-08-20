@@ -46,7 +46,7 @@ impl TransactionInfoContext {
                             .transaction
                             .actions
                             .into_iter()
-                            .map(action_view_to_action)
+                            .map(near_kit::Action::try_from)
                             .collect::<Result<Vec<near_kit::Action>, _>>()
                             .map_err(|err| {
                                 color_eyre::eyre::eyre!(
@@ -424,7 +424,7 @@ fn get_access_key_permission(
 }
 
 /// Extract the contract code hash from the `code` field of a deploy action
-/// produced by [`action_view_to_action`].
+/// obtained via `near_kit::Action::try_from` on a deploy `ActionView`.
 ///
 /// The RPC's `ActionView::DeployContract` / `DeployGlobalContract*` do NOT carry
 /// the contract code: nearcore replaces it with the SHA-256 hash of the code
@@ -486,218 +486,6 @@ fn download_code(
     Ok(())
 }
 
-/// Convert a near_kit `ActionView` (JSON-RPC response type) to a near_kit `Action`.
-fn action_view_to_action(view: near_kit::ActionView) -> Result<near_kit::Action, String> {
-    use base64::Engine as _;
-    use near_kit::*;
-
-    let b64 = base64::engine::general_purpose::STANDARD;
-    let decode_b64 = |s: &str| {
-        b64.decode(s)
-            .map_err(|e| format!("base64 decode error: {e}"))
-    };
-
-    match view {
-        ActionView::CreateAccount => Ok(Action::CreateAccount(CreateAccountAction)),
-        // NOTE: for deploy actions the view's `code` is the base64 of the
-        // *code hash* (32 bytes), not the wasm itself; see
-        // `code_hash_from_deploy_action_view`.
-        ActionView::DeployContract { code } => Ok(Action::DeployContract(DeployContractAction {
-            code: decode_b64(&code)?,
-        })),
-        ActionView::FunctionCall {
-            method_name,
-            args,
-            gas,
-            deposit,
-        } => Ok(Action::FunctionCall(FunctionCallAction {
-            method_name,
-            args: decode_b64(&args)?,
-            gas,
-            deposit,
-        })),
-        ActionView::Transfer { deposit } => Ok(Action::Transfer(TransferAction { deposit })),
-        ActionView::Stake { stake, public_key } => {
-            Ok(Action::Stake(StakeAction { stake, public_key }))
-        }
-        ActionView::AddKey {
-            public_key,
-            access_key,
-        } => {
-            let permission = match access_key.permission {
-                AccessKeyPermissionView::FullAccess => AccessKeyPermission::FullAccess,
-                AccessKeyPermissionView::FunctionCall {
-                    allowance,
-                    receiver_id,
-                    method_names,
-                } => AccessKeyPermission::FunctionCall(FunctionCallPermission {
-                    allowance,
-                    receiver_id,
-                    method_names,
-                }),
-                AccessKeyPermissionView::GasKeyFunctionCall {
-                    balance,
-                    num_nonces,
-                    allowance,
-                    receiver_id,
-                    method_names,
-                } => AccessKeyPermission::GasKeyFunctionCall(
-                    GasKeyInfo {
-                        balance,
-                        num_nonces,
-                    },
-                    FunctionCallPermission {
-                        allowance,
-                        receiver_id,
-                        method_names,
-                    },
-                ),
-                AccessKeyPermissionView::GasKeyFullAccess {
-                    balance,
-                    num_nonces,
-                } => AccessKeyPermission::GasKeyFullAccess(GasKeyInfo {
-                    balance,
-                    num_nonces,
-                }),
-            };
-            Ok(Action::AddKey(AddKeyAction {
-                public_key,
-                access_key: AccessKey {
-                    nonce: access_key.nonce,
-                    permission,
-                },
-            }))
-        }
-        ActionView::DeleteKey { public_key } => {
-            Ok(Action::DeleteKey(DeleteKeyAction { public_key }))
-        }
-        ActionView::DeleteAccount { beneficiary_id } => {
-            Ok(Action::DeleteAccount(DeleteAccountAction {
-                beneficiary_id,
-            }))
-        }
-        ActionView::Delegate {
-            delegate_action,
-            signature,
-        } => {
-            let actions = delegate_action
-                .actions
-                .into_iter()
-                .map(|a| {
-                    let action = action_view_to_action(a)?;
-                    NonDelegateAction::try_from(action)
-                        .map_err(|_| "Delegate actions cannot be nested".to_string())
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            Ok(Action::Delegate(Box::new(SignedDelegateAction {
-                delegate_action: DelegateAction {
-                    sender_id: delegate_action.sender_id,
-                    receiver_id: delegate_action.receiver_id,
-                    actions,
-                    nonce: delegate_action.nonce,
-                    max_block_height: delegate_action.max_block_height,
-                    public_key: delegate_action.public_key,
-                },
-                signature,
-            })))
-        }
-        ActionView::DelegateV2 {
-            delegate_action,
-            signature,
-        } => {
-            let VersionedDelegateActionPayloadView::V2(delegate_action) = delegate_action;
-            let actions = delegate_action
-                .actions
-                .into_iter()
-                .map(|action| {
-                    let action = action_view_to_action(action)?;
-                    NonDelegateAction::try_from(action)
-                        .map_err(|_| "Delegate actions cannot be nested".to_string())
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            let nonce = match delegate_action.nonce {
-                TransactionNonceView::Nonce { nonce } => TransactionNonce::from_nonce(nonce),
-                TransactionNonceView::GasKeyNonce { nonce, nonce_index } => {
-                    TransactionNonce::from_nonce_and_index(nonce, nonce_index)
-                }
-            };
-            Ok(Action::DelegateV2(Box::new(
-                VersionedSignedDelegateAction {
-                    delegate_action: VersionedDelegateActionPayload::V2(DelegateActionV2 {
-                        sender_id: delegate_action.sender_id,
-                        receiver_id: delegate_action.receiver_id,
-                        actions,
-                        nonce,
-                        max_block_height: delegate_action.max_block_height,
-                        public_key: delegate_action.public_key,
-                    }),
-                    signature,
-                },
-            )))
-        }
-        ActionView::DeployGlobalContract { code } => {
-            Ok(Action::DeployGlobalContract(DeployGlobalContractAction {
-                code: decode_b64(&code)?,
-                deploy_mode: GlobalContractDeployMode::CodeHash,
-            }))
-        }
-        ActionView::DeployGlobalContractByAccountId { code } => {
-            Ok(Action::DeployGlobalContract(DeployGlobalContractAction {
-                code: decode_b64(&code)?,
-                deploy_mode: GlobalContractDeployMode::AccountId,
-            }))
-        }
-        ActionView::UseGlobalContract { code_hash } => {
-            Ok(Action::UseGlobalContract(UseGlobalContractAction {
-                contract_identifier: GlobalContractId::CodeHash(*code_hash.as_bytes()),
-            }))
-        }
-        ActionView::UseGlobalContractByAccountId { account_id } => {
-            Ok(Action::UseGlobalContract(UseGlobalContractAction {
-                contract_identifier: GlobalContractId::AccountId(account_id),
-            }))
-        }
-        ActionView::DeterministicStateInit {
-            code,
-            data,
-            deposit,
-        } => {
-            let contract_id = match code {
-                GlobalContractIdentifierView::CodeHash(hash) => {
-                    GlobalContractId::CodeHash(*hash.as_bytes())
-                }
-                GlobalContractIdentifierView::AccountId(id) => GlobalContractId::AccountId(id),
-            };
-            let data_map = data
-                .into_iter()
-                .map(|(k, v)| Ok((decode_b64(&k)?, decode_b64(&v)?)))
-                .collect::<Result<_, String>>()?;
-            Ok(Action::DeterministicStateInit(
-                DeterministicStateInitAction {
-                    state_init: StateInit::V1(StateInitV1 {
-                        code: contract_id,
-                        data: data_map,
-                    }),
-                    deposit,
-                },
-            ))
-        }
-        ActionView::TransferToGasKey {
-            public_key,
-            deposit,
-        } => Ok(Action::TransferToGasKey(TransferToGasKeyAction {
-            public_key,
-            deposit,
-        })),
-        ActionView::WithdrawFromGasKey { public_key, amount } => {
-            Ok(Action::WithdrawFromGasKey(WithdrawFromGasKeyAction {
-                public_key,
-                amount,
-            }))
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -706,13 +494,18 @@ mod tests {
     fn deploy_action_view_code_is_the_code_hash() {
         use base64::Engine as _;
 
-        // nearcore puts sha256(code) — not the code — into the deploy action view.
+        // nearcore puts sha256(code) — not the code — into the deploy action
+        // view; `Action::try_from` must keep those 32 hash bytes as-is (and
+        // never hash them again), because `download_code` verifies the WASM it
+        // fetches against this value.
         let code_hash = near_kit::CryptoHash::hash(b"some wasm bytes");
         let view = near_kit::ActionView::DeployContract {
             code: base64::engine::general_purpose::STANDARD.encode(code_hash.as_bytes()),
         };
+        assert_eq!(view.deploy_code_hash().unwrap().unwrap(), code_hash);
 
-        let near_kit::Action::DeployContract(action) = action_view_to_action(view).unwrap() else {
+        let near_kit::Action::DeployContract(action) = near_kit::Action::try_from(view).unwrap()
+        else {
             panic!("expected a DeployContract action");
         };
         assert_eq!(
@@ -723,7 +516,8 @@ mod tests {
         let view = near_kit::ActionView::DeployGlobalContract {
             code: base64::engine::general_purpose::STANDARD.encode(code_hash.as_bytes()),
         };
-        let near_kit::Action::DeployGlobalContract(action) = action_view_to_action(view).unwrap()
+        let near_kit::Action::DeployGlobalContract(action) =
+            near_kit::Action::try_from(view).unwrap()
         else {
             panic!("expected a DeployGlobalContract action");
         };
@@ -755,7 +549,7 @@ mod tests {
                 },
             },
         };
-        let near_kit::Action::AddKey(action) = action_view_to_action(view).unwrap() else {
+        let near_kit::Action::AddKey(action) = near_kit::Action::try_from(view).unwrap() else {
             panic!("expected an AddKey action");
         };
         assert_eq!(action.public_key, public_key);

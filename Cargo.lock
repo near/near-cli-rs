@@ -2635,7 +2635,6 @@ dependencies = [
  "interactive-clap-derive",
  "keyring",
  "linked-hash-map",
- "ml-dsa",
  "near-abi",
  "near-gas",
  "near-kit",
@@ -2711,9 +2710,9 @@ dependencies = [
 
 [[package]]
 name = "near-kit"
-version = "0.15.0"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd5cc7b13c405c456375ce711a9ba0461482fab09bfce8ebb14ea543aeb22737"
+checksum = "be50630b782cf7b2e2370a03b965e50253aaa3576205ee59e41b97b99c0ede8e"
 dependencies = [
  "base64 0.23.1",
  "bip39",
@@ -2742,6 +2741,7 @@ dependencies = [
  "sha3 0.12.0",
  "thiserror 2.0.19",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

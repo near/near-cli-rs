@@ -29,12 +29,16 @@ pub fn get_contract_state(
     block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<Vec<near_kit::StateItem>> {
     tracing::info!(target: "near_teach_me", "Obtaining the state of the contract ...");
+    // Page size 0 = near-kit's default; every page carries a positive `limit`,
+    // so the node treats the query as paginated and large state is not
+    // rejected with `TOO_LARGE_CONTRACT_STATE`.
     crate::common::block_on(network_config.client().rpc().view_state_all(
         contract_account_id,
         &prefix,
-        crate::common::VIEW_STATE_PAGE_ITEMS,
+        0,
         block_reference,
     ))
+    .map(near_kit::ViewStateAllResult::into_values)
     .into_eyre()
     .wrap_err_with(|| {
         format!(

@@ -747,19 +747,18 @@ pub fn get_public_keys_from_network_config(
                 // (`ml-dsa-65-hash:...`). The full public key needed to build an
                 // action cannot be recovered from the handle, so those keys are
                 // skipped from the interactive picker.
-                access_key_list.extend(
-                    access_key_list_for_network
-                        .keys
-                        .iter()
-                        .filter(|access_key_info_view| {
-                            !access_key_info_view.public_key.is_ml_dsa65_hash()
-                        })
-                        .map(|access_key_info_view| AccessKeyInfo {
-                            public_key: access_key_info_view.public_key.clone(),
-                            permission: access_key_info_view.access_key.permission.clone(),
-                            network_name: network_config.network_name.clone(),
-                        }),
-                );
+                access_key_list.extend(access_key_list_for_network.keys.iter().filter_map(
+                    |access_key_info_view| {
+                        access_key_info_view
+                            .public_key
+                            .full_pubkey()
+                            .map(|public_key| AccessKeyInfo {
+                                public_key: public_key.clone(),
+                                permission: access_key_info_view.access_key.permission.clone(),
+                                network_name: network_config.network_name.clone(),
+                            })
+                    },
+                ));
                 processed_networks.push(network_config.network_name.to_string());
             }
             Err(err) => {
@@ -951,29 +950,6 @@ pub fn input_signature_scheme() -> color_eyre::eyre::Result<Option<SignatureSche
     }))
 }
 
-/// Generate a random ML-DSA-65 secret key in the expanded (FIPS-204 `skEncode`,
-/// 4032-byte) form.
-///
-/// near-kit generates ML-DSA-65 keys as 32-byte seeds and prints them as
-/// `ml-dsa-65:<bs58 of 32 bytes>`. nearcore / near-crypto based tooling (and
-/// older near CLI releases) only parse the 4032-byte expanded form, so the
-/// credentials the CLI writes and prints use that form to stay interoperable.
-pub fn generate_ml_dsa65_expanded_secret_key() -> color_eyre::eyre::Result<near_kit::SecretKey> {
-    let seed_key = near_kit::SecretKey::generate_ml_dsa65();
-    let seed = ml_dsa::B32::try_from(seed_key.as_bytes())
-        .map_err(|_| color_eyre::eyre::eyre!("Internal error: ML-DSA-65 seed must be 32 bytes"))?;
-    let signing_key = ml_dsa::ExpandedSigningKey::<ml_dsa::MlDsa65>::from_seed(&seed);
-    // `to_expanded` is deprecated in the `ml-dsa` crate in favor of seeds, but
-    // the expanded form is what NEAR tooling exchanges.
-    #[allow(deprecated)]
-    let expanded = signing_key.to_expanded();
-    let expanded: Box<[u8; near_kit::ML_DSA_65_SECRET_KEY_LENGTH]> = Box::new(<[u8;
-        near_kit::ML_DSA_65_SECRET_KEY_LENGTH]>::try_from(
-        expanded.as_slice(),
-    )?);
-    Ok(near_kit::SecretKey::ml_dsa65_from_expanded(expanded)?)
-}
-
 /// A freshly generated key pair for either supported signature scheme. The
 /// Ed25519 variant keeps the full [`KeyPairProperties`] (seed phrase, HD path,
 /// implicit account id); ML-DSA-65 keys are random and carry only the key
@@ -992,7 +968,12 @@ impl GeneratedKeyPair {
         match signature_scheme {
             SignatureScheme::Ed25519 => Ok(Self::Ed25519(generate_keypair()?)),
             SignatureScheme::MlDsa65 => {
-                let private_key = generate_ml_dsa65_expanded_secret_key()?;
+                // The expanded (FIPS-204 `skEncode`, 4032-byte) form rather than
+                // near-kit's default 32-byte seed form: nearcore / near-crypto
+                // based tooling (and older near CLI releases) only parse the
+                // expanded form, so the credentials the CLI writes and prints
+                // use it to stay interoperable.
+                let private_key = near_kit::SecretKey::generate_ml_dsa65_expanded();
                 Ok(Self::MlDsa65 {
                     public_key: private_key.public_key().to_string(),
                     private_key: private_key.to_string(),
@@ -1076,17 +1057,6 @@ impl GeneratedKeyPair {
     }
 }
 
-/// The on-chain `ml-dsa-65-hash:` handle for a full ML-DSA-65 public key.
-///
-/// Returns `None` for other key types (and for keys that are already a hash
-/// handle, which are printed as-is by their `Display` impl).
-pub fn ml_dsa_65_pubkey_handle(public_key: &near_kit::PublicKey) -> Option<near_kit::PublicKey> {
-    match public_key {
-        near_kit::PublicKey::MlDsa65(_) => public_key.to_ml_dsa65_hash(),
-        _ => None,
-    }
-}
-
 pub fn print_full_signed_transaction(transaction: &near_kit::SignedTransactionV1) -> String {
     let mut info_str = format!("\n{:<13} {}", "signature:", transaction.signature);
     info_str.push_str(&print_full_unsigned_transaction(&transaction.transaction));
@@ -1104,7 +1074,7 @@ pub fn print_full_unsigned_transaction(transaction: &near_kit::VersionedTransact
         "public_key:",
         transaction.public_key()
     ));
-    if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(transaction.public_key()) {
+    if let Some(pub_key_hash) = transaction.public_key().to_ml_dsa65_hash() {
         info_str.push_str(&format!("\n{:<13} {}", "pub key hash:", pub_key_hash));
     }
     info_str.push_str(&format!(
@@ -1229,7 +1199,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", stake_action.public_key
                 ));
-                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&stake_action.public_key) {
+                if let Some(pub_key_hash) = stake_action.public_key.to_ml_dsa65_hash() {
                     info_str.push_str(&format!(
                         "\n{:>18} {:<13} {}",
                         "", "pub key hash:", pub_key_hash
@@ -1248,7 +1218,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", add_key_action.public_key
                 ));
-                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&add_key_action.public_key) {
+                if let Some(pub_key_hash) = add_key_action.public_key.to_ml_dsa65_hash() {
                     info_str.push_str(&format!(
                         "\n{:>18} {:<13} {}",
                         "", "pub key hash:", pub_key_hash
@@ -1269,7 +1239,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", delete_key_action.public_key
                 ));
-                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&delete_key_action.public_key) {
+                if let Some(pub_key_hash) = delete_key_action.public_key.to_ml_dsa65_hash() {
                     info_str.push_str(&format!(
                         "\n{:>18} {:<13} {}",
                         "", "pub key hash:", pub_key_hash
@@ -1391,8 +1361,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", transfer_to_gas_key.public_key
                 ));
-                if let Some(pub_key_hash) = ml_dsa_65_pubkey_handle(&transfer_to_gas_key.public_key)
-                {
+                if let Some(pub_key_hash) = transfer_to_gas_key.public_key.to_ml_dsa65_hash() {
                     info_str.push_str(&format!(
                         "\n{:>18} {:<13} {}",
                         "", "pub key hash:", pub_key_hash
@@ -1411,9 +1380,7 @@ pub fn print_unsigned_transaction(
                     "\n{:>18} {:<13} {}",
                     "", "public key:", withdraw_from_gas_key.public_key
                 ));
-                if let Some(pub_key_hash) =
-                    ml_dsa_65_pubkey_handle(&withdraw_from_gas_key.public_key)
-                {
+                if let Some(pub_key_hash) = withdraw_from_gas_key.public_key.to_ml_dsa65_hash() {
                     info_str.push_str(&format!(
                         "\n{:>18} {:<13} {}",
                         "", "pub key hash:", pub_key_hash
@@ -2590,15 +2557,6 @@ pub fn fetch_historically_delegated_staking_pools(
         .collect())
 }
 
-/// Entries requested per `view_state` page when reading contract state.
-///
-/// A `view_state` request without `limit` (or `after_key`) is not treated as
-/// paginated by the node, so it is subject to the ~50 KB per-account cap that
-/// most public RPCs enforce (`TOO_LARGE_CONTRACT_STATE`). Always requesting
-/// pages avoids that; the node additionally caps every page at ~50 KB, so the
-/// effective page size is usually smaller than this.
-pub const VIEW_STATE_PAGE_ITEMS: u32 = 10_000;
-
 #[tracing::instrument(name = "Getting currently active staking pools ...", skip_all)]
 pub fn fetch_currently_active_staking_pools(
     network_config: &crate::config::NetworkConfig,
@@ -2606,10 +2564,13 @@ pub fn fetch_currently_active_staking_pools(
 ) -> color_eyre::Result<std::collections::BTreeSet<near_kit::AccountId>> {
     tracing::info!(target: "near_teach_me", "Getting currently active staking pools ...");
 
+    // Page size 0 = near-kit's default; since near-kit 0.16 every page carries
+    // a positive `limit`, so the node treats the query as paginated and large
+    // state is not rejected with `TOO_LARGE_CONTRACT_STATE`.
     let values = block_on(network_config.client().rpc().view_state_all(
         staking_pools_factory_account_id,
         b"se",
-        VIEW_STATE_PAGE_ITEMS,
+        0,
         near_kit::BlockReference::final_(),
     ))
     .into_eyre()?;
@@ -3489,7 +3450,7 @@ mod ml_dsa65_key_generation_tests {
 
     #[test]
     fn generated_ml_dsa65_secret_key_is_in_expanded_form() {
-        let secret_key = generate_ml_dsa65_expanded_secret_key().unwrap();
+        let secret_key = near_kit::SecretKey::generate_ml_dsa65_expanded();
         assert_eq!(secret_key.key_type(), near_kit::KeyType::MlDsa65);
         assert_eq!(
             secret_key.as_bytes().len(),
