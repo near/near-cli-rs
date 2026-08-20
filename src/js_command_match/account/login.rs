@@ -42,11 +42,11 @@ mod tests {
             ),
             (
                 format!("near login --{} testnet", NETWORK_ID_ALIASES[0]),
-                "account import-account using-web-wallet network-config testnet".to_string(),
+                "account import-account using-web-wallet network testnet".to_string(),
             ),
             (
                 format!("near login --{} mainnet", NETWORK_ID_ALIASES[1]),
-                "account import-account using-web-wallet network-config mainnet".to_string(),
+                "account import-account using-web-wallet network mainnet".to_string(),
             ),
         ] {
             let input_cmd =

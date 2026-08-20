@@ -26,14 +26,11 @@ impl PrintKeypairToTerminalContext {
         ));
 
         display_info.push_str(&format!(
-            "\n{:<13} {}",
+            "\n{:<13} \n{}",
             "keychain props:",
-            format!(
-                "\n{}",
-                crate::common::indent_payload(&serde_json::to_string_pretty(
-                    &previous_context.key_store_property,
-                )?)
-            )
+            crate::common::indent_payload(&serde_json::to_string_pretty(
+                &previous_context.key_store_property,
+            )?)
         ));
 
         display_string.push_str(&format!(
