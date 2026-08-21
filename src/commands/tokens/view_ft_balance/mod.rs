@@ -267,6 +267,13 @@ fn print_fts_inventory(
             })
     });
 
+    let symbol_width = fts
+        .iter()
+        .map(|item| item.ft.ft_meta.symbol.chars().count())
+        .max()
+        .unwrap_or_default()
+        + 1;
+
     let output = fts
         .iter()
         .map(|item| {
@@ -276,11 +283,12 @@ fn print_fts_inventory(
                 .unwrap_or_default();
 
             format!(
-                "\t{:<14}{}{} (FT-contract: {})\n",
+                "\t{:<width$}{}{} (FT-contract: {})\n",
                 item.ft.ft_meta.symbol,
                 item.tokens_scaled,
                 usd_value,
-                item.ft.ft_contract_account_id
+                item.ft.ft_contract_account_id,
+                width = symbol_width
             )
         })
         .collect::<String>();
