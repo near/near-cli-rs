@@ -145,8 +145,8 @@ pub fn get_ft_balance(
 #[derive(Debug, Clone, PartialEq)]
 struct FTCalculatedValue {
     ft: FTInventory,
-    tokens_scaled: String, // Exact formatted string for values of any scale
-    usd_value: f64,        // Used strictly for sorting and filtering
+    tokens_scaled: String,  // Exact formatted string for values of any scale
+    usd_value: Option<f64>, // Used strictly for sorting and filtering
 }
 
 fn parse_raw_amount_to_string(amount_str: &str, decimals: u8) -> Option<String> {
@@ -195,17 +195,32 @@ fn calculate_usd_value_f64(amount_str: &str, decimals: u8, price: f64) -> Option
     }
 }
 
-fn calculate_ft_usd_value(ft: &FTInventory) -> Option<FTCalculatedValue> {
-    let price = ft.ft_meta.price?;
-
-    let usd_value = calculate_usd_value_f64(&ft.amount, ft.ft_meta.decimals, price)?;
+fn calculate_ft_value(ft: &FTInventory) -> Option<FTCalculatedValue> {
     let tokens_scaled = parse_raw_amount_to_string(&ft.amount, ft.ft_meta.decimals)?;
+    let usd_value = ft
+        .ft_meta
+        .price
+        .and_then(|price| calculate_usd_value_f64(&ft.amount, ft.ft_meta.decimals, price));
 
     Some(FTCalculatedValue {
         ft: ft.clone(),
         tokens_scaled,
         usd_value,
     })
+}
+
+fn format_usd_value(value: f64) -> String {
+    let formatted = format!("{value:.2}");
+    let (integer, fraction) = formatted.split_once('.').unwrap_or((&formatted, "00"));
+    let grouped_integer = integer
+        .as_bytes()
+        .rchunks(3)
+        .rev()
+        .map(|chunk| String::from_utf8_lossy(chunk).into_owned())
+        .collect::<Vec<_>>()
+        .join(",");
+
+    format!("${grouped_integer}.{fraction}")
 }
 
 fn print_fts_inventory(
@@ -219,7 +234,17 @@ fn print_fts_inventory(
     let mut fts = inventory
         .fts()
         .into_iter()
-        .filter_map(|ft| calculate_ft_usd_value(&ft).filter(|item| item.usd_value >= min_usd))
+        .filter_map(|ft| {
+            let calculated_value = calculate_ft_value(&ft)?;
+
+            // For non-mainnet networks, we will display all fungible tokens regardless of their USD value.
+            // This is to provide users with a complete view of their token holdings in test environments.
+            if network_config.network_name != "mainnet" {
+                return Some(calculated_value);
+            }
+
+            (calculated_value.usd_value >= Some(min_usd)).then_some(calculated_value)
+        })
         .collect::<Vec<_>>();
 
     if fts.is_empty() {
@@ -235,15 +260,35 @@ fn print_fts_inventory(
     fts.sort_by(|a, b| {
         b.usd_value
             .partial_cmp(&a.usd_value)
-            .unwrap_or(std::cmp::Ordering::Equal)
+            .unwrap_or(match (a.usd_value, b.usd_value) {
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                _ => std::cmp::Ordering::Equal,
+            })
     });
+
+    let symbol_width = fts
+        .iter()
+        .map(|item| item.ft.ft_meta.symbol.chars().count())
+        .max()
+        .unwrap_or_default()
+        + 1;
 
     let output = fts
         .iter()
         .map(|item| {
+            let usd_value = item
+                .usd_value
+                .map(|value| format!(" ({})", format_usd_value(value)))
+                .unwrap_or_default();
+
             format!(
-                "\t{} {} (FT-contract: {})\n",
-                item.tokens_scaled, item.ft.ft_meta.symbol, item.ft.ft_contract_account_id
+                "\t{:<width$}{}{} (FT-contract: {})\n",
+                item.ft.ft_meta.symbol,
+                item.tokens_scaled,
+                usd_value,
+                item.ft.ft_contract_account_id,
+                width = symbol_width
             )
         })
         .collect::<String>();
@@ -283,10 +328,10 @@ mod tests {
         // Case: 100.5 tokens (2 decimals), price $2.50
         // 10050 base units / 10^2 = 100.5 tokens. 100.5 * 2.50 = 251.25
         let ft = create_test_ft("10050", 2, Some(2.50));
-        let result = calculate_ft_usd_value(&ft).unwrap();
+        let result = calculate_ft_value(&ft).unwrap();
 
         assert_eq!(result.tokens_scaled, "100.5");
-        assert!((result.usd_value - 251.25).abs() < 1e-6);
+        assert!((result.usd_value.unwrap() - 251.25).abs() < 1e-6);
     }
 
     #[test]
@@ -297,7 +342,7 @@ mod tests {
         let tiny_price = Some(0.0000000001); // 10^-10
 
         let ft = create_test_ft(crazy_amount, 2, tiny_price);
-        let result = calculate_ft_usd_value(&ft);
+        let result = calculate_ft_value(&ft);
 
         assert!(result.is_some());
         let val = result.unwrap();
@@ -307,7 +352,7 @@ mod tests {
             val.tokens_scaled,
             "340282366920938463463374607431768211456000"
         );
-        assert!(val.usd_value > 0.0);
+        assert!(val.usd_value.unwrap() > 0.0);
     }
 
     #[test]
@@ -342,30 +387,39 @@ mod tests {
         // Case: API returns a negative number like "-100"
         // Rejected immediately during ASCII digit validation
         let ft = create_test_ft("-100", 6, Some(1.0));
-        assert!(calculate_ft_usd_value(&ft).is_none());
+        assert!(calculate_ft_value(&ft).is_none());
     }
 
     #[test]
     fn test_invalid_amount_string() {
         // Case: API returns non-numeric characters
         let ft = create_test_ft("not_a_number", 6, Some(1.0));
-        assert!(calculate_ft_usd_value(&ft).is_none());
+        assert!(calculate_ft_value(&ft).is_none());
     }
 
     #[test]
     fn test_missing_price() {
         // Case: price is missing (None)
         let ft = create_test_ft("5000000", 6, None);
-        assert!(calculate_ft_usd_value(&ft).is_none());
+        let result = calculate_ft_value(&ft).unwrap();
+
+        assert_eq!(result.tokens_scaled, "5");
+        assert_eq!(result.usd_value, None);
     }
 
     #[test]
     fn test_zero_price() {
         // Case: price is present and equals $0.00
         let ft = create_test_ft("1000000", 6, Some(0.0));
-        let result = calculate_ft_usd_value(&ft).unwrap();
+        let result = calculate_ft_value(&ft).unwrap();
 
         assert_eq!(result.tokens_scaled, "1");
-        assert_eq!(result.usd_value, 0.0);
+        assert_eq!(result.usd_value, Some(0.0));
+    }
+
+    #[test]
+    fn test_usd_value_formatting() {
+        assert_eq!(format_usd_value(207932.76), "$207,932.76");
+        assert_eq!(format_usd_value(0.1), "$0.10");
     }
 }
