@@ -15,11 +15,16 @@ impl SaveKeypairToLegacyKeychainContext {
             "{}",
             crate::common::save_access_key_to_legacy_keychain(
                 previous_context.chosen_network_config,
-                previous_context.config.credentials_home_dir,
+                previous_context.config.credentials_home_dir.clone(),
                 &serde_json::to_string(&previous_context.key_store_property)?,
                 &previous_context.key_store_property.to_public_key_str(),
                 previous_context.account_id.as_str()
             )?
+        );
+
+        crate::common::update_used_account_list_as_signer(
+            &previous_context.config.credentials_home_dir,
+            &previous_context.account_id,
         );
 
         Ok(Self)

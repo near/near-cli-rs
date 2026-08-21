@@ -72,6 +72,31 @@ pub enum ImportAccountActions {
     UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
+fn check_implicit_account_id(
+    account_id: &near_primitives::types::AccountId,
+    public_key: &near_crypto::PublicKey,
+) -> color_eyre::eyre::Result<()> {
+    if near_primitives::account::id::AccountType::NearImplicitAccount
+        != account_id.get_account_type()
+    {
+        return Ok(());
+    }
+
+    let expected_public_key = near_crypto::PublicKey::from_near_implicit_account(account_id)
+        .map_err(|err| {
+            color_eyre::Report::msg(format!(
+                "Failed to derive the public key of implicit <{account_id}>: {err}"
+            ))
+        })?;
+
+    if *public_key != expected_public_key {
+        return Err(color_eyre::eyre::eyre!(
+            "Provided public key cannot sign for implicit account <{account_id}>:\n   expected public key: {expected_public_key}\n   provided public key: {public_key}"
+        ));
+    }
+    Ok(())
+}
+
 pub fn check_account_id(
     global_context: &crate::GlobalContext,
     chosen_network_config: &crate::config::NetworkConfig,

@@ -27,14 +27,20 @@ impl LoginFromSeedPhraseContext {
         scope: &<LoginFromSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let master_seed_phrase = bip39::Mnemonic::parse(scope.master_seed_phrase.clone())?;
+        let key_store_property = super::key_store_prop::RecoverableKey::derive(
+            master_seed_phrase,
+            scope.seed_phrase_hd_path.clone().into(),
+        )?;
+
+        super::check_implicit_account_id(
+            &previous_context.account_id,
+            &key_store_property.public_key,
+        )?;
 
         Ok(Self {
             global_context: previous_context.global_context,
             account_id: previous_context.account_id,
-            key_store_property: super::key_store_prop::RecoverableKey::derive(
-                master_seed_phrase,
-                scope.seed_phrase_hd_path.clone().into(),
-            )?,
+            key_store_property,
         })
     }
 }
@@ -44,9 +50,9 @@ impl From<LoginFromSeedPhraseContext> for super::network::NetworkForImportAccoun
         let get_key_store_property_after_getting_network_callback: super::network::GetKeyStorePropertyAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 move |_network_config| {
-                    let key_store_property = item.key_store_property.clone();
-
-                    Ok(super::key_store_prop::KeyStorePropertyType::Recoverable(key_store_property))
+                    Ok(super::key_store_prop::KeyStorePropertyType::Recoverable(
+                        item.key_store_property.clone(),
+                    ))
                 }
             });
 
