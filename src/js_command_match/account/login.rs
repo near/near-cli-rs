@@ -15,7 +15,7 @@ impl LoginArgs {
             "account".to_string(),
             "import-account".to_string(),
             "using-web-wallet".to_string(),
-            "network-config".to_string(),
+            "network".to_string(),
             network_id,
         ];
 
@@ -34,19 +34,19 @@ mod tests {
         for (input, expected_output) in [
             (
                 "near import-account".to_string(),
-                "account import-account using-web-wallet network-config testnet".to_string(),
+                "account import-account using-web-wallet network testnet".to_string(),
             ),
             (
                 "near login".to_string(),
-                "account import-account using-web-wallet network-config testnet".to_string(),
+                "account import-account using-web-wallet network testnet".to_string(),
             ),
             (
                 format!("near login --{} testnet", NETWORK_ID_ALIASES[0]),
-                "account import-account using-web-wallet network-config testnet".to_string(),
+                "account import-account using-web-wallet network testnet".to_string(),
             ),
             (
                 format!("near login --{} mainnet", NETWORK_ID_ALIASES[1]),
-                "account import-account using-web-wallet network-config mainnet".to_string(),
+                "account import-account using-web-wallet network mainnet".to_string(),
             ),
         ] {
             let input_cmd =

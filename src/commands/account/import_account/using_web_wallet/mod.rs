@@ -1,31 +1,43 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = crate::GlobalContext)]
+#[interactive_clap(input_context = super::ImportAccountCommandContext)]
 #[interactive_clap(output_context = LoginFromWebWalletContext)]
 pub struct LoginFromWebWallet {
     #[interactive_clap(named_arg)]
     /// Select network
-    network_config: crate::network::Network,
+    network: super::network::NetworkForImportAccount,
 }
 
 #[derive(Clone)]
-pub struct LoginFromWebWalletContext(crate::network::NetworkContext);
+pub struct LoginFromWebWalletContext {
+    global_context: crate::GlobalContext,
+    account_id: near_primitives::types::AccountId,
+    key_store_property: super::key_store_prop::RecoverableKey,
+}
 
 impl LoginFromWebWalletContext {
     pub fn from_previous_context(
-        previous_context: crate::GlobalContext,
+        previous_context: super::ImportAccountCommandContext,
         _scope: &<LoginFromWebWallet as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
-                let config = previous_context.config.clone();
+        Ok(Self {
+            global_context: previous_context.global_context,
+            account_id: previous_context.account_id,
+            key_store_property: super::key_store_prop::RecoverableKey::generate_keypair()?,
+        })
+    }
+}
 
+impl From<LoginFromWebWalletContext> for super::network::NetworkForImportAccountContext {
+    fn from(item: LoginFromWebWalletContext) -> Self {
+        let get_key_store_property_after_getting_network_callback: super::network::GetKeyStorePropertyAfterGettingNetworkCallback =
+            std::sync::Arc::new({
                 move |network_config| {
-                    let key_pair_properties: crate::common::KeyPairProperties =
-                        crate::common::generate_keypair()?;
+                    let key_store_property = super::key_store_prop::KeyStorePropertyType::Recoverable(item.key_store_property.clone());
+
                     let mut url: url::Url = network_config.wallet_url.join("login/")?;
                     url.query_pairs_mut()
                         .append_pair("title", "NEAR CLI")
-                        .append_pair("public_key", &key_pair_properties.public_key_str);
+                        .append_pair("public_key", &key_store_property.to_public_key_str());
                     // Use `success_url` once capture mode is implemented
                     //.append_pair("success_url", "http://127.0.0.1:8080");
                     eprintln!(
@@ -35,31 +47,14 @@ impl LoginFromWebWalletContext {
                     // url.open();
                     open::that(url.as_ref()).ok();
 
-                    let key_pair_properties_buf = serde_json::to_string(&key_pair_properties)?;
-                    let error_message = format!(
-                        "\nIt is currently not possible to verify the account access key.\nYou may not be logged in to {} or you may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n ",
-                        url.as_str()
-                    );
-                    super::login(
-                        network_config.clone(),
-                        config.credentials_home_dir.clone(),
-                        &key_pair_properties_buf,
-                        &key_pair_properties.public_key_str,
-                        &error_message,
-                    )
+                    Ok(key_store_property)
                 }
             });
 
-        Ok(Self(crate::network::NetworkContext {
-            config: previous_context.config,
-            interacting_with_account_ids: Vec::new(),
-            on_after_getting_network_callback,
-        }))
-    }
-}
-
-impl From<LoginFromWebWalletContext> for crate::network::NetworkContext {
-    fn from(item: LoginFromWebWalletContext) -> Self {
-        item.0
+        Self {
+            global_context: item.global_context,
+            account_id: item.account_id,
+            get_key_store_property_after_getting_network_callback,
+        }
     }
 }
