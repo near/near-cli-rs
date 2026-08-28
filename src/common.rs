@@ -2369,7 +2369,7 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
     }
 }
 
-fn normalize_keychain_key_id(public_key_str: &str) -> color_eyre::eyre::Result<String> {
+pub(crate) fn normalize_keychain_key_id(public_key_str: &str) -> color_eyre::eyre::Result<String> {
     let public_key_handle = near_crypto::PublicKey::from_str(public_key_str)
         .map(|public_key| near_crypto::PublicKeyHandle::from(&public_key))
         .or_else(|_| near_crypto::PublicKeyHandle::from_str(public_key_str))
