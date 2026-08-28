@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::ImportAccountCommandContext)]
+#[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = LoginFromSeedPhraseContext)]
 pub struct LoginFromSeedPhrase {
     /// Enter the seed-phrase for this account:
@@ -7,23 +7,22 @@ pub struct LoginFromSeedPhrase {
 
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
+    /// Enter BIP32 path for this account:
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
 
-    #[interactive_clap(named_arg)]
-    /// Select network:
-    network: super::network::NetworkForImportAccount,
+    #[interactive_clap(subargs)]
+    details: super::ImportAccountDetails,
 }
 
 #[derive(Debug, Clone)]
 pub struct LoginFromSeedPhraseContext {
     global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
     key_store_property: super::key_store_prop::RecoverableKey,
 }
 
 impl LoginFromSeedPhraseContext {
     pub fn from_previous_context(
-        previous_context: super::ImportAccountCommandContext,
+        previous_context: crate::GlobalContext,
         scope: &<LoginFromSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
         let master_seed_phrase = bip39::Mnemonic::parse(scope.master_seed_phrase.clone())?;
@@ -32,41 +31,31 @@ impl LoginFromSeedPhraseContext {
             scope.seed_phrase_hd_path.clone().into(),
         )?;
 
-        super::check_implicit_account_id(
-            &previous_context.account_id,
-            &key_store_property.public_key,
-        )?;
-
         Ok(Self {
-            global_context: previous_context.global_context,
-            account_id: previous_context.account_id,
+            global_context: previous_context,
             key_store_property,
         })
     }
 }
 
-impl From<LoginFromSeedPhraseContext> for super::network::NetworkForImportAccountContext {
+impl From<LoginFromSeedPhraseContext> for super::ImportAccountDetailsContext {
     fn from(item: LoginFromSeedPhraseContext) -> Self {
-        let get_key_store_property_after_getting_network_callback: super::network::GetKeyStorePropertyAfterGettingNetworkCallback =
-            std::sync::Arc::new({
-                move |_network_config| {
-                    Ok(super::key_store_prop::KeyStorePropertyType::Recoverable(
-                        item.key_store_property.clone(),
-                    ))
-                }
-            });
+        let key_store_property =
+            super::key_store_prop::KeyStorePropertyType::Recoverable(item.key_store_property);
+        let on_after_getting_network_callback: super::network::OnAfterGettingNetworkConfigCallback =
+            std::sync::Arc::new(move |_network_config| Ok(()));
 
         Self {
             global_context: item.global_context,
-            account_id: item.account_id,
-            get_key_store_property_after_getting_network_callback,
+            key_store_property,
+            on_after_getting_network_callback,
         }
     }
 }
 
 impl LoginFromSeedPhrase {
     pub fn input_seed_phrase_hd_path(
-        _context: &super::ImportAccountCommandContext,
+        _context: &crate::GlobalContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::slip10::BIP32Path>> {
         crate::transaction_signature_options::sign_with_seed_phrase::input_seed_phrase_hd_path()
     }

@@ -25,18 +25,15 @@ pub struct NetworkForImportAccount {
     save_mode: SaveMode,
 }
 
-pub type GetKeyStorePropertyAfterGettingNetworkCallback = std::sync::Arc<
-    dyn Fn(
-        &crate::config::NetworkConfig,
-    ) -> color_eyre::eyre::Result<super::key_store_prop::KeyStorePropertyType>,
->;
+pub type OnAfterGettingNetworkConfigCallback =
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<()>>;
 
 #[derive(Clone)]
 pub struct NetworkForImportAccountContext {
     pub global_context: crate::GlobalContext,
     pub account_id: near_primitives::types::AccountId,
-    pub get_key_store_property_after_getting_network_callback:
-        GetKeyStorePropertyAfterGettingNetworkCallback,
+    pub key_store_property: super::key_store_prop::KeyStorePropertyType,
+    pub on_after_getting_network_callback: OnAfterGettingNetworkConfigCallback,
 }
 
 #[derive(Clone)]
@@ -65,17 +62,14 @@ impl NetworkForImportAccountOutputContext {
             network_config.wallet_url = url.into();
         }
 
-        let key_store_property = (previous_context
-            .get_key_store_property_after_getting_network_callback)(
-            &network_config
-        )?;
+        (previous_context.on_after_getting_network_callback)(&network_config)?;
 
         if scope.check_account_id {
             super::check_account_id(
                 &previous_context.global_context,
                 &network_config,
                 &previous_context.account_id,
-                key_store_property.public_key(),
+                previous_context.key_store_property.public_key(),
             )?;
         }
 
@@ -83,7 +77,7 @@ impl NetworkForImportAccountOutputContext {
             config: previous_context.global_context.config,
             chosen_network_config: network_config,
             account_id: previous_context.account_id,
-            key_store_property,
+            key_store_property: previous_context.key_store_property,
         })
     }
 }
@@ -109,7 +103,7 @@ impl NetworkForImportAccount {
         }
         let select_choose_input = Select::new(
             format!(
-                "Would you like to check if account <{}> exists?",
+                "Would you like to check if account <{}> has the access key?",
                 context.account_id
             )
             .as_str(),

@@ -9,49 +9,15 @@ mod using_seed_phrase;
 mod using_web_wallet;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = crate::GlobalContext)]
-#[interactive_clap(output_context = ImportAccountCommandContext)]
+#[interactive_clap(context = crate::GlobalContext)]
 pub struct ImportAccountCommand {
-    #[interactive_clap(skip_default_input_arg)]
-    /// What Account ID do you want to import?
-    account_id: crate::types::account_id::AccountId,
-
     #[interactive_clap(subcommand)]
     /// How would you like to import the account?
     import_account_actions: ImportAccountActions,
 }
 
-#[derive(Debug, Clone)]
-pub struct ImportAccountCommandContext {
-    global_context: crate::GlobalContext,
-    account_id: near_primitives::types::AccountId,
-}
-
-impl ImportAccountCommandContext {
-    pub fn from_previous_context(
-        previous_context: crate::GlobalContext,
-        scope: &<ImportAccountCommand as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> color_eyre::eyre::Result<Self> {
-        Ok(Self {
-            global_context: previous_context,
-            account_id: scope.account_id.clone().into(),
-        })
-    }
-}
-
-impl ImportAccountCommand {
-    pub fn input_account_id(
-        context: &crate::GlobalContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_non_signer_account_id_from_used_account_list(
-            &context.config.credentials_home_dir,
-            "What Account ID do you want to import?",
-        )
-    }
-}
-
 #[derive(Debug, EnumDiscriminants, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(context = ImportAccountCommandContext)]
+#[interactive_clap(context = crate::GlobalContext)]
 #[strum_discriminants(derive(EnumMessage, EnumIter))]
 /// How would you like to import the account?
 pub enum ImportAccountActions {
@@ -70,6 +36,58 @@ pub enum ImportAccountActions {
     ))]
     /// Import existing account using a private key
     UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
+}
+
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = ImportAccountDetailsContext)]
+#[interactive_clap(output_context = network::NetworkForImportAccountContext)]
+pub struct ImportAccountDetails {
+    #[interactive_clap(skip_default_input_arg)]
+    /// What Account ID do you want to import?
+    account_id: crate::types::account_id::AccountId,
+
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: network::NetworkForImportAccount,
+}
+
+#[derive(Clone)]
+pub struct ImportAccountDetailsContext {
+    global_context: crate::GlobalContext,
+    key_store_property: key_store_prop::KeyStorePropertyType,
+    on_after_getting_network_callback: network::OnAfterGettingNetworkConfigCallback,
+}
+
+impl network::NetworkForImportAccountContext {
+    pub fn from_previous_context(
+        previous_context: ImportAccountDetailsContext,
+        scope: &<ImportAccountDetails as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
+
+        check_implicit_account_id(
+            &account_id,
+            previous_context.key_store_property.public_key(),
+        )?;
+
+        Ok(Self {
+            global_context: previous_context.global_context,
+            account_id,
+            key_store_property: previous_context.key_store_property,
+            on_after_getting_network_callback: previous_context.on_after_getting_network_callback,
+        })
+    }
+}
+
+impl ImportAccountDetails {
+    pub fn input_account_id(
+        context: &ImportAccountDetailsContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What Account ID do you want to import?",
+        )
+    }
 }
 
 fn check_implicit_account_id(
