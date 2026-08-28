@@ -1112,12 +1112,7 @@ impl GeneratedKeyPair {
     /// key would blow past filesystem name limits and would never match the
     /// handle the chain reports for the key.
     pub fn keychain_key_id(&self) -> color_eyre::eyre::Result<String> {
-        Ok(match self {
-            Self::Ed25519(properties) => properties.public_key_str.clone(),
-            Self::MlDsa65 { .. } => {
-                near_crypto::PublicKeyHandle::from(&self.public_key()?).to_string()
-            }
-        })
+        normalize_keychain_key_id(self.public_key_str())
     }
 
     /// JSON written to the keychain / legacy keychain credentials file. Ed25519
@@ -2374,18 +2369,28 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
     }
 }
 
+fn normalize_keychain_key_id(public_key_str: &str) -> color_eyre::eyre::Result<String> {
+    let public_key_handle = near_crypto::PublicKey::from_str(public_key_str)
+        .map(|public_key| near_crypto::PublicKeyHandle::from(&public_key))
+        .or_else(|_| near_crypto::PublicKeyHandle::from_str(public_key_str))
+        .wrap_err("Failed to parse public key or public key handle")?;
+
+    Ok(public_key_handle.to_string())
+}
+
 pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties_buf: &str,
     public_key_str: &str,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
+    let keychain_key_id = normalize_keychain_key_id(public_key_str)?;
     let service_name = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name, account_id
     ));
 
-    keyring::Entry::new(&service_name, &format!("{account_id}:{public_key_str}"))
+    keyring::Entry::new(&service_name, &format!("{account_id}:{keychain_key_id}"))
         .wrap_err("Failed to open keychain")?
         .set_password(key_pair_properties_buf)
         .wrap_err("Failed to save password to keychain. You may need to install the secure keychain package by following this instruction: https://github.com/jaraco/keyring#using-keyring-on-headless-linux-systems")?;
@@ -2401,8 +2406,9 @@ pub fn save_access_key_to_legacy_keychain(
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
     let dir_name = network_config.network_name.as_str();
+    let keychain_key_id = normalize_keychain_key_id(public_key_str)?;
     let file_with_key_name: std::path::PathBuf =
-        format!("{}.json", public_key_str.replace(':', "_")).into();
+        format!("{}.json", keychain_key_id.replace(':', "_")).into();
     let mut path_with_key_name = std::path::PathBuf::from(&credentials_home_dir);
     path_with_key_name.push(dir_name);
     path_with_key_name.push(account_id);
