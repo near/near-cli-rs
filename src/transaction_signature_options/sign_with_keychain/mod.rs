@@ -84,14 +84,17 @@ impl SignKeychainContext {
         let want_gas_key = scope.nonce_index.is_some();
 
         let password = if previous_context.global_context.offline {
+            let signer_public_key = scope
+                .signer_public_key
+                .clone()
+                .wrap_err("Signer public key is required to sign a transaction in offline mode")?;
+            let keychain_key_id =
+                crate::common::normalize_keychain_key_id(&signer_public_key.to_string())?;
             let res = keyring::Entry::new(
                 &service_name,
                 &format!(
                     "{}:{}",
-                    previous_context.prepopulated_transaction.signer_id,
-                    scope.signer_public_key.clone().wrap_err(
-                        "Signer public key is required to sign a transaction in offline mode"
-                    )?
+                    previous_context.prepopulated_transaction.signer_id, keychain_key_id
                 ),
             )?
             .get_password();
