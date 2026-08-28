@@ -293,7 +293,7 @@ fn test_find_network_account_exists_with_empty_network_connection() {
     let context = create_test_context_with_empty_network_connection();
 
     // Expected result: Error, because there are no networks in configuration, so it's impossible to be sure that account does not exist on all networks
-    let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "test.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert!(result.is_err());
 }
@@ -304,7 +304,7 @@ fn test_find_network_account_exists_with_default_context() {
     let context = create_test_context_with_default();
 
     // Expected result: Returns the network that comes first in the configuration (mainnet)
-    let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "test.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
 }
@@ -316,13 +316,12 @@ fn test_for_testnet_find_network_account_exists_with_default_context() {
     let context = create_test_context_with_default();
 
     // Expected result: Account found on the testnet
-    let existent_account_id: near_primitives::types::AccountId =
-        "volodymyr.testnet".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "volodymyr.testnet".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert_eq!(result.unwrap().unwrap().network_name, "testnet");
 
     // Expected result: Account does not exist on the testnet
-    let non_existent_account_id: near_primitives::types::AccountId =
+    let non_existent_account_id: near_kit::AccountId =
         "nonexistent.volodymyr.testnet".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.unwrap().is_none());
@@ -334,12 +333,12 @@ fn test_for_mainnet_find_network_account_exists_with_default_context() {
     let context = create_test_context_with_default();
 
     // Expected result: Account found on the mainnet
-    let existent_account_id: near_primitives::types::AccountId = "devhub.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "devhub.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
 
     // Expected result: Account does not exist on the mainnet
-    let non_existent_account_id: near_primitives::types::AccountId =
+    let non_existent_account_id: near_kit::AccountId =
         "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.unwrap().is_none());
@@ -351,7 +350,7 @@ fn test_find_network_account_exists_with_context_with_failed_rpc_on_testnet() {
     let context = create_test_context_with_failed_rpc_on_testnet();
 
     // Expected result: Returns mainnet, because testnet RPC is failed
-    let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "test.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
 }
@@ -363,12 +362,12 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_
     let context = create_test_context_with_failed_rpc_on_testnet();
 
     // Expected result: Account found on the mainnet
-    let existent_account_id: near_primitives::types::AccountId = "devhub.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "devhub.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert_eq!(result.unwrap().unwrap().network_name, "mainnet");
 
     // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account does not exist on the testnet
-    let non_existent_account_id: near_primitives::types::AccountId =
+    let non_existent_account_id: near_kit::AccountId =
         "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
@@ -381,13 +380,12 @@ fn test_for_testnet_find_network_account_exists_with_context_with_failed_rpc_on_
     let context = create_test_context_with_failed_rpc_on_testnet();
 
     // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account exists on the testnet
-    let existent_account_id: near_primitives::types::AccountId =
-        "volodymyr.testnet".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "volodymyr.testnet".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert!(result.is_err());
 
     // Expected result: Error, because testnet RPC is failed, so it's impossible to be sure that account does not exist on the testnet
-    let non_existent_account_id: near_primitives::types::AccountId =
+    let non_existent_account_id: near_kit::AccountId =
         "nonexistent.volodymyr.testnet".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
@@ -400,7 +398,7 @@ fn test_find_network_account_exists_with_context_with_failed_rpc_on_mainnet() {
     let context = create_test_context_with_failed_rpc_on_mainnet();
 
     // Expected result: Returns testnet, because mainnet RPC is failed
-    let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "test.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert_eq!(result.unwrap().unwrap().network_name, "testnet");
 }
@@ -412,12 +410,12 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc_on_
     let context = create_test_context_with_failed_rpc_on_mainnet();
 
     // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account exists on the mainnet
-    let existent_account_id: near_primitives::types::AccountId = "devhub.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "devhub.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert!(result.is_err());
 
     // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account does not exist on the mainnet
-    let non_existent_account_id: near_primitives::types::AccountId =
+    let non_existent_account_id: near_kit::AccountId =
         "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
@@ -430,13 +428,12 @@ fn test_for_testnet_find_network_account_exists_with_context_with_failed_rpc_on_
     let context = create_test_context_with_failed_rpc_on_mainnet();
 
     // Expected result: Account found on the testnet
-    let existent_account_id: near_primitives::types::AccountId =
-        "volodymyr.testnet".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "volodymyr.testnet".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert_eq!(result.unwrap().unwrap().network_name, "testnet");
 
     // Expected result: Error, because mainnet RPC is failed, so it's impossible to be sure that account does not exist on the mainnet
-    let non_existent_account_id: near_primitives::types::AccountId =
+    let non_existent_account_id: near_kit::AccountId =
         "nonexistent.volodymyr.testnet".parse().unwrap();
     let result = find_network_where_account_exist(&context, non_existent_account_id.clone());
     assert!(result.is_err());
@@ -449,7 +446,7 @@ fn test_find_network_account_exists_with_context_with_failed_rpc() {
     let context = create_test_context_with_failed_rpc();
 
     // Expected result: Error, because RPC is failed on all networks
-    let existent_account_id: near_primitives::types::AccountId = "test.near".parse().unwrap();
+    let existent_account_id: near_kit::AccountId = "test.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id.clone());
     assert!(result.is_err());
 }
@@ -461,13 +458,12 @@ fn test_for_testnet_find_network_account_exists_with_context_with_failed_rpc() {
     let context = create_test_context_with_failed_rpc();
 
     // Expected result: Error, because RPC is failed on all networks
-    let existent_account_id_testnet: near_primitives::types::AccountId =
-        "volodymyr.testnet".parse().unwrap();
+    let existent_account_id_testnet: near_kit::AccountId = "volodymyr.testnet".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id_testnet.clone());
     assert!(result.is_err());
 
     // Expected result: Error, because RPC is failed on all networks
-    let non_existent_account_id_testnet: near_primitives::types::AccountId =
+    let non_existent_account_id_testnet: near_kit::AccountId =
         "nonexistent.volodymyr.testnet".parse().unwrap();
     let result =
         find_network_where_account_exist(&context, non_existent_account_id_testnet.clone());
@@ -481,13 +477,12 @@ fn test_for_mainnet_find_network_account_exists_with_context_with_failed_rpc() {
     let context = create_test_context_with_failed_rpc();
 
     // Expected result: Error, because RPC is failed on all networks
-    let existent_account_id_mainnet: near_primitives::types::AccountId =
-        "devhub.near".parse().unwrap();
+    let existent_account_id_mainnet: near_kit::AccountId = "devhub.near".parse().unwrap();
     let result = find_network_where_account_exist(&context, existent_account_id_mainnet.clone());
     assert!(result.is_err());
 
     // Expected result: Error, because RPC is failed on all networks
-    let non_existent_account_id_mainnet: near_primitives::types::AccountId =
+    let non_existent_account_id_mainnet: near_kit::AccountId =
         "zzz-nonexistent-xq7k9m2p4w.near".parse().unwrap();
     let result =
         find_network_where_account_exist(&context, non_existent_account_id_mainnet.clone());

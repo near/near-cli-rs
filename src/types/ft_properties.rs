@@ -3,7 +3,7 @@ use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub enum FungibleTokenTransferAmount {
@@ -200,26 +200,25 @@ pub struct FtMetadata {
 
 #[tracing::instrument(name = "Getting FT metadata ...", skip_all, parent = None)]
 pub fn params_ft_metadata(
-    ft_contract_account_id: near_primitives::types::AccountId,
+    ft_contract_account_id: near_kit::AccountId,
     network_config: &crate::config::NetworkConfig,
-    block_reference: near_primitives::types::BlockReference,
+    block_reference: near_kit::BlockReference,
 ) -> color_eyre::eyre::Result<FtMetadata> {
     tracing::info!(target: "near_teach_me", "Getting FT metadata ...");
-    let ft_metadata: FtMetadata = network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
-            &ft_contract_account_id,
-            "ft_metadata",
-            vec![],
-            block_reference,
+    let result = block_on(network_config.client().rpc().view_function(
+        &ft_contract_account_id,
+        "ft_metadata",
+        &[],
+        block_reference,
+    ))
+    .into_eyre()
+    .wrap_err_with(|| {
+        format!(
+            "Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
+            ft_contract_account_id, network_config.network_name
         )
-        .wrap_err_with(||{
-            format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
-                ft_contract_account_id,
-                network_config.network_name
-            )
-        })?
-        .parse_result_from_json()?;
+    })?;
+    let ft_metadata: FtMetadata = result.parse_result_from_json()?;
     Ok(ft_metadata)
 }
 
@@ -228,12 +227,12 @@ pub struct FtContract {
     #[serde(flatten)]
     pub ft_metadata: FtMetadata,
     #[serde(rename = "contract")]
-    pub ft_contract_account_id: near_primitives::types::AccountId,
+    pub ft_contract_account_id: near_kit::AccountId,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransfer {
-    pub receiver_id: near_primitives::types::AccountId,
+    pub receiver_id: near_kit::AccountId,
     #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
     pub amount: u128,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -242,7 +241,7 @@ pub struct FtTransfer {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FtTransferCall {
-    pub receiver_id: near_primitives::types::AccountId,
+    pub receiver_id: near_kit::AccountId,
     #[serde(deserialize_with = "parse_u128_string", serialize_with = "to_string")]
     pub amount: u128,
     #[serde(skip_serializing_if = "Option::is_none")]

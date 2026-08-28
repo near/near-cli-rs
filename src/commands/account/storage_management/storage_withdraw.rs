@@ -51,7 +51,7 @@ impl SignerAccountIdContext {
     ) -> color_eyre::eyre::Result<Self> {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
-                let signer_account_id: near_primitives::types::AccountId =
+                let signer_account_id: near_kit::AccountId =
                     scope.signer_account_id.clone().into();
                 let get_contract_account_id = previous_context.get_contract_account_id.clone();
                 let amount = previous_context.amount;
@@ -60,27 +60,27 @@ impl SignerAccountIdContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: signer_account_id.clone(),
                         receiver_id: get_contract_account_id(network_config)?,
-                        actions: vec![near_primitives::transaction::Action::FunctionCall(
-                            Box::new(near_primitives::transaction::FunctionCallAction {
+                        actions: vec![near_kit::Action::FunctionCall(
+                            near_kit::FunctionCallAction {
                                 method_name: "storage_withdraw".to_string(),
                                 args: serde_json::to_vec(&serde_json::json!({
                                     "amount": amount.clone().as_yoctonear().to_string()
                                 }))?,
-                                gas: near_primitives::gas::Gas::from_teragas(50),
+                                gas: near_kit::Gas::from_tgas(50),
                                 deposit: near_token::NearToken::from_yoctonear(1),
-                            }),
+                            },
                         )],
                     })
                 }
             });
 
         let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
-            let signer_account_id: near_primitives::types::AccountId = scope.signer_account_id.clone().into();
+            let signer_account_id: near_kit::AccountId = scope.signer_account_id.clone().into();
             let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, network_config| {
                 let contract_account_id = (previous_context.get_contract_account_id)(network_config)?;
-                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status
+                if outcome_view.is_success()
                     && let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         tracing_indicatif::suspend_tracing_indicatif(|| {
                             eprintln!(

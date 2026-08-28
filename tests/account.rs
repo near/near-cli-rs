@@ -48,7 +48,10 @@ async fn test_view_account_summary_nonexistent() -> Result<(), Box<dyn std::erro
 
     let stderr = String::from_utf8_lossy(&output.stderr);
 
-    assert!(stderr.contains("account nonexistent.near does not exist while viewing"));
+    assert!(
+        stderr.contains("account nonexistent.near does not exist while viewing"),
+        "Expected the legacy unknown-account message, got stderr: {stderr}"
+    );
 
     Ok(())
 }

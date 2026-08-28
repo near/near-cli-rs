@@ -2,7 +2,7 @@ use color_eyre::eyre::Context;
 use serde_json::json;
 
 use crate::common::CallResultExt;
-use crate::common::JsonRpcClientExt;
+use crate::common::{RpcResultExt, block_on};
 
 use super::send_ft::input_ft_contract_account_id;
 use crate::types::ft_inventory::{FTContract, FTInventory, get_account_ft_inventory};
@@ -34,11 +34,11 @@ impl ViewFtBalanceContext {
 
             move |network_config, block_reference| {
                 if let FTContract::SingleContract(ft_contract_account_id) = &ft_contract {
-                    let ft_contract_account_id: near_primitives::types::AccountId = ft_contract_account_id.clone().into();
+                    let ft_contract_account_id: near_kit::AccountId = ft_contract_account_id.clone().into();
                     let ft_metadata = crate::types::ft_properties::params_ft_metadata(
                         ft_contract_account_id.clone(),
                         network_config,
-                        block_reference.clone(),
+                        *block_reference,
                     )?;
 
                     let ft_contract = crate::types::ft_properties::FtContract {
@@ -54,7 +54,7 @@ impl ViewFtBalanceContext {
                     let args = serde_json::to_vec(&json!({
                         "account_id": owner_account_id.clone().to_string(),
                         }))?;
-                    let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, block_reference.clone())?;
+                    let call_result = get_ft_balance(network_config, &ft_contract_account_id, args, *block_reference)?;
                     call_result.print_logs();
                     let amount: String = call_result.parse_result_from_json()?;
                     let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
@@ -121,25 +121,27 @@ impl ViewFtBalance {
 #[tracing::instrument(name = "Getting FT balance ...", skip_all, parent = None)]
 pub fn get_ft_balance(
     network_config: &crate::config::NetworkConfig,
-    ft_contract_account_id: &near_primitives::types::AccountId,
+    ft_contract_account_id: &near_kit::AccountId,
     args: Vec<u8>,
-    block_reference: near_primitives::types::BlockReference,
-) -> color_eyre::eyre::Result<near_primitives::views::CallResult> {
+    block_reference: near_kit::BlockReference,
+) -> color_eyre::eyre::Result<near_kit::ViewFunctionResult> {
     tracing::info!(target: "near_teach_me", "Getting FT balance ...");
-    network_config
-        .json_rpc_client()
-        .blocking_call_view_function(
-            ft_contract_account_id,
-            "ft_balance_of",
-            args,
-            block_reference,
+    let result = block_on(
+            network_config.client().rpc().view_function(
+                ft_contract_account_id,
+                "ft_balance_of",
+                &args,
+                block_reference,
+            ),
         )
+        .into_eyre()
         .wrap_err_with(||{
             format!("Failed to fetch query for view method: 'ft_balance_of' (contract <{}> on network <{}>)",
                 ft_contract_account_id,
                 network_config.network_name
             )
-        })
+        })?;
+    Ok(result)
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -225,7 +227,7 @@ fn format_usd_value(value: f64) -> String {
 
 fn print_fts_inventory(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
     verbosity: crate::Verbosity,
 ) -> crate::CliResult {
     let inventory = get_account_ft_inventory(network_config, account_id)?;
@@ -312,8 +314,7 @@ mod tests {
     fn create_test_ft(amount: &str, decimals: u8, price: Option<f64>) -> FTInventory {
         FTInventory {
             amount: amount.to_string(),
-            ft_contract_account_id: near_primitives::types::AccountId::from_str("test.near")
-                .unwrap(),
+            ft_contract_account_id: near_kit::AccountId::from_str("test.near").unwrap(),
             ft_meta: crate::types::ft_inventory::FTMeta {
                 decimals,
                 name: "Test Token".to_string(),

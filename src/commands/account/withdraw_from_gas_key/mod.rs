@@ -17,7 +17,7 @@ pub struct WithdrawFromGasKeyCommand {
 #[derive(Debug, Clone)]
 pub struct WithdrawFromGasKeyCommandContext {
     global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
+    owner_account_id: near_kit::AccountId,
 }
 
 impl WithdrawFromGasKeyCommandContext {
@@ -62,8 +62,8 @@ pub struct WithdrawFromGasKeyDetails {
 #[derive(Debug, Clone)]
 pub struct WithdrawFromGasKeyDetailsContext {
     global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
-    public_key: near_crypto::PublicKey,
+    owner_account_id: near_kit::AccountId,
+    public_key: near_kit::PublicKey,
     amount: crate::types::near_token::NearToken,
 }
 
@@ -120,8 +120,8 @@ impl WithdrawFromGasKeyDetails {
             .filter(|info| {
                 matches!(
                     info.permission,
-                    near_primitives::views::AccessKeyPermissionView::GasKeyFunctionCall { .. }
-                        | near_primitives::views::AccessKeyPermissionView::GasKeyFullAccess { .. }
+                    near_kit::AccessKeyPermissionView::GasKeyFunctionCall { .. }
+                        | near_kit::AccessKeyPermissionView::GasKeyFullAccess { .. }
                 )
             })
             .cloned()
@@ -164,11 +164,11 @@ impl From<WithdrawFromGasKeyDetailsContext> for crate::commands::ActionContext {
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: owner_account_id.clone(),
                         receiver_id: owner_account_id.clone(),
-                        actions: vec![near_primitives::transaction::Action::WithdrawFromGasKey(
-                            Box::new(near_primitives::action::WithdrawFromGasKeyAction {
+                        actions: vec![near_kit::Action::WithdrawFromGasKey(
+                            near_kit::WithdrawFromGasKeyAction {
                                 public_key: public_key.clone(),
                                 amount: amount.into(),
-                            }),
+                            },
                         )],
                     })
                 }

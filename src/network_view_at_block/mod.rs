@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use color_eyre::eyre::ContextCompat;
-use near_primitives::types::{BlockId, BlockReference, Finality};
+use near_kit::{BlockReference, Finality};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 pub type OnAfterGettingBlockReferenceCallback =
@@ -10,7 +10,7 @@ pub type OnAfterGettingBlockReferenceCallback =
 #[derive(Clone)]
 pub struct ArgsForViewContext {
     pub config: crate::config::Config,
-    pub interacting_with_account_ids: Vec<near_primitives::types::AccountId>,
+    pub interacting_with_account_ids: Vec<near_kit::AccountId>,
     pub on_after_getting_block_reference_callback: OnAfterGettingBlockReferenceCallback,
 }
 
@@ -92,7 +92,7 @@ impl NowContext {
         previous_context: NetworkViewAtBlockArgsContext,
         _scope: &<Now as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let block_reference = Finality::Final.into();
+        let block_reference = BlockReference::Finality(Finality::Final);
 
         (previous_context.on_after_getting_block_reference_callback)(
             &previous_context.network_config,
@@ -107,7 +107,7 @@ impl NowContext {
 #[interactive_clap(output_context = AtBlockHeightContext)]
 pub struct AtBlockHeight {
     /// Type the block ID height:
-    block_id_height: near_primitives::types::BlockHeight,
+    block_id_height: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -118,7 +118,7 @@ impl AtBlockHeightContext {
         previous_context: NetworkViewAtBlockArgsContext,
         scope: &<AtBlockHeight as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let block_reference = BlockReference::BlockId(BlockId::Height(scope.block_id_height));
+        let block_reference = BlockReference::at_height(scope.block_id_height);
 
         (previous_context.on_after_getting_block_reference_callback)(
             &previous_context.network_config,
@@ -144,9 +144,8 @@ impl BlockIdHashContext {
         previous_context: NetworkViewAtBlockArgsContext,
         scope: &<BlockIdHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let block_reference = BlockReference::BlockId(BlockId::Hash(
-            near_primitives::hash::CryptoHash::from_str(&scope.block_id_hash).unwrap(),
-        ));
+        let block_reference =
+            BlockReference::at_hash(near_kit::CryptoHash::from_str(&scope.block_id_hash).unwrap());
 
         (previous_context.on_after_getting_block_reference_callback)(
             &previous_context.network_config,

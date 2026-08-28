@@ -19,10 +19,10 @@ pub struct GenerateKeypair {
 #[derive(Debug, Clone)]
 pub struct GenerateKeypairContext {
     global_context: crate::GlobalContext,
-    signer_account_id: near_primitives::types::AccountId,
-    permission: near_primitives::account::AccessKeyPermission,
+    signer_account_id: near_kit::AccountId,
+    permission: near_kit::AccessKeyPermission,
     generated_key_pair: crate::common::GeneratedKeyPair,
-    public_key: near_crypto::PublicKey,
+    public_key: near_kit::PublicKey,
 }
 
 impl GenerateKeypairContext {

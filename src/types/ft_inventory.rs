@@ -22,7 +22,7 @@ impl std::fmt::Display for FTContract {
 }
 
 impl std::str::FromStr for FTContract {
-    type Err = <near_primitives::types::AccountId as std::str::FromStr>::Err;
+    type Err = <near_kit::AccountId as std::str::FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.to_lowercase() == "all" {
@@ -50,7 +50,7 @@ impl Inventory {
 pub struct FTInventory {
     pub amount: String,
     #[serde(rename = "contract")]
-    pub ft_contract_account_id: near_primitives::types::AccountId,
+    pub ft_contract_account_id: near_kit::AccountId,
     pub ft_meta: FTMeta,
 }
 
@@ -65,7 +65,7 @@ pub struct FTMeta {
 #[tracing::instrument(name = "Getting FT token inventory information for", skip_all)]
 pub fn get_account_ft_inventory(
     network_config: &crate::config::NetworkConfig,
-    account_id: &near_primitives::types::AccountId,
+    account_id: &near_kit::AccountId,
 ) -> color_eyre::eyre::Result<Inventory> {
     tracing::Span::current().pb_set_message(&format!("account <{account_id}>..."));
     tracing::info!(target: "near_teach_me", "Getting FT token inventory information for account <{account_id}>...");
@@ -261,7 +261,7 @@ mod tests {
         let (base_url, server_handle) = spawn_mock_nearblocks_server();
 
         let network_config = network_config(base_url.parse().unwrap());
-        let account_id = near_primitives::types::AccountId::from_str("test.near").unwrap();
+        let account_id = near_kit::AccountId::from_str("test.near").unwrap();
         let inventory = get_account_ft_inventory(&network_config, &account_id).unwrap();
 
         assert_eq!(inventory.fts().len(), 3);

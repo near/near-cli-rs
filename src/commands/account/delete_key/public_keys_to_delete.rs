@@ -18,8 +18,8 @@ pub struct PublicKeyList {
 #[derive(Debug, Clone)]
 pub struct PublicKeyListContext {
     global_context: crate::GlobalContext,
-    owner_account_id: near_primitives::types::AccountId,
-    public_keys: Vec<near_crypto::PublicKey>,
+    owner_account_id: near_kit::AccountId,
+    public_keys: Vec<near_kit::PublicKey>,
 }
 
 impl PublicKeyListContext {
@@ -50,9 +50,7 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
                             .clone()
                             .into_iter()
                             .map(|public_key| {
-                                near_primitives::transaction::Action::DeleteKey(Box::new(
-                                    near_primitives::transaction::DeleteKeyAction { public_key },
-                                ))
+                                near_kit::Action::DeleteKey(near_kit::DeleteKeyAction { public_key })
                             })
                             .collect(),
                     })

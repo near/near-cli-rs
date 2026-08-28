@@ -1,7 +1,6 @@
 use color_eyre::eyre::WrapErr;
 
-use crate::common::JsonRpcClientExt;
-use crate::common::RpcQueryResponseExt;
+use crate::common::{RpcResultExt, block_on};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -40,27 +39,24 @@ impl PublicKeyFromKeychainContext {
                     ));
 
                     let password = {
-                        let access_key_list = network_config
-                            .json_rpc_client()
-                            .blocking_call_view_access_key_list(
-                                &account_id.clone().into(),
-                                near_primitives::types::Finality::Final.into(),
-                            )
-                            .wrap_err_with(|| {
-                                format!("Failed to fetch access key list for {account_id}")
-                            })?
-                            .access_key_list_view()?;
-
-                        let res = access_key_list
+                        let nk_list = block_on(network_config.client().rpc().view_access_key_list(
+                            &account_id.clone().into(),
+                            near_kit::Finality::Final.into(),
+                        ))
+                        .into_eyre()
+                        .wrap_err_with(|| {
+                            format!("Failed to fetch access key list for {account_id}")
+                        })?;
+                        let res = nk_list
                             .keys
-                            .into_iter()
+                            .iter()
                             .filter(|key| {
                                 matches!(
                                     key.access_key.permission,
-                                    near_primitives::views::AccessKeyPermissionView::FullAccess
+                                    near_kit::AccessKeyPermissionView::FullAccess
                                 )
                             })
-                            .map(|key| key.public_key)
+                            .map(|key| &key.public_key)
                             .find_map(|public_key| {
                                 let keyring = keyring::Entry::new(
                                     &service_name,
