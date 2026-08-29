@@ -15,7 +15,7 @@ use crate::common::RpcQueryResponseExt;
 pub struct SignLegacyKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    signer_public_key: Option<crate::types::public_key::PublicKey>,
+    signer_public_key: Option<crate::types::public_key::PublicKeyOrKeyHandle>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
@@ -79,8 +79,7 @@ impl SignLegacyKeychainContext {
                 let signer_public_key = scope.signer_public_key.as_ref().wrap_err(
                     "Signer public key is required to sign a transaction in offline mode",
                 )?;
-                let keychain_key_id =
-                    crate::common::normalize_keychain_key_id(&signer_public_key.to_string())?;
+                let keychain_key_id = signer_public_key.to_string();
                 signer_keychain_folder.join(format!("{}.json", keychain_key_id.replace(':', "_")))
             } else if signer_keychain_folder.exists() {
                 let full_access_key_filenames = network_config
@@ -277,7 +276,7 @@ impl From<SignLegacyKeychainContext> for super::SubmitContext {
 impl SignLegacyKeychain {
     fn input_signer_public_key(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKeyOrKeyHandle>> {
         if context.global_context.offline {
             let network_config = context.network_config.clone();
 
@@ -294,15 +293,15 @@ impl SignLegacyKeychain {
             let key_list = signer_dir
                 .filter_map(|entry| entry.ok())
                 .filter_map(|entry| entry.file_name().into_string().ok())
-                .filter(|file_name_str| file_name_str.starts_with("ed25519_"))
                 .map(|file_name_str| file_name_str.replace(".json", "").replace('_', ":"))
+                .filter_map(|public_key| {
+                    crate::types::public_key::PublicKeyOrKeyHandle::from_str(&public_key).ok()
+                })
                 .collect::<Vec<_>>();
 
             let selected_input = Select::new("Choose a public key:", key_list).prompt()?;
 
-            return Ok(Some(crate::types::public_key::PublicKey::from_str(
-                &selected_input,
-            )?));
+            return Ok(Some(selected_input));
         }
         Ok(None)
     }
