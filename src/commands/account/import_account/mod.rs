@@ -138,8 +138,8 @@ fn check_account_id(
         chosen_network_config.clone(),
     ) {
         Err(err @ crate::common::AccountStateError::Cancel) => Err(color_eyre::eyre::eyre!(err)),
-        Err(_) => Err(color_eyre::eyre::eyre!(
-            "Couldn't find access key for account <{account_id}> on network <{}>:\n    access_key: {public_key}",
+        Err(err) => Err(color_eyre::eyre::eyre!(
+            "Couldn't find access key for account <{account_id}> on network <{}>:\n    access_key: {public_key}\nVerification error: {err}",
             chosen_network_config.network_name
         )),
         _ => Ok(()),
