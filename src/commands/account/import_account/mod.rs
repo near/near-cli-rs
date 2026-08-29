@@ -66,14 +66,15 @@ pub fn login(
             public_key.clone(),
             network_config.clone(),
         );
-        if let Err(err @ crate::common::AccountStateError::Cancel) = access_key_view {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
-        }
-        if access_key_view.is_err() {
+        if let Err(err) = access_key_view {
+            if matches!(&err, crate::common::AccountStateError::Cancel) {
+                return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
+            }
+            let warning = format!("{error_message}\nVerification error: {err}");
             tracing::warn!(
                 parent: &tracing::Span::none(),
                 "{}",
-                crate::common::indent_payload(error_message)
+                crate::common::indent_payload(&warning)
             );
 
             #[derive(strum_macros::Display)]
