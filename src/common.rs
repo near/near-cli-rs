@@ -3028,7 +3028,7 @@ fn profile_table(
         if let Some(description) = &account_profile.profile.description {
             table.add_row(prettytable::row![
                 Fg->"Description",
-                Fy->description.to_string(),
+                Fy->description
             ]);
         }
         if let Some(linktree) = &account_profile.profile.linktree {
