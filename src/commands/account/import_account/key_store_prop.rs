@@ -33,7 +33,7 @@ impl RecoverableKey {
     pub fn generate_keypair() -> color_eyre::eyre::Result<Self> {
         // NOTE: `.unwrap()` is fine as this is default near web-wallets path and it is hardened
         let seed_phrase_hd_path = near_slip10::BIP32Path::from_str("m/44'/397'/0'").unwrap();
-        // TODO: can change to 24 when support for ML-DSA-65 derivation lands
+        // TODO: change to 24 when support for ML-DSA-65 derivation lands
         let master_seed_phrase = bip39::Mnemonic::generate(12)?;
 
         Self::derive(master_seed_phrase, seed_phrase_hd_path)

@@ -1,7 +1,5 @@
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use near_primitives::account::id::AccountType;
-
 pub mod key_store_prop;
 mod network;
 mod using_private_key;
@@ -65,11 +63,6 @@ impl network::NetworkForImportAccountContext {
     ) -> color_eyre::eyre::Result<Self> {
         let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
-        check_implicit_account_id(
-            &account_id,
-            previous_context.key_store_property.public_key(),
-        )?;
-
         Ok(Self {
             global_context: previous_context.global_context,
             account_id,
@@ -90,62 +83,65 @@ impl ImportAccountDetails {
     }
 }
 
-fn check_implicit_account_id(
+fn warn_on_implicit_account_id_missmatch(
     account_id: &near_primitives::types::AccountId,
     public_key: &near_crypto::PublicKey,
-) -> color_eyre::eyre::Result<()> {
-    if near_primitives::account::id::AccountType::NearImplicitAccount
-        != account_id.get_account_type()
-    {
-        return Ok(());
+) {
+    use color_eyre::owo_colors::OwoColorize;
+
+    let Ok(derived_account_id) = near_crypto::PublicKey::from_near_implicit_account(account_id)
+    else {
+        return;
+    };
+
+    if derived_account_id == *public_key {
+        return;
     }
 
-    let expected_public_key = near_crypto::PublicKey::from_near_implicit_account(account_id)
-        .map_err(|err| {
-            color_eyre::Report::msg(format!(
-                "Failed to derive the public key of implicit <{account_id}>: {err}"
-            ))
-        })?;
-
-    if *public_key != expected_public_key {
-        return Err(color_eyre::eyre::eyre!(
-            "Provided public key cannot sign for implicit account <{account_id}>:\n   expected public key: {expected_public_key}\n   provided public key: {public_key}"
-        ));
-    }
-    Ok(())
+    let info_str = format!(
+        "{}\n{}",
+        format!(
+            "<{account_id}> is a NEAR implicit account id, but it is not derived from <{public_key}>."
+        ).yellow(),
+        "This key will only be able to sign if it was added to the account on chain. Re-run with --check-account-id to verify it.".yellow()
+    );
+    tracing::warn!(
+        parent: &tracing::Span::none(),
+        "\n{}",
+        crate::common::indent_payload(&info_str)
+    );
 }
 
-pub fn check_account_id(
+fn check_account_id(
     global_context: &crate::GlobalContext,
     chosen_network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     public_key: &near_crypto::PublicKey,
 ) -> crate::CliResult {
-    // Implicit account always exists - we import it without prompting to check if it exists.
-    if let AccountType::NearImplicitAccount = account_id.get_account_type() {
-        return Ok(());
-    }
-
     if !crate::common::is_account_exist(global_context, account_id.clone())? {
+        // Implicit AccountId always exists. If the public key that was passed to this function is
+        // the same public key that was used to generate implicit AccountId, then we don't need
+        // to return error as implicit AccountId will be instantiated on the first transaction.
+        if near_crypto::PublicKey::from_near_implicit_account(account_id)
+            .is_ok_and(|derived_public_key| derived_public_key == *public_key)
+        {
+            return Ok(());
+        }
         return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
             "Couldn't find account <{account_id}> on any known network"
         ));
     }
 
-    let access_key_view = crate::common::verify_account_access_key(
+    match crate::common::verify_account_access_key(
         account_id.clone(),
         public_key.clone(),
         chosen_network_config.clone(),
-    );
-    if let Err(err @ crate::common::AccountStateError::Cancel) = access_key_view {
-        return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
-    }
-    if access_key_view.is_err() {
-        return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+    ) {
+        Err(err @ crate::common::AccountStateError::Cancel) => Err(color_eyre::eyre::eyre!(err)),
+        Err(_) => Err(color_eyre::eyre::eyre!(
             "Couldn't find access key for account <{account_id}> on network <{}>:\n    access_key: {public_key}",
             chosen_network_config.network_name
-        ));
+        )),
+        _ => Ok(()),
     }
-
-    Ok(())
 }

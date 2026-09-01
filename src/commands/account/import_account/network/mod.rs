@@ -71,6 +71,11 @@ impl NetworkForImportAccountOutputContext {
                 &previous_context.account_id,
                 previous_context.key_store_property.public_key(),
             )?;
+        } else {
+            super::warn_on_implicit_account_id_missmatch(
+                &previous_context.account_id,
+                previous_context.key_store_property.public_key(),
+            );
         }
 
         Ok(Self {
@@ -87,12 +92,6 @@ impl NetworkForImportAccount {
         context: &NetworkForImportAccountContext,
     ) -> color_eyre::eyre::Result<bool> {
         use inquire::Select;
-        use near_primitives::account::id::AccountType;
-
-        // Implicit accounts always exist - nothing to verify
-        if let AccountType::NearImplicitAccount = context.account_id.get_account_type() {
-            return Ok(false);
-        }
 
         #[derive(strum_macros::Display)]
         enum ConfirmOptions {
