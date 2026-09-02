@@ -1,5 +1,15 @@
 use color_eyre::eyre::Context;
+use near_jsonrpc_client::errors::{JsonRpcError, JsonRpcServerError};
+use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryError, RpcQueryResponse};
+use near_primitives::{
+    action::{DeployGlobalContractAction, GlobalContractDeployMode, GlobalContractIdentifier},
+    hash::CryptoHash,
+    transaction::Action,
+    views::QueryRequest,
+};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
+use crate::common::JsonRpcClientExt as _;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = crate::GlobalContext)]
@@ -48,9 +58,9 @@ impl ContractFileContext {
 /// Choose a global contract deploy mode:
 pub enum DeployGlobalMode {
     #[strum_discriminants(strum(
-        message = "as-global-hash       - Deploy code as a global contract code hash (immutable)"
+        message = "as-global-hash       - Deploy code as a global contract code hash (immutable, requires network access)"
     ))]
-    /// Deploy code as a global contract code hash (immutable)
+    /// Deploy code as a global contract code hash (immutable, requires network access)
     AsGlobalHash(DeployGlobalResult),
     #[strum_discriminants(strum(
         message = "as-global-account-id - Deploy code as a global contract account ID (mutable)"
@@ -139,24 +149,91 @@ impl DeployGlobalResultContext {
     }
 }
 
+type GlobalContractQueryResult = crate::common::BoxedJsonRpcResult<RpcQueryResponse, RpcQueryError>;
+
+fn code_hash_actions(
+    code: &[u8],
+    expected_hash: CryptoHash,
+    query_result: GlobalContractQueryResult,
+) -> color_eyre::eyre::Result<Vec<Action>> {
+    match query_result {
+        Ok(RpcQueryResponse {
+            kind: QueryResponseKind::ViewCode(code),
+            ..
+        }) if code.hash == expected_hash && CryptoHash::hash_bytes(&code.code) == expected_hash => {
+            return Ok(Vec::new());
+        }
+        Ok(_) => {
+            return Err(color_eyre::eyre::eyre!(
+                "Unexpected response for global contract <{expected_hash}>"
+            ));
+        }
+        Err(err)
+            if matches!(
+                err.as_ref(),
+                JsonRpcError::ServerError(JsonRpcServerError::HandlerError(
+                    RpcQueryError::NoGlobalContractCode {
+                        identifier: GlobalContractIdentifier::CodeHash(code_hash),
+                        ..
+                    }
+                )) if *code_hash == expected_hash
+            ) => {}
+        Err(err) => {
+            return Err(err)
+                .wrap_err_with(|| format!("Failed to query global contract <{expected_hash}>"));
+        }
+    }
+
+    Ok(vec![Action::DeployGlobalContract(
+        DeployGlobalContractAction {
+            code: code.to_vec().into(),
+            deploy_mode: GlobalContractDeployMode::CodeHash,
+        },
+    )])
+}
+
 impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
     fn from(item: DeployGlobalResultContext) -> Self {
         let account_id = item.account_id.clone();
+        let offline = item.global_context.offline;
+        let code_hash = (item.mode == GlobalContractDeployMode::CodeHash)
+            .then(|| CryptoHash::hash_bytes(&item.code));
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
-        std::sync::Arc::new({
-            move |_network_config| {
+            std::sync::Arc::new(move |network_config| {
+                let actions = if let Some(code_hash) = code_hash {
+                    eprintln!("\nWasm code hash: {code_hash}");
+                    if offline {
+                        return Err(color_eyre::eyre::eyre!(
+                            "`contract deploy-as-global ... as-global-hash` requires network access; use `transaction construct-transaction ... add-action deploy-global-contract ... as-global-hash` for unchecked offline construction"
+                        ));
+                    }
+                    let actions = code_hash_actions(
+                        &item.code,
+                        code_hash,
+                        network_config.json_rpc_client().blocking_call(
+                            near_jsonrpc_client::methods::query::RpcQueryRequest {
+                                block_reference: near_primitives::types::Finality::Final.into(),
+                                request: QueryRequest::ViewGlobalContractCode { code_hash },
+                            },
+                        ),
+                    )?;
+                    if actions.is_empty() {
+                        eprintln!("Global contract <{code_hash}> already exists; skipping deployment.");
+                    }
+                    actions
+                } else {
+                    vec![Action::DeployGlobalContract(DeployGlobalContractAction {
+                        code: item.code.clone().into(),
+                        deploy_mode: item.mode.clone(),
+                    })]
+                };
+
                 Ok(crate::commands::PrepopulatedTransaction {
                     signer_id: item.account_id.clone(),
                     receiver_id: item.account_id.clone(),
-                    actions: vec![near_primitives::transaction::Action::DeployGlobalContract(
-                        near_primitives::action::DeployGlobalContractAction {
-                            code: item.code.clone().into(),
-                            deploy_mode: item.mode.clone(),
-                        },
-                    )],
+                    actions,
                 })
-            }
-        });
+            });
 
         Self {
             global_context: item.global_context,
@@ -176,3 +253,6 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
