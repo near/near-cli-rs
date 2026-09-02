@@ -5,6 +5,7 @@ mod send_ft_call;
 mod send_near;
 mod send_nft;
 mod view_ft_balance;
+mod view_mt_ft_balance;
 mod view_near_balance;
 mod view_nft_assets;
 
@@ -55,32 +56,37 @@ impl TokensCommands {
 /// Select actions with tokens:
 pub enum TokensActions {
     #[strum_discriminants(strum(
-        message = "send-near         - The transfer is carried out in NEAR tokens"
+        message = "send-near          - The transfer is carried out in NEAR tokens"
     ))]
     /// The transfer is carried out in NEAR tokens
     SendNear(self::send_near::SendNearCommand),
     #[strum_discriminants(strum(
-        message = "send-ft           - The transfer is carried out in FT tokens"
+        message = "send-ft            - The transfer is carried out in FT tokens"
     ))]
     /// The transfer is carried out in FT tokens
     SendFt(self::send_ft::FtContract),
     #[strum_discriminants(strum(
-        message = "send-ft-call      - Transfer FT tokens via ft_transfer_call"
+        message = "send-ft-call       - Transfer FT tokens via ft_transfer_call"
     ))]
     /// Transfer FT tokens via ft_transfer_call to a receiving contract
     SendFtCall(self::send_ft_call::FtContract),
     #[strum_discriminants(strum(
-        message = "send-nft          - The transfer is carried out in NFT tokens"
+        message = "send-nft           - The transfer is carried out in NFT tokens"
     ))]
     /// The transfer is carried out in NFT tokens
     SendNft(self::send_nft::SendNftCommand),
-    #[strum_discriminants(strum(message = "view-near-balance - View the balance of Near tokens"))]
+    #[strum_discriminants(strum(message = "view-near-balance  - View the balance of Near tokens"))]
     /// View the balance of Near tokens
     ViewNearBalance(self::view_near_balance::ViewNearBalance),
-    #[strum_discriminants(strum(message = "view-ft-balance   - View the balance of FT tokens"))]
+    #[strum_discriminants(strum(message = "view-ft-balance    - View the balance of FT tokens"))]
     /// View the balance of FT tokens
     ViewFtBalance(self::view_ft_balance::ViewFtBalance),
-    #[strum_discriminants(strum(message = "view-nft-assets   - View the balance of NFT tokens"))]
+    #[strum_discriminants(strum(message = "view-nft-assets    - View the balance of NFT tokens"))]
     /// View NFT token assets
     ViewNftAssets(self::view_nft_assets::ViewNftAssets),
+    #[strum_discriminants(strum(
+        message = "view-mt-ft-balance - View the balance of MT-FT tokens"
+    ))]
+    /// View the balance of MT-FT tokens
+    ViewMtFtBalance(self::view_mt_ft_balance::ViewMtFtBalance),
 }
