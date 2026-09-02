@@ -4,57 +4,52 @@
 pub struct LoginFromSeedPhrase {
     /// Enter the seed-phrase for this account:
     master_seed_phrase: String,
+
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
+    /// Enter BIP32 path for this account:
     seed_phrase_hd_path: crate::types::slip10::BIP32Path,
-    #[interactive_clap(named_arg)]
-    /// Select network
-    network_config: crate::network::Network,
+
+    #[interactive_clap(subargs)]
+    details: super::ImportAccountDetails,
 }
 
-#[derive(Clone)]
-pub struct LoginFromSeedPhraseContext(crate::network::NetworkContext);
+#[derive(Debug, Clone)]
+pub struct LoginFromSeedPhraseContext {
+    global_context: crate::GlobalContext,
+    key_store_property: super::key_store_prop::RecoverableKey,
+}
 
 impl LoginFromSeedPhraseContext {
     pub fn from_previous_context(
         previous_context: crate::GlobalContext,
         scope: &<LoginFromSeedPhrase as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let key_pair_properties = crate::common::get_key_pair_properties_from_seed_phrase(
-            scope.seed_phrase_hd_path.clone(),
-            scope.master_seed_phrase.clone(),
+        let master_seed_phrase = bip39::Mnemonic::parse(scope.master_seed_phrase.clone())?;
+        let key_store_property = super::key_store_prop::RecoverableKey::derive(
+            master_seed_phrase,
+            scope.seed_phrase_hd_path.clone().into(),
         )?;
-        let key_pair_properties_buf = serde_json::to_string(&key_pair_properties).unwrap();
 
-        let on_after_getting_network_callback: crate::network::OnAfterGettingNetworkCallback =
-            std::sync::Arc::new({
-                let config = previous_context.config.clone();
-
-                move |network_config| {
-                    super::login(
-                        network_config.clone(),
-                        config.credentials_home_dir.clone(),
-                        &key_pair_properties_buf,
-                        &key_pair_properties.public_key_str,
-                        &format!(
-                            "\nIt is currently not possible to verify the account access key on network <{}>.\nYou may have entered an incorrect account_id.\nYou have the option to reconfirm your account or save your access key information.\n ",
-                            network_config.network_name
-                        ),
-                    )
-                }
-            });
-
-        Ok(Self(crate::network::NetworkContext {
-            config: previous_context.config,
-            interacting_with_account_ids: Vec::new(),
-            on_after_getting_network_callback,
-        }))
+        Ok(Self {
+            global_context: previous_context,
+            key_store_property,
+        })
     }
 }
 
-impl From<LoginFromSeedPhraseContext> for crate::network::NetworkContext {
+impl From<LoginFromSeedPhraseContext> for super::ImportAccountDetailsContext {
     fn from(item: LoginFromSeedPhraseContext) -> Self {
-        item.0
+        let key_store_property =
+            super::key_store_prop::KeyStorePropertyType::Recoverable(item.key_store_property);
+        let on_after_getting_network_callback: super::network::OnAfterGettingNetworkConfigCallback =
+            std::sync::Arc::new(move |_network_config| Ok(()));
+
+        Self {
+            global_context: item.global_context,
+            key_store_property,
+            on_after_getting_network_callback,
+        }
     }
 }
 
