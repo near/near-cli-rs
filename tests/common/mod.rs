@@ -8,12 +8,21 @@ pub struct TestContext {
     pub config_home: std::path::PathBuf,
 }
 
+#[allow(dead_code)]
 pub async fn prepare_tests() -> Result<TestContext, Box<dyn std::error::Error>> {
+    prepare_tests_with_accounts(Vec::new()).await
+}
+
+#[allow(dead_code)]
+pub async fn prepare_tests_with_accounts(
+    additional_accounts: Vec<near_sandbox::GenesisAccount>,
+) -> Result<TestContext, Box<dyn std::error::Error>> {
     // Configure the sandbox with a custom epoch length
     let config = SandboxConfig {
         additional_genesis: Some(serde_json::json!({
             "epoch_length": 43200,
         })),
+        additional_accounts,
         ..Default::default()
     };
     // Start a local sandbox
