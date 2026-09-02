@@ -289,3 +289,58 @@ fn try_rewrite_construct_transaction_args() -> Option<Vec<String>> {
     rewritten.insert(receiver_idx, "receiver-id".to_string());
     Some(rewritten)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Cmd;
+
+    fn add_key_command(function_names: &str) -> Vec<&str> {
+        vec![
+            "near",
+            "account",
+            "add-key",
+            "alice.testnet",
+            "grant-function-call-access",
+            "--allowance",
+            "unlimited",
+            "--contract-account-id",
+            "contract.testnet",
+            "--function-names",
+            function_names,
+        ]
+    }
+
+    fn construct_transaction_command(function_names: &str) -> Vec<&str> {
+        vec![
+            "near",
+            "transaction",
+            "construct-transaction",
+            "alice.testnet",
+            "receiver-id",
+            "contract.testnet",
+            "add-action",
+            "add-key",
+            "grant-function-call-access",
+            "--allowance",
+            "unlimited",
+            "--contract-account-id",
+            "contract.testnet",
+            "--function-names",
+            function_names,
+        ]
+    }
+
+    #[test]
+    fn function_names_cli_accepts_empty_for_unrestricted_access() {
+        assert!(Cmd::try_parse_from(add_key_command("")).is_ok());
+        assert!(Cmd::try_parse_from(construct_transaction_command("")).is_ok());
+    }
+
+    #[test]
+    fn function_names_cli_rejects_malformed_lists() {
+        for function_names in [" ", "ft_transfer,", ",ft_transfer", "\"ft_transfer\""] {
+            assert!(Cmd::try_parse_from(add_key_command(function_names)).is_err());
+            assert!(Cmd::try_parse_from(construct_transaction_command(function_names)).is_err());
+        }
+    }
+}
