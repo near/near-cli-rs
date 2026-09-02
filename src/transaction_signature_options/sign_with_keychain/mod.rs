@@ -12,7 +12,7 @@ use crate::common::RpcQueryResponseExt;
 pub struct SignKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    signer_public_key: Option<crate::types::public_key::PublicKey>,
+    signer_public_key: Option<crate::types::public_key::PublicKeyOrKeyHandle>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
@@ -88,8 +88,7 @@ impl SignKeychainContext {
                 .signer_public_key
                 .clone()
                 .wrap_err("Signer public key is required to sign a transaction in offline mode")?;
-            let keychain_key_id =
-                crate::common::normalize_keychain_key_id(&signer_public_key.to_string())?;
+            let keychain_key_id = signer_public_key.to_string();
             let res = keyring::Entry::new(
                 &service_name,
                 &format!(
@@ -324,11 +323,13 @@ impl From<SignKeychainContext> for super::SubmitContext {
 impl SignKeychain {
     fn input_signer_public_key(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKeyOrKeyHandle>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<crate::types::public_key::PublicKey>::new("Enter public_key:")
-                    .prompt()?,
+                CustomType::<crate::types::public_key::PublicKeyOrKeyHandle>::new(
+                    "Enter public key or key handle:",
+                )
+                .prompt()?,
             ));
         }
         Ok(None)
