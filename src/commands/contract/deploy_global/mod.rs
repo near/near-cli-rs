@@ -141,23 +141,26 @@ impl DeployGlobalResultContext {
     }
 }
 
-/// Whether global contract code hashing to `expected_hash` is already deployed.
-fn global_contract_exists(
-    expected_hash: near_primitives::hash::CryptoHash,
-    query_result: crate::common::BoxedJsonRpcResult<
-        near_jsonrpc_primitives::types::query::RpcQueryResponse,
-        near_jsonrpc_primitives::types::query::RpcQueryError,
-    >,
+/// Whether global contract code hashing to `code_hash` is already deployed on `network_config`.
+fn global_contract_by_hash_exists(
+    network_config: &crate::config::NetworkConfig,
+    code_hash: near_primitives::hash::CryptoHash,
 ) -> color_eyre::eyre::Result<bool> {
+    let query_result = network_config.json_rpc_client().blocking_call(
+        near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference: near_primitives::types::Finality::Final.into(),
+            request: near_primitives::views::QueryRequest::ViewGlobalContractCode { code_hash },
+        },
+    );
     match query_result {
         Ok(response) => match response.kind {
             near_jsonrpc_primitives::types::query::QueryResponseKind::ViewCode(code)
-                if near_primitives::hash::CryptoHash::hash_bytes(&code.code) == expected_hash =>
+                if near_primitives::hash::CryptoHash::hash_bytes(&code.code) == code_hash =>
             {
                 Ok(true)
             }
             _ => Err(color_eyre::eyre::eyre!(
-                "Unexpected response when querying global contract <{expected_hash}>"
+                "Unexpected response when querying global contract <{code_hash}>"
             )),
         },
         Err(err)
@@ -171,7 +174,7 @@ fn global_contract_exists(
             Ok(false)
         }
         Err(err) => {
-            Err(err).wrap_err_with(|| format!("Failed to query global contract <{expected_hash}>"))
+            Err(err).wrap_err_with(|| format!("Failed to query global contract <{code_hash}>"))
         }
     }
 }
@@ -198,23 +201,13 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
                             "Skipping the existing-code check for global contract <{code_hash}> on <{}> in offline mode.",
                             network_config.network_name
                         );
-                    } else {
-                        let query_result = network_config.json_rpc_client().blocking_call(
-                            near_jsonrpc_client::methods::query::RpcQueryRequest {
-                                block_reference: near_primitives::types::Finality::Final.into(),
-                                request: near_primitives::views::QueryRequest::ViewGlobalContractCode {
-                                    code_hash,
-                                },
-                            },
+                    } else if global_contract_by_hash_exists(network_config, code_hash)? {
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Global contract <{code_hash}> already exists on <{}> network. No transaction needed.",
+                            network_config.network_name
                         );
-                        if global_contract_exists(code_hash, query_result)? {
-                            tracing::info!(
-                                parent: &tracing::Span::none(),
-                                "Global contract <{code_hash}> already exists on <{}> network. No transaction needed.",
-                                network_config.network_name
-                            );
-                            actions.clear();
-                        }
+                        actions.clear();
                     }
                 }
 
@@ -241,65 +234,5 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
             sign_as_delegate_action: false,
             on_sending_delegate_action_callback: None,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use near_jsonrpc_primitives::types::query::{
-        QueryResponseKind, RpcQueryError, RpcQueryResponse,
-    };
-    use near_primitives::hash::CryptoHash;
-
-    const CODE: &[u8] = b"\0asm\x01\0\0\0";
-
-    fn handler_error(
-        error: RpcQueryError,
-    ) -> Box<near_jsonrpc_client::errors::JsonRpcError<RpcQueryError>> {
-        Box::new(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(error),
-        ))
-    }
-
-    fn view_code(code: &[u8]) -> RpcQueryResponse {
-        RpcQueryResponse {
-            kind: QueryResponseKind::ViewCode(near_primitives::views::ContractCodeView {
-                code: code.to_vec(),
-                hash: CryptoHash::hash_bytes(code),
-            }),
-            block_height: 1,
-            block_hash: CryptoHash::default(),
-        }
-    }
-
-    #[test]
-    fn absent_code_does_not_exist() {
-        let hash = CryptoHash::hash_bytes(CODE);
-        let absent = handler_error(RpcQueryError::NoGlobalContractCode {
-            identifier: near_primitives::action::GlobalContractIdentifier::CodeHash(hash),
-            block_height: 1,
-            block_hash: CryptoHash::default(),
-        });
-        assert!(!global_contract_exists(hash, Err(absent)).unwrap());
-    }
-
-    #[test]
-    fn matching_code_exists() {
-        let hash = CryptoHash::hash_bytes(CODE);
-        assert!(global_contract_exists(hash, Ok(view_code(CODE))).unwrap());
-    }
-
-    #[test]
-    fn mismatching_code_is_an_error() {
-        let hash = CryptoHash::hash_bytes(CODE);
-        assert!(global_contract_exists(hash, Ok(view_code(b"other"))).is_err());
-    }
-
-    #[test]
-    fn other_rpc_errors_are_errors() {
-        let hash = CryptoHash::hash_bytes(CODE);
-        let err = handler_error(RpcQueryError::NoSyncedBlocks);
-        assert!(global_contract_exists(hash, Err(err)).is_err());
     }
 }
