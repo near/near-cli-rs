@@ -142,7 +142,7 @@ pub async fn get_mt_ft_inventory(
         let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
             amount_str.parse::<u128>()?,
             mt_ft_metadata.decimals,
-            mt_ft_metadata.symbol.clone(),
+            mt_ft_metadata.symbol,
         );
 
         let mt_ft_inventory = MtFtInventory {
@@ -174,10 +174,7 @@ pub async fn get_mt_ft_inventory(
         let fungible_token = crate::types::ft_properties::FungibleToken::from_params_ft(
             amount_str.parse::<u128>()?,
             mt_ft_metadata.decimals,
-            mt_ft_metadata
-                .name
-                .clone()
-                .unwrap_or_else(|| mt_ft_metadata.symbol.clone()),
+            mt_ft_metadata.name,
         );
 
         let mt_ft_inventory = MtFtInventory {
@@ -274,7 +271,7 @@ async fn get_mt_ft_balance(
 #[derive(Debug, Clone, Default, PartialEq, serde::Deserialize)]
 pub struct MtFtMetadata {
     symbol: String,
-    name: Option<String>,
+    name: String,
     decimals: u8,
 }
 
@@ -575,7 +572,7 @@ mod tests {
     fn test_mt_ft_metadata_default() {
         let metadata = MtFtMetadata::default();
         assert_eq!(metadata.symbol, "");
-        assert_eq!(metadata.name, None);
+        assert_eq!(metadata.name, "");
         assert_eq!(metadata.decimals, 0);
     }
 
@@ -583,11 +580,11 @@ mod tests {
     fn test_mt_ft_metadata_new() {
         let metadata = MtFtMetadata {
             symbol: "TON".to_string(),
-            name: Some("Toncoin".to_string()),
+            name: "Toncoin".to_string(),
             decimals: 9,
         };
         assert_eq!(metadata.symbol, "TON");
-        assert_eq!(metadata.name, Some("Toncoin".to_string()));
+        assert_eq!(metadata.name, "Toncoin");
         assert_eq!(metadata.decimals, 9);
     }
 
@@ -600,19 +597,7 @@ mod tests {
         }"#;
         let metadata: MtFtMetadata = serde_json::from_str(json).unwrap();
         assert_eq!(metadata.symbol, "TON");
-        assert_eq!(metadata.name, Some("Toncoin".to_string()));
-        assert_eq!(metadata.decimals, 9);
-    }
-
-    #[test]
-    fn test_mt_ft_metadata_deserialize_without_name() {
-        let json = r#"{
-            "symbol": "TON",
-            "decimals": 9
-        }"#;
-        let metadata: MtFtMetadata = serde_json::from_str(json).unwrap();
-        assert_eq!(metadata.symbol, "TON");
-        assert_eq!(metadata.name, None);
+        assert_eq!(metadata.name, "Toncoin");
         assert_eq!(metadata.decimals, 9);
     }
 
