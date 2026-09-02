@@ -50,9 +50,9 @@ impl ContractFileContext {
 /// Choose a global contract deploy mode:
 pub enum DeployGlobalMode {
     #[strum_discriminants(strum(
-        message = "as-global-hash       - Deploy code as a global contract code hash (immutable, skips if already deployed, not available offline)"
+        message = "as-global-hash       - Deploy code as a global contract code hash (immutable, skips if already deployed)"
     ))]
-    /// Deploy code as a global contract code hash (immutable, skips if already deployed, not available offline)
+    /// Deploy code as a global contract code hash (immutable, skips if already deployed)
     AsGlobalHash(DeployGlobalResult),
     #[strum_discriminants(strum(
         message = "as-global-account-id - Deploy code as a global contract account ID (mutable)"
@@ -73,23 +73,17 @@ impl DeployGlobalModeContext {
         previous_context: ContractFileContext,
         scope: &<DeployGlobalMode as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let mode = match scope {
-            DeployGlobalModeDiscriminants::AsGlobalHash => {
-                if previous_context.global_context.offline {
-                    return Err(color_eyre::eyre::eyre!(
-                        "`as-global-hash` checks the chain for existing code, so it cannot run with `--offline`. To build the transaction offline without that check, use `transaction construct-transaction ... add-action deploy-global-contract ... as-global-hash`."
-                    ));
-                }
-                near_primitives::action::GlobalContractDeployMode::CodeHash
-            }
-            DeployGlobalModeDiscriminants::AsGlobalAccountId => {
-                near_primitives::action::GlobalContractDeployMode::AccountId
-            }
-        };
         Ok(DeployGlobalModeContext {
             global_context: previous_context.global_context,
             code: previous_context.code,
-            mode,
+            mode: match scope {
+                DeployGlobalModeDiscriminants::AsGlobalHash => {
+                    near_primitives::action::GlobalContractDeployMode::CodeHash
+                }
+                DeployGlobalModeDiscriminants::AsGlobalAccountId => {
+                    near_primitives::action::GlobalContractDeployMode::AccountId
+                }
+            },
         })
     }
 }
@@ -185,6 +179,7 @@ fn global_contract_exists(
 impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
     fn from(item: DeployGlobalResultContext) -> Self {
         let account_id = item.account_id.clone();
+        let offline = item.global_context.offline;
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new(move |network_config| {
                 let mut actions = vec![near_primitives::transaction::Action::DeployGlobalContract(
@@ -197,21 +192,29 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
                 if item.mode == near_primitives::action::GlobalContractDeployMode::CodeHash {
                     let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&item.code);
                     tracing::info!(parent: &tracing::Span::none(), "Wasm code hash: {code_hash}");
-                    let query_result = network_config.json_rpc_client().blocking_call(
-                        near_jsonrpc_client::methods::query::RpcQueryRequest {
-                            block_reference: near_primitives::types::Finality::Final.into(),
-                            request: near_primitives::views::QueryRequest::ViewGlobalContractCode {
-                                code_hash,
-                            },
-                        },
-                    );
-                    if global_contract_exists(code_hash, query_result)? {
-                        tracing::info!(
+                    if offline {
+                        tracing::warn!(
                             parent: &tracing::Span::none(),
-                            "Global contract <{code_hash}> already exists on <{}> network. No transaction needed.",
+                            "Skipping the existing-code check for global contract <{code_hash}> on <{}> in offline mode.",
                             network_config.network_name
                         );
-                        actions.clear();
+                    } else {
+                        let query_result = network_config.json_rpc_client().blocking_call(
+                            near_jsonrpc_client::methods::query::RpcQueryRequest {
+                                block_reference: near_primitives::types::Finality::Final.into(),
+                                request: near_primitives::views::QueryRequest::ViewGlobalContractCode {
+                                    code_hash,
+                                },
+                            },
+                        );
+                        if global_contract_exists(code_hash, query_result)? {
+                            tracing::info!(
+                                parent: &tracing::Span::none(),
+                                "Global contract <{code_hash}> already exists on <{}> network. No transaction needed.",
+                                network_config.network_name
+                            );
+                            actions.clear();
+                        }
                     }
                 }
 
