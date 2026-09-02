@@ -261,7 +261,7 @@ fn sign_transaction_with_usb(
         super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
 
     if previous_context.sign_as_delegate_action {
-        super::ensure_gas_key_not_delegated(&unsigned_transaction)?;
+        super::ensure_ledger_gas_key_not_delegated(&unsigned_transaction)?;
 
         let max_block_height = block_height
             + meta_transaction_valid_for.unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
@@ -527,7 +527,7 @@ fn sign_transaction_with_ble(
         super::build_unsigned_transaction(unsigned_transaction, nonce_resolution);
 
     if previous_context.sign_as_delegate_action {
-        super::ensure_gas_key_not_delegated(&unsigned_transaction)?;
+        super::ensure_ledger_gas_key_not_delegated(&unsigned_transaction)?;
 
         let max_block_height = block_height
             + meta_transaction_valid_for.unwrap_or(super::META_TRANSACTION_VALID_FOR_DEFAULT);
