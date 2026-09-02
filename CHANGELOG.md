@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.1](https://github.com/near/near-cli-rs/compare/v0.30.0...v0.30.1) - 2026-09-02
+
+### Added
+
+- make global hash deployment retry-safe ([#658](https://github.com/near/near-cli-rs/pull/658))
+
+### Fixed
+
+- For the testnet, display all fungible tokens ([#646](https://github.com/near/near-cli-rs/pull/646))
+
+### Other
+
+- `account import-account` command ([#645](https://github.com/near/near-cli-rs/pull/645))
+
 ## [0.30.0](https://github.com/near/near-cli-rs/compare/v0.29.0...v0.30.0) - 2026-08-17
 
 ### Added
