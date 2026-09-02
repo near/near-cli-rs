@@ -50,9 +50,9 @@ impl ContractFileContext {
 /// Choose a global contract deploy mode:
 pub enum DeployGlobalMode {
     #[strum_discriminants(strum(
-        message = "as-global-hash       - Deploy code as a global contract code hash (immutable, requires network access)"
+        message = "as-global-hash       - Deploy code as a global contract code hash (immutable, skips if already deployed, not available offline)"
     ))]
-    /// Deploy code as a global contract code hash (immutable, requires network access)
+    /// Deploy code as a global contract code hash (immutable, skips if already deployed, not available offline)
     AsGlobalHash(DeployGlobalResult),
     #[strum_discriminants(strum(
         message = "as-global-account-id - Deploy code as a global contract account ID (mutable)"
@@ -77,7 +77,7 @@ impl DeployGlobalModeContext {
             DeployGlobalModeDiscriminants::AsGlobalHash => {
                 if previous_context.global_context.offline {
                     return Err(color_eyre::eyre::eyre!(
-                        "`as-global-hash` checks whether the code hash is already deployed, which requires network access. Use `transaction construct-transaction ... add-action deploy-global-contract ... as-global-hash` to build the transaction offline without that check."
+                        "`as-global-hash` checks the chain for existing code, so it cannot run with `--offline`. To build the transaction offline without that check, use `transaction construct-transaction ... add-action deploy-global-contract ... as-global-hash`."
                     ));
                 }
                 near_primitives::action::GlobalContractDeployMode::CodeHash
@@ -196,7 +196,7 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
 
                 if item.mode == near_primitives::action::GlobalContractDeployMode::CodeHash {
                     let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&item.code);
-                    eprintln!("\nWasm code hash: {code_hash}");
+                    tracing::info!(parent: &tracing::Span::none(), "Wasm code hash: {code_hash}");
                     let query_result = network_config.json_rpc_client().blocking_call(
                         near_jsonrpc_client::methods::query::RpcQueryRequest {
                             block_reference: near_primitives::types::Finality::Final.into(),
@@ -206,7 +206,11 @@ impl From<DeployGlobalResultContext> for crate::commands::ActionContext {
                         },
                     );
                     if global_contract_exists(code_hash, query_result)? {
-                        eprintln!("Global contract <{code_hash}> already exists; skipping deployment.");
+                        tracing::info!(
+                            parent: &tracing::Span::none(),
+                            "Global contract <{code_hash}> already exists on <{}> network. No transaction needed.",
+                            network_config.network_name
+                        );
                         actions.clear();
                     }
                 }
