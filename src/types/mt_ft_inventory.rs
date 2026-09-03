@@ -5,6 +5,11 @@ use crate::common::{CallResultExt, JsonRpcClientExt, RpcQueryResponseExt, indent
 
 type TokenId = String;
 
+/// Asset identifiers supported by the MT-FT balance commands.
+///
+/// The program currently supports only tokens described by the NEP-141 and
+/// NEP-245 protocols. Other asset identifier formats, such as `nep171:` and
+/// `imt:`, are ignored when reading an owner's complete asset list.
 #[derive(Debug, Clone, PartialEq)]
 pub enum IntentsTokenId {
     Nep141(near_primitives::types::AccountId),
@@ -71,6 +76,21 @@ pub struct FT {
     pub token_id: IntentsTokenId,
 }
 
+fn parse_supported_mt_fts(tokens: Vec<serde_json::Value>) -> Vec<FT> {
+    tokens
+        .into_iter()
+        .filter_map(|token| match serde_json::from_value::<FT>(token) {
+            Ok(token) => Some(token),
+            Err(error) => {
+                tracing::debug!(
+                    "Skipping unsupported MT asset from 'mt_tokens_for_owner': {error}. The program currently only supports tokens described by the NEP-141 and NEP-245 protocols."
+                );
+                None
+            }
+        })
+        .collect()
+}
+
 #[tracing::instrument(name = "Getting MT tokens for owner", skip_all, parent = None)]
 pub fn get_mt_tokens_for_owner(
     network_config: &crate::config::NetworkConfig,
@@ -98,7 +118,8 @@ pub fn get_mt_tokens_for_owner(
                 network_config.network_name
             )
         })?
-        .parse_result_from_json()
+        .parse_result_from_json::<Vec<serde_json::Value>>()
+        .map(parse_supported_mt_fts)
         .wrap_err_with(||{
         format!("Failed to parse the result of the view method: 'mt_tokens_for_owner' (contract <{}> on network <{}>)",
             mt_contract_account_id,
@@ -500,6 +521,36 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(err.contains("invalid token ID format"));
+    }
+
+    #[test]
+    fn test_invalid_token_id_unsupported_nep() {
+        let result = IntentsTokenId::from_str("nep171:token.near:token");
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("invalid token ID format"));
+        assert!(err.contains("nep141"));
+        assert!(err.contains("nep245"));
+    }
+
+    #[test]
+    fn test_parse_supported_tokens_skips_unsupported_assets() {
+        let tokens = vec![
+            serde_json::json!({ "token_id": "nep171:token.near:token" }),
+            serde_json::json!({ "token_id": "nep245:v2.omni.near:1117_token" }),
+            serde_json::json!({ "token_id": "imt:token.near:token" }),
+        ];
+
+        let parsed_tokens = parse_supported_mt_fts(tokens);
+
+        assert_eq!(parsed_tokens.len(), 1);
+        assert_eq!(
+            parsed_tokens[0].token_id,
+            IntentsTokenId::Nep245(
+                near_primitives::types::AccountId::from_str("v2.omni.near").unwrap(),
+                "1117_token".to_string()
+            )
+        );
     }
 
     #[test]

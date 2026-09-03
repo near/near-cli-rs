@@ -85,8 +85,8 @@ pub enum TokensActions {
     /// View NFT token assets
     ViewNftAssets(self::view_nft_assets::ViewNftAssets),
     #[strum_discriminants(strum(
-        message = "view-mt-ft-balance - View the balance of MT-FT tokens"
+        message = "view-mt-ft-balance - View the balance of MT-FT tokens (NEP-141, NEP-245 only)"
     ))]
-    /// View the balance of MT-FT tokens
+    /// View the balance of MT-FT tokens (NEP-141, NEP-245 only)
     ViewMtFtBalance(self::view_mt_ft_balance::ViewMtFtBalance),
 }
