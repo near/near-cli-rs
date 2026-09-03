@@ -1,12 +1,7 @@
-#![allow(clippy::enum_variant_names, clippy::large_enum_variant)]
-use std::{str::FromStr, vec};
-
-use color_eyre::eyre::Context;
-use inquire::{CustomType, Select};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-use near_primitives::account::id::AccountType;
-
+pub mod key_store_prop;
+mod network;
 mod using_private_key;
 mod using_seed_phrase;
 mod using_web_wallet;
@@ -15,6 +10,7 @@ mod using_web_wallet;
 #[interactive_clap(context = crate::GlobalContext)]
 pub struct ImportAccountCommand {
     #[interactive_clap(subcommand)]
+    /// How would you like to import the account?
     import_account_actions: ImportAccountActions,
 }
 
@@ -40,121 +36,112 @@ pub enum ImportAccountActions {
     UsingPrivateKey(self::using_private_key::LoginFromPrivateKey),
 }
 
-pub fn login(
-    network_config: crate::config::NetworkConfig,
-    credentials_home_dir: std::path::PathBuf,
-    key_pair_properties_buf: &str,
-    public_key_str: &str,
-    error_message: &str,
-) -> crate::CliResult {
-    let public_key: near_crypto::PublicKey = near_crypto::PublicKey::from_str(public_key_str)?;
+#[derive(Debug, Clone, interactive_clap::InteractiveClap)]
+#[interactive_clap(input_context = ImportAccountDetailsContext)]
+#[interactive_clap(output_context = network::NetworkForImportAccountContext)]
+pub struct ImportAccountDetails {
+    #[interactive_clap(skip_default_input_arg)]
+    /// What Account ID do you want to import?
+    account_id: crate::types::account_id::AccountId,
 
-    let account_id = loop {
-        let account_id_from_cli = input_account_id()?;
+    #[interactive_clap(named_arg)]
+    /// Select network
+    network_config: network::NetworkForImportAccount,
+}
 
-        // If the implicit account does not exist on the network, it will still be imported.
-        if let AccountType::NearImplicitAccount = account_id_from_cli.get_account_type() {
-            let pk_implicit_account =
-                near_crypto::PublicKey::from_near_implicit_account(&account_id_from_cli)?;
-            if public_key_str == pk_implicit_account.to_string() {
-                break account_id_from_cli;
-            }
-        };
+#[derive(Clone)]
+pub struct ImportAccountDetailsContext {
+    global_context: crate::GlobalContext,
+    key_store_property: key_store_prop::KeyStorePropertyType,
+    on_after_getting_network_callback: network::OnAfterGettingNetworkConfigCallback,
+}
 
-        let access_key_view = crate::common::verify_account_access_key(
-            account_id_from_cli.clone(),
-            public_key.clone(),
-            network_config.clone(),
-        );
-        if let Err(err @ crate::common::AccountStateError::Cancel) = access_key_view {
-            return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(err));
-        }
-        if access_key_view.is_err() {
-            tracing::warn!(
-                parent: &tracing::Span::none(),
-                "{}",
-                crate::common::indent_payload(error_message)
-            );
+impl network::NetworkForImportAccountContext {
+    pub fn from_previous_context(
+        previous_context: ImportAccountDetailsContext,
+        scope: &<ImportAccountDetails as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
+    ) -> color_eyre::eyre::Result<Self> {
+        let account_id: near_primitives::types::AccountId = scope.account_id.clone().into();
 
-            #[derive(strum_macros::Display)]
-            enum ConfirmOptions {
-                #[strum(to_string = "Yes, I want to re-enter the account_id.")]
-                Yes,
-                #[strum(to_string = "No, I want to save the access key information.")]
-                No,
-            }
-            let select_choose_input = Select::new(
-                "Would you like to re-enter the account_id?",
-                vec![ConfirmOptions::Yes, ConfirmOptions::No],
-            )
-            .prompt()?;
-            if let ConfirmOptions::No = select_choose_input {
-                break account_id_from_cli;
-            }
-        } else {
-            break account_id_from_cli;
-        }
+        Ok(Self {
+            global_context: previous_context.global_context,
+            account_id,
+            key_store_property: previous_context.key_store_property,
+            on_after_getting_network_callback: previous_context.on_after_getting_network_callback,
+        })
+    }
+}
+
+impl ImportAccountDetails {
+    pub fn input_account_id(
+        context: &ImportAccountDetailsContext,
+    ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+        crate::common::input_non_signer_account_id_from_used_account_list(
+            &context.global_context.config.credentials_home_dir,
+            "What Account ID do you want to import?",
+        )
+    }
+}
+
+fn warn_on_implicit_account_id_missmatch(
+    account_id: &near_primitives::types::AccountId,
+    public_key: &near_crypto::PublicKey,
+) {
+    use color_eyre::owo_colors::OwoColorize;
+
+    let Ok(derived_account_id) = near_crypto::PublicKey::from_near_implicit_account(account_id)
+    else {
+        return;
     };
-    crate::common::update_used_account_list_as_signer(&credentials_home_dir, &account_id);
-    save_access_key(
-        account_id,
-        key_pair_properties_buf,
-        public_key_str,
-        network_config,
-        credentials_home_dir,
-    )?;
-    Ok(())
+
+    if derived_account_id == *public_key {
+        return;
+    }
+
+    let info_str = format!(
+        "{}\n{}",
+        format!(
+            "<{account_id}> is a NEAR implicit account id, but it is not derived from <{public_key}>."
+        ).yellow(),
+        "This key will only be able to sign if it was added to the account on chain. Re-run with --check-account-id to verify it.".yellow()
+    );
+    tracing::warn!(
+        parent: &tracing::Span::none(),
+        "\n{}",
+        crate::common::indent_payload(&info_str)
+    );
 }
 
-fn input_account_id() -> color_eyre::eyre::Result<near_primitives::types::AccountId> {
-    Ok(CustomType::new("Enter account ID:").prompt()?)
-}
-
-fn save_access_key(
-    account_id: near_primitives::types::AccountId,
-    key_pair_properties_buf: &str,
-    public_key_str: &str,
-    network_config: crate::config::NetworkConfig,
-    credentials_home_dir: std::path::PathBuf,
+fn check_account_id(
+    global_context: &crate::GlobalContext,
+    chosen_network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+    public_key: &near_crypto::PublicKey,
 ) -> crate::CliResult {
-    #[derive(strum_macros::Display)]
-    enum SelectStorage {
-        #[strum(to_string = "Store the access key in my keychain")]
-        SaveToKeychain,
-        #[strum(
-            to_string = "Store the access key in my legacy keychain (compatible with the old near CLI)"
-        )]
-        SaveToLegacyKeychain,
-    }
-    let selection = Select::new(
-        "Select a keychain to save the access key to:",
-        vec![
-            SelectStorage::SaveToKeychain,
-            SelectStorage::SaveToLegacyKeychain,
-        ],
-    )
-    .prompt()?;
-    if let SelectStorage::SaveToKeychain = selection {
-        let storage_message =
-            crate::common::save_access_key_to_keychain_or_save_to_legacy_keychain(
-                network_config,
-                credentials_home_dir,
-                key_pair_properties_buf,
-                public_key_str,
-                account_id.as_ref(),
-            )?;
-        eprintln!("{storage_message}");
-        return Ok(());
+    if !crate::common::is_account_exist(global_context, account_id.clone())? {
+        // Implicit AccountId always exists. If the public key that was passed to this function is
+        // the same public key that was used to generate implicit AccountId, then we don't need
+        // to return error as implicit AccountId will be instantiated on the first transaction.
+        if near_crypto::PublicKey::from_near_implicit_account(account_id)
+            .is_ok_and(|derived_public_key| derived_public_key == *public_key)
+        {
+            return Ok(());
+        }
+        return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Couldn't find account <{account_id}> on any known network"
+        ));
     }
 
-    let storage_message = crate::common::save_access_key_to_legacy_keychain(
-        network_config,
-        credentials_home_dir,
-        key_pair_properties_buf,
-        public_key_str,
-        account_id.as_ref(),
-    )
-    .wrap_err_with(|| format!("Failed to save a file with access key: {public_key_str}"))?;
-    eprintln!("{storage_message}");
-    Ok(())
+    match crate::common::verify_account_access_key(
+        account_id.clone(),
+        public_key.clone(),
+        chosen_network_config.clone(),
+    ) {
+        Err(err @ crate::common::AccountStateError::Cancel) => Err(color_eyre::eyre::eyre!(err)),
+        Err(_) => Err(color_eyre::eyre::eyre!(
+            "Couldn't find access key for account <{account_id}> on network <{}>:\n    access_key: {public_key}",
+            chosen_network_config.network_name
+        )),
+        _ => Ok(()),
+    }
 }
