@@ -8,6 +8,7 @@ pub mod file_bytes;
 pub mod ft_inventory;
 pub mod ft_properties;
 pub mod json;
+pub mod mt_ft_inventory;
 pub mod near_allowance;
 pub mod near_token;
 pub mod nonce32_bytes;
