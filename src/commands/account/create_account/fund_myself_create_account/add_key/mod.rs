@@ -17,7 +17,7 @@ pub enum AccessKeyMode {
     /// Automatically generate a key pair
     AutogenerateNewKeypair(self::autogenerate_new_keypair::GenerateKeypair),
     #[strum_discriminants(strum(
-        message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"
+        message = "use-manually-provided-seed-phrase - Use the provided seed phrase manually"
     ))]
     /// Use the provided seed phrase manually
     UseManuallyProvidedSeedPhrase(

@@ -127,7 +127,7 @@ impl From<ConstructTransactionContext>
     fn from(item: ConstructTransactionContext) -> Self {
         Self {
             global_context: item.global_context,
-            owner_account_id: item.signer_account_id,
+            owner_account_id: item.receiver_account_id,
         }
     }
 }
@@ -138,7 +138,7 @@ impl From<ConstructTransactionContext>
     fn from(item: ConstructTransactionContext) -> Self {
         Self {
             global_context: item.global_context,
-            account_id: item.signer_account_id,
+            account_id: item.receiver_account_id,
         }
     }
 }

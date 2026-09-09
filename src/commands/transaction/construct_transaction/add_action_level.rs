@@ -109,7 +109,7 @@ macro_rules! impl_add_action_level {
                     /// Add an access key for this account:
                     pub enum AccessKeyMode {
                         #[strum_discriminants(strum(
-                            message = "use-manually-provided-seed-prase  - Use the provided seed phrase manually"
+                            message = "use-manually-provided-seed-phrase - Use the provided seed phrase manually"
                         ))]
                         /// Use the provided seed phrase manually
                         UseManuallyProvidedSeedPhrase(
@@ -641,7 +641,7 @@ macro_rules! impl_add_action_level {
                             scope: &<DeleteAccountAction as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
                         ) -> color_eyre::eyre::Result<Self> {
                             let beneficiary_id: near_primitives::types::AccountId = scope.beneficiary_id.clone().into();
-                            if previous_context.signer_account_id == beneficiary_id {
+                            if previous_context.receiver_account_id == beneficiary_id {
                                 return Err(color_eyre::eyre::eyre!(
                                     "Invalid beneficiary account ID.\nThe beneficiary account ID cannot be the same as the account ID being deleted."
                                 ));
