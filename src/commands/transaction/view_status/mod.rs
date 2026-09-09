@@ -33,9 +33,12 @@ impl TransactionInfoContext {
                         previous_context.verbosity
                     {
                         eprintln!("Transaction status:");
-                        println!("{query_view_transaction_status:#?}");
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&query_view_transaction_status)?
+                        );
                     } else {
-                        println!("{query_view_transaction_status:?}");
+                        println!("{}", serde_json::to_string(&query_view_transaction_status)?);
                     }
                     Ok(())
                 }
