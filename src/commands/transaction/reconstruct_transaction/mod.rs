@@ -61,17 +61,7 @@ impl TransactionInfoContext {
                         ))
                     );
 
-                    if prepopulated_transaction.actions.len() == 1
-                        && let near_primitives::transaction::Action::Delegate(
-                            signed_delegate_action,
-                        ) = &prepopulated_transaction.actions[0]
-                    {
-                        prepopulated_transaction = crate::commands::PrepopulatedTransaction {
-                            signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
-                            receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
-                            actions: signed_delegate_action.delegate_action.get_actions(),
-                        };
-                    }
+                    unwrap_delegate_action(&mut prepopulated_transaction)?;
 
                     let cmd =
                         crate::commands::CliTopLevelCommand::Transaction(CliTransactionCommands {
@@ -155,6 +145,34 @@ impl From<TransactionInfoContext> for crate::network::NetworkContext {
     }
 }
 
+fn unwrap_delegate_action(
+    transaction: &mut crate::commands::PrepopulatedTransaction,
+) -> color_eyre::eyre::Result<()> {
+    if transaction.actions.len() == 1
+        && let near_primitives::transaction::Action::Delegate(signed_delegate_action) =
+            &transaction.actions[0]
+    {
+        // Unlike top-level action views, delegated actions contain actual Wasm.
+        // Normalize them to view semantics so both deployment paths carry hashes.
+        let actions = signed_delegate_action
+            .delegate_action
+            .get_actions()
+            .into_iter()
+            .map(near_primitives::views::ActionView::from)
+            .map(near_primitives::transaction::Action::try_from)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|err| {
+                color_eyre::eyre::eyre!("Failed to reconstruct delegated actions: {err}")
+            })?;
+        *transaction = crate::commands::PrepopulatedTransaction {
+            signer_id: signed_delegate_action.delegate_action.sender_id.clone(),
+            receiver_id: signed_delegate_action.delegate_action.receiver_id.clone(),
+            actions,
+        };
+    }
+    Ok(())
+}
+
 fn action_transformation(
     archival_action: near_primitives::transaction::Action,
     receiver_id: near_primitives::types::AccountId,
@@ -207,6 +225,7 @@ fn action_transformation(
             )))
         }
         Action::DeployContract(deploy_contract_action) => {
+            let code_hash = deploy_action_code_hash(&deploy_contract_action.code)?;
             let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the file path where to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
@@ -216,7 +235,7 @@ fn action_transformation(
                 network_config,
                 block_reference,
                 &file_path,
-                &near_primitives::hash::CryptoHash::hash_bytes(&deploy_contract_action.code)
+                &code_hash
             )?;
             Ok(Some(add_action::CliActionSubcommand::DeployContract(
                 add_action::deploy_contract::CliDeployContractAction {
@@ -269,13 +288,11 @@ fn action_transformation(
             "Reconstructing DelegateV2 (meta) transactions is not supported."
         )),
         Action::DeployGlobalContract(action) => {
+            let code_hash = deploy_action_code_hash(action.code.as_ref())?;
             let file_path = CustomType::<crate::types::path_buf::PathBuf>::new("Enter the file path where to save the contract:")
                 .with_starting_input("reconstruct-transaction-deploy-code.wasm")
                 .prompt()?;
 
-            let code_hash = near_primitives::hash::CryptoHash::try_from(action.code.as_ref()).map_err(|_| {
-                color_eyre::Report::msg("Internal error: Failed to calculate code hash from the deploy global contract action code.".to_string())
-            })?;
             let contract_type = match action.deploy_mode {
                 near_primitives::action::GlobalContractDeployMode::AccountId => {
                     &crate::commands::contract::download_wasm::ContractType::GlobalContractByAccountId {
@@ -435,16 +452,13 @@ fn download_code(
         color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
     })?;
 
-    let code_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
+    let code_hash = verify_downloaded_code(&code, hash_to_match)?;
     tracing::info!(
         parent: &tracing::Span::none(),
         "The code for <{}> was downloaded successfully with hash <{}>",
         contract_type,
         code_hash,
     );
-    if &code_hash != hash_to_match {
-        return Err(color_eyre::Report::msg("The code hash of the contract deploy action does not match the code that we retrieved from the archive node.".to_string()));
-    }
 
     std::fs::write(file_path, code).wrap_err(format!(
         "Failed to write the deploy command code to file: '{file_path}' in the current folder"
@@ -458,4 +472,131 @@ fn download_code(
     );
 
     Ok(())
+}
+
+// Action views contain the code hash, not the deployed Wasm. Converting a view to
+// an Action preserves those bytes, so hashing them again would hash the hash.
+fn deploy_action_code_hash(
+    code: &[u8],
+) -> color_eyre::eyre::Result<near_primitives::hash::CryptoHash> {
+    near_primitives::hash::CryptoHash::try_from(code).map_err(|err| {
+        color_eyre::eyre::eyre!("Invalid code hash in the contract deploy action view: {err}")
+    })
+}
+
+fn verify_downloaded_code(
+    code: &[u8],
+    hash_to_match: &near_primitives::hash::CryptoHash,
+) -> color_eyre::eyre::Result<near_primitives::hash::CryptoHash> {
+    let code_hash = near_primitives::hash::CryptoHash::hash_bytes(code);
+    if code_hash != *hash_to_match {
+        color_eyre::eyre::bail!(
+            "The code hash of the contract deploy action does not match the code that we retrieved from the archive node."
+        );
+    }
+    Ok(code_hash)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use near_primitives::{
+        action::GlobalContractDeployMode, transaction::Action, views::ActionView,
+    };
+
+    #[test]
+    fn deploy_views_preserve_the_expected_archive_code_hash() {
+        let code = b"\0asm\x01\0\0\0";
+        let expected_hash = near_primitives::hash::CryptoHash::hash_bytes(code);
+        for original_action in [
+            Action::DeployContract(near_primitives::transaction::DeployContractAction {
+                code: code.to_vec(),
+            }),
+            Action::DeployGlobalContract(near_primitives::action::DeployGlobalContractAction {
+                code: code.to_vec().into(),
+                deploy_mode: GlobalContractDeployMode::CodeHash,
+            }),
+            Action::DeployGlobalContract(near_primitives::action::DeployGlobalContractAction {
+                code: code.to_vec().into(),
+                deploy_mode: GlobalContractDeployMode::AccountId,
+            }),
+        ] {
+            let archival_action = Action::try_from(ActionView::from(original_action)).unwrap();
+            let hash_bytes = match archival_action {
+                Action::DeployContract(action) => action.code,
+                Action::DeployGlobalContract(action) => action.code.to_vec(),
+                _ => unreachable!(),
+            };
+            let action_hash = deploy_action_code_hash(&hash_bytes).unwrap();
+            assert_eq!(action_hash, expected_hash);
+            verify_downloaded_code(code, &action_hash).unwrap();
+            let err = verify_downloaded_code(b"different contract", &action_hash).unwrap_err();
+            assert!(err.to_string().contains("does not match"));
+        }
+    }
+
+    #[test]
+    fn malformed_deploy_hash_is_rejected() {
+        for len in [0, 31, 33] {
+            let err = deploy_action_code_hash(&vec![0; len]).unwrap_err();
+            assert!(err.to_string().contains("Invalid code hash"));
+        }
+    }
+
+    #[test]
+    fn delegated_deployments_are_normalized_to_action_view_hashes() {
+        for code in [b"\0asm\x01\0\0\0".to_vec(), vec![42; 32]] {
+            let expected_hash = near_primitives::hash::CryptoHash::hash_bytes(&code);
+            let deployments = vec![
+                Action::DeployContract(near_primitives::transaction::DeployContractAction {
+                    code: code.clone(),
+                }),
+                Action::DeployGlobalContract(near_primitives::action::DeployGlobalContractAction {
+                    code: code.clone().into(),
+                    deploy_mode: GlobalContractDeployMode::CodeHash,
+                }),
+                Action::DeployGlobalContract(near_primitives::action::DeployGlobalContractAction {
+                    code: code.clone().into(),
+                    deploy_mode: GlobalContractDeployMode::AccountId,
+                }),
+            ];
+            let delegate = Action::Delegate(Box::new(
+                near_primitives::action::delegate::SignedDelegateAction {
+                    delegate_action: near_primitives::action::delegate::DelegateAction {
+                        sender_id: "sender.near".parse().unwrap(),
+                        receiver_id: "receiver.near".parse().unwrap(),
+                        actions: deployments
+                            .into_iter()
+                            .map(|action| action.try_into().unwrap())
+                            .collect(),
+                        nonce: 1,
+                        max_block_height: 100,
+                        public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+                    },
+                    signature: near_crypto::Signature::empty(near_crypto::KeyType::ED25519),
+                },
+            ));
+            // Exercise the same outer view conversion and unwrap as RPC reconstruction.
+            let mut transaction = crate::commands::PrepopulatedTransaction {
+                signer_id: "relayer.near".parse().unwrap(),
+                receiver_id: "sender.near".parse().unwrap(),
+                actions: vec![Action::try_from(ActionView::from(delegate)).unwrap()],
+            };
+            unwrap_delegate_action(&mut transaction).unwrap();
+            assert_eq!(transaction.signer_id.as_str(), "sender.near");
+            assert_eq!(transaction.receiver_id.as_str(), "receiver.near");
+            assert_eq!(transaction.actions.len(), 3);
+            for action in transaction.actions {
+                let hash_bytes = match action {
+                    Action::DeployContract(action) => action.code,
+                    Action::DeployGlobalContract(action) => action.code.to_vec(),
+                    _ => unreachable!(),
+                };
+                let action_hash = deploy_action_code_hash(&hash_bytes).unwrap();
+                assert_eq!(action_hash, expected_hash);
+                verify_downloaded_code(&code, &action_hash).unwrap();
+                assert!(verify_downloaded_code(b"different contract", &action_hash).is_err());
+            }
+        }
+    }
 }
