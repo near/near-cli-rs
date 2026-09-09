@@ -1,3 +1,4 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use color_eyre::eyre::Context;
 use serde_with::{base64::Base64, serde_as};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
@@ -482,7 +483,7 @@ impl InspectStateInitBorshContext {
     ) -> color_eyre::eyre::Result<Self> {
         let bytes = borsh::to_vec(&previous_context.state_init)
             .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-serialize state-init: {e}"))?;
-        println!("{}", near_primitives::serialize::to_base64(&bytes));
+        println!("{}", STANDARD.encode(&bytes));
         Ok(Self)
     }
 }
