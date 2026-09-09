@@ -49,7 +49,11 @@ impl TransactionInfoContext {
                             .into_iter()
                             .map(near_primitives::transaction::Action::try_from)
                             .collect::<Result<Vec<near_primitives::transaction::Action>, _>>()
-                            .expect("Internal error: can not convert the action_view to action."),
+                            .map_err(|err| {
+                                color_eyre::eyre::eyre!(
+                                    "Failed to reconstruct transaction actions: {err}"
+                                )
+                            })?,
                     };
 
                     tracing::info!(
@@ -281,9 +285,9 @@ fn action_transformation(
                 }
             )))
         }
-        Action::Delegate(_) => {
-            panic!("Internal error: Delegate action should have been handled before calling action_transformation.");
-        }
+        Action::Delegate(_) => Err(color_eyre::eyre::eyre!(
+            "Reconstructing a Delegate action is only supported when it is the only action in the transaction."
+        )),
         Action::DelegateV2(_) => Err(color_eyre::eyre::eyre!(
             "Reconstructing DelegateV2 (meta) transactions is not supported."
         )),
@@ -599,6 +603,129 @@ mod tests {
                 assert!(verify_downloaded_code(b"different contract", &action_hash).is_err());
             }
         }
+    }
+
+    fn reconstruct_action(action: Action) -> color_eyre::eyre::Result<Vec<String>> {
+        let config = crate::config::Config::default();
+        let network_config = config.network_connection.values().next().unwrap();
+        Ok(action_transformation(
+            action,
+            "receiver.near".parse().unwrap(),
+            network_config,
+            near_primitives::types::BlockReference::Finality(
+                near_primitives::types::Finality::Final,
+            ),
+        )?
+        .unwrap()
+        .to_cli_args()
+        .into_iter()
+        .collect())
+    }
+
+    #[test]
+    fn unsupported_gas_key_actions_return_errors() {
+        let public_key = near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519);
+        let function_call = near_primitives::account::FunctionCallPermission {
+            allowance: None,
+            receiver_id: "receiver.near".to_owned(),
+            method_names: vec!["method".to_owned()],
+        };
+        for action in [
+            Action::TransferToGasKey(Box::new(near_primitives::action::TransferToGasKeyAction {
+                public_key: public_key.clone(),
+                deposit: near_token::NearToken::from_yoctonear(1),
+            })),
+            Action::WithdrawFromGasKey(Box::new(
+                near_primitives::action::WithdrawFromGasKeyAction {
+                    public_key: public_key.clone(),
+                    amount: near_token::NearToken::from_yoctonear(1),
+                },
+            )),
+            Action::AddKey(Box::new(near_primitives::transaction::AddKeyAction {
+                public_key: public_key.clone(),
+                access_key: near_primitives::account::AccessKey::gas_key_full_access(1),
+            })),
+            Action::AddKey(Box::new(near_primitives::transaction::AddKeyAction {
+                public_key,
+                access_key: near_primitives::account::AccessKey::gas_key_function_call(
+                    1,
+                    function_call,
+                ),
+            })),
+        ] {
+            let err = reconstruct_action(action).unwrap_err();
+            assert!(err.to_string().contains("Gas key"));
+            assert!(err.to_string().contains("not yet supported"));
+        }
+    }
+
+    #[test]
+    fn unhandled_delegate_returns_an_error_instead_of_panicking() {
+        let action = Action::Delegate(Box::new(
+            near_primitives::action::delegate::SignedDelegateAction {
+                delegate_action: near_primitives::action::delegate::DelegateAction {
+                    sender_id: "sender.near".parse().unwrap(),
+                    receiver_id: "receiver.near".parse().unwrap(),
+                    actions: vec![],
+                    nonce: 1,
+                    max_block_height: 100,
+                    public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+                },
+                signature: near_crypto::Signature::empty(near_crypto::KeyType::ED25519),
+            },
+        ));
+        let err = reconstruct_action(action).unwrap_err();
+        assert!(err.to_string().contains("only action"));
+    }
+
+    #[test]
+    fn supported_actions_keep_their_command_arguments() {
+        let args = reconstruct_action(Action::Transfer(
+            near_primitives::transaction::TransferAction {
+                deposit: near_token::NearToken::from_near(1),
+            },
+        ))
+        .unwrap();
+        assert_eq!(args, ["transfer", "1 NEAR"]);
+
+        let public_key = near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519);
+        let args = reconstruct_action(Action::AddKey(Box::new(
+            near_primitives::transaction::AddKeyAction {
+                public_key: public_key.clone(),
+                access_key: near_primitives::account::AccessKey::full_access(),
+            },
+        )))
+        .unwrap();
+        assert_eq!(
+            args,
+            [
+                "add-key",
+                "grant-full-access",
+                "use-manually-provided-public-key",
+                &public_key.to_string()
+            ]
+        );
+
+        let args = reconstruct_action(Action::AddKey(Box::new(
+            near_primitives::transaction::AddKeyAction {
+                public_key: public_key.clone(),
+                access_key: near_primitives::account::AccessKey {
+                    nonce: 0,
+                    permission: near_primitives::account::AccessKeyPermission::FunctionCall(
+                        near_primitives::account::FunctionCallPermission {
+                            allowance: None,
+                            receiver_id: "receiver.near".to_owned(),
+                            method_names: vec!["method".to_owned()],
+                        },
+                    ),
+                },
+            },
+        )))
+        .unwrap();
+        assert!(args.contains(&"grant-function-call-access".to_owned()));
+        assert!(args.contains(&"receiver.near".to_owned()));
+        assert!(args.contains(&"method".to_owned()));
+        assert!(args.contains(&public_key.to_string()));
     }
 }
 
