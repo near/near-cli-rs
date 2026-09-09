@@ -444,10 +444,11 @@ fn download_code(
     // Unfortunately, RPC doesn't return the code for the deployed contract. Only the hash.
     // So we need to fetch it from archive node.
 
-    let code = crate::commands::contract::download_wasm::get_code(
+    let code = crate::commands::contract::download_wasm::get_code_with_hash(
         contract_type,
         network_config,
         block_reference,
+        Some(*hash_to_match),
     ).map_err(|e| {
         color_eyre::Report::msg(format!("Couldn't fetch the code. Please verify that you are using the archival node in the `network_connection.*.rpc_url` field of the `config.toml` file. You can see the list of RPC providers at https://docs.near.org/api/rpc/providers.\nError: {e}"))
     })?;
@@ -600,3 +601,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod archive_rpc_tests;
