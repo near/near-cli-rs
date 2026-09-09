@@ -66,7 +66,7 @@ impl FungibleToken {
 
     pub fn normalize(&self, ft_metadata: &FtMetadata) -> color_eyre::eyre::Result<Self> {
         if ft_metadata.symbol.to_uppercase() != self.symbol.to_uppercase() {
-            color_eyre::eyre::bail!("Invalid currency symbol")
+            color_eyre::eyre::bail!("Invalid currency symbol");
         } else if let Some(decimals_diff) = ft_metadata.decimals.checked_sub(self.decimals) {
             let amount = if decimals_diff == 0 {
                 self.amount
@@ -88,7 +88,7 @@ impl FungibleToken {
             color_eyre::eyre::bail!(
                 "Invalid decimal places. Your FT amount exceeds {} decimal places.",
                 ft_metadata.decimals
-            )
+            );
         }
     }
 
