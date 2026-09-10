@@ -1,4 +1,5 @@
-use near_primitives::{borsh, borsh::BorshDeserialize};
+use base64::{Engine as _, engine::general_purpose::STANDARD};
+use borsh::BorshDeserialize;
 
 #[derive(Debug, Clone)]
 pub struct TransactionAsBase64 {
@@ -47,7 +48,8 @@ impl std::str::FromStr for TransactionAsBase64 {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
             inner: near_primitives::transaction::TransactionV0::try_from_slice(
-                &near_primitives::serialize::from_base64(s)
+                &STANDARD
+                    .decode(s)
                     .map_err(|err| format!("base64 transaction sequence is invalid: {err}"))?,
             )
             .map_err(|err| format!("transaction could not be parsed: {err}"))?,
@@ -57,8 +59,8 @@ impl std::str::FromStr for TransactionAsBase64 {
 
 impl std::fmt::Display for TransactionAsBase64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let base64_unsigned_transaction = near_primitives::serialize::to_base64(
-            &borsh::to_vec(&self.inner)
+        let base64_unsigned_transaction = STANDARD.encode(
+            borsh::to_vec(&self.inner)
                 .expect("Transaction is not expected to fail on serialization"),
         );
         write!(f, "{base64_unsigned_transaction}")
