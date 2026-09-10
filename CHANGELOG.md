@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.2](https://github.com/near/near-cli-rs/compare/v0.30.1...v0.30.2) - 2026-09-10
+
+### Other
+
+- *(construct-transaction)* allow more actions ([#667](https://github.com/near/near-cli-rs/pull/667))
+
 ## [0.30.1](https://github.com/near/near-cli-rs/compare/v0.30.0...v0.30.1) - 2026-09-02
 
 ### Added
