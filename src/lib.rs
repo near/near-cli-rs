@@ -1,4 +1,8 @@
 #![allow(clippy::arc_with_non_send_sync)]
+// The `construct-transaction` action chain nests Cli types 10 levels deep (see
+// `impl_add_action_level!`), which overflows the default query depth limit
+// when computing type layouts.
+#![recursion_limit = "512"]
 pub use common::CliResult;
 
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};

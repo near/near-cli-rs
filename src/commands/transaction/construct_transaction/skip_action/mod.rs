@@ -32,6 +32,11 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
                     if let Some((delete_account_idx, action)) = actions.iter().enumerate().find(|(_, action)| {
                         matches!(action, near_primitives::action::Action::DeleteAccount(_))
                     }) {
+                        if signer_account_id != receiver_account_id {
+                            color_eyre::eyre::bail!(
+                                "The delete account action requires the transaction signer and receiver to be the same account, but the signer is <{signer_account_id}> and the account being deleted is <{receiver_account_id}>"
+                            );
+                        }
                         if delete_account_idx != actions.len() - 1 {
                             color_eyre::eyre::bail!("Delete account action should be the last action in the transaction");
                         }
