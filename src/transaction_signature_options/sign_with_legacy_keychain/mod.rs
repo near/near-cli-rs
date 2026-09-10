@@ -76,17 +76,12 @@ impl SignLegacyKeychainContext {
             keychain_folder.join(previous_context.prepopulated_transaction.signer_id.as_str());
         let signer_access_key_file_path: std::path::PathBuf = {
             if previous_context.global_context.offline {
-                signer_keychain_folder.join(format!(
-                    "{}.json",
-                    scope
-                        .signer_public_key
-                        .as_ref()
-                        .wrap_err(
-                            "Signer public key is required to sign a transaction in offline mode"
-                        )?
-                        .to_string()
-                        .replace(':', "_")
-                ))
+                let signer_public_key = scope.signer_public_key.as_ref().wrap_err(
+                    "Signer public key is required to sign a transaction in offline mode",
+                )?;
+                let keychain_key_id =
+                    crate::common::normalize_keychain_key_id(&signer_public_key.to_string())?;
+                signer_keychain_folder.join(format!("{}.json", keychain_key_id.replace(':', "_")))
             } else if signer_keychain_folder.exists() {
                 let full_access_key_filenames = network_config
                     .json_rpc_client()
