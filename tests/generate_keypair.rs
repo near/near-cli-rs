@@ -14,6 +14,10 @@ fn ml_dsa_65_keypair_roundtrips() {
     assert!(public_key.starts_with("ml-dsa-65:"), "{public_key}");
     assert!(private_key.starts_with("ml-dsa-65:"), "{private_key}");
 
+    // Credentials must retain the expanded secret key, not a seed-only encoding.
+    let encoded_secret = private_key.strip_prefix("ml-dsa-65:").unwrap();
+    assert_eq!(bs58::decode(encoded_secret).into_vec().unwrap().len(), 4032);
+
     // The printed strings must parse back into near_crypto types of the
     // post-quantum key type, and the secret key must derive the public key.
     let parsed_public = near_crypto::PublicKey::from_str(public_key).unwrap();
