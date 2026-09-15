@@ -2260,13 +2260,21 @@ pub fn print_transaction_status(
             .checked_add(receipt.outcome.tokens_burnt)
             .context("overflow while adding transaction status total tokens burnt")?;
 
-        if receipt.outcome.logs.is_empty() {
-            logs_info.push_str(&format!(
-                "\nLogs [{}]:   No logs",
-                receipt.outcome.executor_id
-            ));
+        let header = if let near_primitives::views::ExecutionStatusView::Failure(_) =
+            receipt.outcome.status
+        {
+            format!("Logs [{}] (failed):", receipt.outcome.executor_id)
+                .red()
+                .to_string()
         } else {
-            logs_info.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
+            format!("Logs [{}]:", receipt.outcome.executor_id)
+                .cyan()
+                .to_string()
+        };
+        if receipt.outcome.logs.is_empty() {
+            logs_info.push_str(&format!("\n{header}   {}", "No logs".dimmed()));
+        } else {
+            logs_info.push_str(&format!("\n{header}"));
             logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
         };
     }
