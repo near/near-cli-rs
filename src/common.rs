@@ -2157,6 +2157,7 @@ pub fn print_transaction_status(
         .as_ref()
         .map(get_near_usd_exchange_rate);
 
+    let mut transaction_info = std::borrow::Cow::Borrowed(transaction_info);
     let mut success_data = String::new();
     #[allow(unused_assignments)]
     let mut return_value = String::new();
@@ -2207,7 +2208,9 @@ pub fn print_transaction_status(
                 if let Some(final_execution_outcome) =
                     &rpc_transaction_response.final_execution_outcome
                 {
-                    status = final_execution_outcome.clone().into_outcome().status;
+                    transaction_info =
+                        std::borrow::Cow::Owned(final_execution_outcome.clone().into_outcome());
+                    status = transaction_info.status.clone();
                 }
             }
             near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
@@ -2334,7 +2337,7 @@ pub fn print_transaction_status(
         suspend_tracing_indicatif(|| {
             eprintln!(
                 "{}",
-                print_value_successful_transaction(transaction_info.clone(),)
+                print_value_successful_transaction(transaction_info.clone().into_owned())
             )
         });
     }
