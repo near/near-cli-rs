@@ -2247,6 +2247,27 @@ pub fn print_transaction_status(
     let mut total_gas_burnt = transaction_info.transaction_outcome.outcome.gas_burnt;
     let mut total_tokens_burnt = transaction_info.transaction_outcome.outcome.tokens_burnt;
 
+    let mut logs_info = String::new();
+
+    for receipt in &transaction_info.receipts_outcome {
+        total_gas_burnt = total_gas_burnt
+            .checked_add(receipt.outcome.gas_burnt)
+            .context("overflow while adding transaction status total gas")?;
+        total_tokens_burnt = total_tokens_burnt
+            .checked_add(receipt.outcome.tokens_burnt)
+            .context("overflow while adding transaction status total tokens burnt")?;
+
+        if receipt.outcome.logs.is_empty() {
+            logs_info.push_str(&format!(
+                "\nLogs [{}]:   No logs",
+                receipt.outcome.executor_id
+            ));
+        } else {
+            logs_info.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
+            logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
+        };
+    }
+
     transaction_execution_info.push_str(&format!("\nGas burned: {total_gas_burnt}"));
 
     transaction_execution_info.push_str(&format!(
@@ -2282,37 +2303,18 @@ pub fn print_transaction_status(
         );
     }
 
-    let mut logs_info = String::new();
-
-    for receipt in &transaction_info.receipts_outcome {
-        total_gas_burnt = total_gas_burnt
-            .checked_add(receipt.outcome.gas_burnt)
-            .context("overflow while adding transaction status total gas")?;
-        total_tokens_burnt = total_tokens_burnt
-            .checked_add(receipt.outcome.tokens_burnt)
-            .context("overflow while adding transaction status total tokens burnt")?;
-
-        if receipt.outcome.logs.is_empty() {
-            logs_info.push_str(&format!(
-                "\nLogs [{}]:   No logs",
-                receipt.outcome.executor_id
-            ));
-        } else {
-            logs_info.push_str(&format!("\nLogs [{}]:", receipt.outcome.executor_id));
-            logs_info.push_str(&format!("\n  {}", receipt.outcome.logs.join("\n  ")));
-        };
-    }
-
-    for action in &transaction_info.transaction.actions {
-        if let near_primitives::views::ActionView::FunctionCall { .. } = action {
-            tracing::info!(
-                parent: &tracing::Span::none(),
-                "Function execution logs:{}",
-                crate::common::indent_payload(&format!("{logs_info}\n "))
-            );
-            if result.is_err() {
-                continue;
-            }
+    if transaction_info.transaction.actions.iter().any(|action| {
+        matches!(
+            action,
+            near_primitives::views::ActionView::FunctionCall { .. }
+        )
+    }) {
+        tracing::info!(
+            parent: &tracing::Span::none(),
+            "Function execution logs:{}",
+            crate::common::indent_payload(&format!("{logs_info}\n "))
+        );
+        if result.is_ok() {
             if returned_value_bytes.is_empty() {
                 tracing::info!(
                     parent: &tracing::Span::none(),
