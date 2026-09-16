@@ -1,4 +1,5 @@
 use near_cli_rs::common::{GeneratedKeyPair, SignatureScheme};
+use near_cli_rs::config::Config;
 use std::str::FromStr;
 
 #[test]
@@ -77,4 +78,50 @@ fn ml_dsa_65_keychain_id_is_the_on_chain_handle() {
     let public_key = key_pair.public_key().unwrap();
     let handle = near_crypto::PublicKeyHandle::from(&public_key).to_string();
     assert_eq!(key_id, handle);
+}
+
+#[test]
+fn legacy_keychain_normalizes_ml_dsa_65_key_ids_when_saving() {
+    let key_pair = GeneratedKeyPair::generate(&SignatureScheme::MlDsa65).unwrap();
+    let keychain_json = key_pair.keychain_json().unwrap();
+    let keychain_key_id = key_pair.keychain_key_id().unwrap();
+    let credentials_home_dir = tempfile::tempdir().unwrap();
+    let network_config = Config::default()
+        .network_connection
+        .get("testnet")
+        .unwrap()
+        .clone();
+
+    for (account_id, public_key_str) in [
+        ("full-key.testnet", key_pair.public_key_str()),
+        ("handle.testnet", keychain_key_id.as_str()),
+    ] {
+        near_cli_rs::common::save_access_key_to_legacy_keychain(
+            network_config.clone(),
+            credentials_home_dir.path().to_path_buf(),
+            &keychain_json,
+            public_key_str,
+            account_id,
+        )
+        .unwrap();
+
+        let signer_key_dir = credentials_home_dir.path().join("testnet").join(account_id);
+        let saved_key_files = signer_key_dir
+            .read_dir()
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            saved_key_files,
+            vec![std::ffi::OsString::from(format!(
+                "{}.json",
+                keychain_key_id.replace(':', "_")
+            ))]
+        );
+        assert_eq!(
+            std::fs::read_to_string(signer_key_dir.join(&saved_key_files[0])).unwrap(),
+            keychain_json
+        );
+    }
 }
