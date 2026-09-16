@@ -2717,7 +2717,7 @@ pub fn fetch_currently_active_staking_pools(
         Ok(result
             .values
             .into_iter()
-            .filter_map(|item| near_primitives::borsh::from_slice(&item.value).ok())
+            .filter_map(|item| borsh::from_slice(&item.value).ok())
             .collect())
     } else {
         Err(color_eyre::Report::msg("Error call result".to_string()))
