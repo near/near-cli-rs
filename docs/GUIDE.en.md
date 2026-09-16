@@ -249,7 +249,7 @@ near --teach-me tokens \
 
  |    <fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
 
- |    Gas burned: 0.447 Tgas
+ |    Gas used: 0.447 Tgas
  |    Transaction fee: 0.0000446365125 NEAR (approximately $0.00015176 USD, using $3.40 USD/NEAR exchange rate)
  |    Transaction ID: 8WEG4LgrpEbyhbhHqUJcJ9QT3rqccYHfijmUVL7uPj6a
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -815,7 +815,7 @@ near account \
  |    <fro_volod.testnet> has transferred 1 NEAR to <new.fro_volod.testnet> successfully.
  |    Added access key = ed25519:9E6cc5kQUCFWnE3WLVsCcQEupXdsGT825kVEenWRjSBa to new.fro_volod.testnet.
 
- |    Gas burned: 8.4 Tgas
+ |    Gas used: 8.4 Tgas
  |    Transaction fee: 0.0008349895375 NEAR (approximately $0.00276381 USD, using $3.31 USD/NEAR exchange rate)
  |    Transaction ID: CSxoCxwU5D7UQGgqEe3xUcdQCWj76PZUbga6HHXUkJiw
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -860,7 +860,7 @@ near account \
 
  |    The "create_account" call to <testnet> on behalf of <fro_volod.testnet> succeeded.
 
- |    Gas burned: 12.8 Tgas
+ |    Gas used: 12.8 Tgas
  |    Transaction fee: 0.0012273219166046 NEAR (approximately $0.00353468 USD, using $2.88 USD/NEAR exchange rate)
  |    Transaction ID: EhT2qMgQ2jusMgfMzBJEiKvPxtfLchGFYFGjApuBnpvE
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -936,7 +936,7 @@ near account \
  |    <volodymyr.testnet> has transferred 0.1 NEAR to <pk.volodymyr.testnet> successfully.
  |    Added access key = ed25519:HVPgAsZkZ7cwLZDqK313XJsDyqAvgBxrATcD7VacA8KE to pk.volodymyr.testnet.
 
- |    Gas burned: 8.4 Tgas
+ |    Gas used: 8.4 Tgas
  |    Transaction fee: 0.0008349895375 NEAR (approximately $0.00240476 USD, using $2.88 USD/NEAR exchange rate)
  |    Transaction ID: CMjUG79xuGVY4LuEKV1ZH1mwhEsqNVM3PxHu5FMTvAVh
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -978,7 +978,7 @@ near account \
  |    <volodymyr.testnet> has transferred 0.1 NEAR to <ledger1.volodymyr.testnet> successfully.
  |    Added access key = ed25519:FsRjjvkQZbwcBooXyuz4WMxXtxEKLJVJ6nc3CnaurdRr to ledger1.volodymyr.testnet.
 
- |    Gas burned: 8.4 Tgas
+ |    Gas used: 8.4 Tgas
  |    Transaction fee: 0.0008349895375 NEAR (approximately $0.00238807 USD, using $2.86 USD/NEAR exchange rate)
  |    Transaction ID: E8V5rKKZXBhJc11zyXjs3HnrtbL8SWduogAi2NHUQtvy
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1193,7 +1193,7 @@ near account \
 
  |    Account <test_fro.testnet> has been successfully deleted.
 
- |    Gas burned: 0.512 Tgas
+ |    Gas used: 0.512 Tgas
  |    Transaction fee: 0.0000511097 NEAR (approximately $0.00017019 USD, using $3.33 USD/NEAR exchange rate)
  |    Transaction ID: GZjvB6sDetrShK6bDHpZTgeuSRuwEgP1vfDzsGrsfo1o
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1406,7 +1406,7 @@ near account \
 
  |    Added access key = ed25519:75a5ZgVZ9DFTxs4THtFxPtLj7AY3YzpxtapTQBdcMXx3 to fro_volod.testnet.
 
- |    Gas burned: 0.420 Tgas
+ |    Gas used: 0.420 Tgas
  |    Transaction fee: 0.000041964925 NEAR (approximately $0.00013135 USD, using $3.13 USD/NEAR exchange rate)
  |    Transaction ID: 2UNZbYQN6HvzhkT65igKcX3V7U972aUTREahoH8qLXnP
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1453,7 +1453,7 @@ near account \
 
  |    Added access key = ed25519:GmYFKxZ85UETqmnwCpqEHiy5ZW2YNCj75hM2rvADyXW9 to fro_volod.testnet.
 
- |    Gas burned: 0.421 Tgas
+ |    Gas used: 0.421 Tgas
  |    Transaction fee: 0.0000420600457944 NEAR (approximately $0.00013921 USD, using $3.31 USD/NEAR exchange rate)
  |    Transaction ID: HTpGEukqkBTmYowVgyWAfLFVXBFUUZr9bgdGq865H63X
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1494,7 +1494,7 @@ near account \
 
  |    Access key <ed25519:1TprKa4burMqDMjDHyBSUaFQQczF7NamhxTx2yEXe9P> for account <fro_volod.testnet> has been successfully deleted.
 
- |    Gas burned: 0.407 Tgas
+ |    Gas used: 0.407 Tgas
  |    Transaction fee: 0.000040601225 NEAR (approximately $0.00013357 USD, using $3.29 USD/NEAR exchange rate)
  |    Transaction ID: EnEZCBbpbYnxw1owzdezt78VDffBSV947zAruS9JnYx7
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1571,7 +1571,7 @@ near account \
 
  |    The "storage_deposit" call to <v1.social08.testnet> on behalf of <fro_volod.testnet> succeeded.
 
- |    Gas burned: 2.7 Tgas
+ |    Gas used: 2.7 Tgas
  |    Transaction fee: 0.0002640055798606 NEAR (approximately $0.00071017 USD, using $2.69 USD/NEAR exchange rate)
  |    Transaction ID: 4hdrNYjpTMD4crncQ2dSkvwTu4Nn5gCoxx73KcjX6mSQ
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1620,7 +1620,7 @@ near account \
 
  |    The "storage_withdraw" call to <v1.social08.testnet> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 3.6 Tgas
+ |    Gas used: 3.6 Tgas
  |    Transaction fee: 0.000334496827071 NEAR (approximately $0.00090648 USD, using $2.71 USD/NEAR exchange rate)
  |    Transaction ID: SBmgKggqKy7NuhK51Ug2JRYYeEwT453uqQe5ntHDwUJ
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1670,7 +1670,7 @@ near tokens \
 
  |    <fro_volod.testnet> has transferred 0.1 NEAR to <volodymyr.testnet> successfully.
 
- |    Gas burned: 0.447 Tgas
+ |    Gas used: 0.447 Tgas
  |    Transaction fee: 0.0000446365125 NEAR (approximately $0.00014506 USD, using $3.25 USD/NEAR exchange rate)
  |    Transaction ID: FjU9rvNvaUUwKgFnH7UUmSEYuB3LBKBgY8QPwnfSgwVH
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1710,7 +1710,7 @@ near tokens \
 
  |    The "ft_transfer" call to <usdn.testnet> on behalf of <fro_volod.testnet> succeeded.
 
- |    Gas burned: 3.3 Tgas
+ |    Gas used: 3.3 Tgas
  |    Transaction fee: 0.0003208356830642 NEAR (approximately $0.00104913 USD, using $3.27 USD/NEAR exchange rate)
  |    Transaction ID: 53divo1wG2Qbod9NpHrtb2jLhoMYjr79nx4BWgpXToBV
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1754,7 +1754,7 @@ near tokens \
 
  |    The "ft_transfer" call to <usdn.testnet> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 3.2 Tgas
+ |    Gas used: 3.2 Tgas
  |    Transaction fee: 0.0003185247202124 NEAR (approximately $0.00104157 USD, using $3.27 USD/NEAR exchange rate)
  |    Transaction ID: 3ThPcpCHV7xAjpd6MXkVtcG4E7RYN8XLdsopu17dKtzy
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -1803,7 +1803,7 @@ near tokens \
 
  |    The "nft_transfer" call to <paras-token-v2.testnet> on behalf of <fro_volod.testnet> succeeded.
 
- |    Gas burned: 7.0 Tgas
+ |    Gas used: 7.0 Tgas
  |    Transaction fee: 0.0006925168715809 NEAR (approximately $0.00221605 USD, using $3.20 USD/NEAR exchange rate)
  |    Transaction ID: 5hU6kfPak5pbZjC7ovs1jSiaoFHtKYWr5KUnuWb2fXc2
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -2042,7 +2042,7 @@ near staking \
 
  |    The "deposit_and_stake" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 6.1 Tgas
+ |    Gas used: 6.1 Tgas
  |    Transaction fee: 0.000565088651184 NEAR (approximately $0.00184218 USD, using $3.26 USD/NEAR exchange rate)
  |    Transaction ID: 5mqV2dcZSQZz1RvT9kbKgS68A62sxYCQUyPkfGQ7qsvw
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -2090,7 +2090,7 @@ near staking \
 
  |    The "stake" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 5.8 Tgas
+ |    Gas used: 5.8 Tgas
  |    Transaction fee: 0.0005278299014306 NEAR (approximately $0.00172072 USD, using $3.26 USD/NEAR exchange rate)
  |    Transaction ID: Cv6VTBzU5v4gjmsGAhTFuY2taKL4RmZZoSJfFkV81Fbt
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -2138,7 +2138,7 @@ near staking \
 
  |    The "stake_all" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 5.9 Tgas
+ |    Gas used: 5.9 Tgas
  |    Transaction fee: 0.0005400473556783 NEAR (approximately $0.00174975 USD, using $3.24 USD/NEAR exchange rate)
  |    Transaction ID: BHqnut5dFr9H76K31VqHHw5zgDVNhp3TbjxcmWG87Mg7
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -2186,7 +2186,7 @@ near staking \
 
  |    The "unstake" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 5.8 Tgas
+ |    Gas used: 5.8 Tgas
  |    Transaction fee: 0.0005277130544669 NEAR (approximately $0.00173089 USD, using $3.28 USD/NEAR exchange rate)
  |    Transaction ID: 2CaQzKqsLiVLc9xSKcZAkL8o9ypPgvYrNDdkvGY7AmU9
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -2234,7 +2234,7 @@ near staking \
                                                                                                                                                                               
  |    The "unstake_all" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.                                                                          
                                                                                                                                                                               
- |    Gas burned: 5.9 Tgas                                                                                                                                                    
+ |    Gas used: 5.9 Tgas                                                                                                                                                    
  |    Transaction fee: 0.0005414102448012 NEAR (approximately $0.00177582 USD, using $3.28 USD/NEAR exchange rate)                                                            
  |    Transaction ID: Bp2nPibgyDzKTqbGhqeowhZCgdqAjoGYr3PGnBVLDD9X                                                                                                            
  |    To see the transaction in the transaction explorer, please open this url in your browser:                                                                               
@@ -2279,7 +2279,7 @@ near staking \
 
  |    The "withdraw" call to <aurora.pool.f863973.m0> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 3.3 Tgas
+ |    Gas used: 3.3 Tgas
  |    Transaction fee: 0.0002987794103032 NEAR (approximately $0.00089932 USD, using $3.01 USD/NEAR exchange rate)
  |    Transaction ID: 9g59iXm8efEjZ2wmK3KEKTNQFAcqXfnVXUQXJroFnPcD
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -2419,7 +2419,7 @@ near contract \
 
  |    The "rate" call to <turbo.volodymyr.testnet> on behalf of <fro_volod.testnet> succeeded.
 
- |    Gas burned: 2.2 Tgas
+ |    Gas used: 2.2 Tgas
  |    Transaction fee: 0.0002154134874181 NEAR (approximately $0.00070440 USD, using $3.27 USD/NEAR exchange rate)
  |    Transaction ID: DVB2RxNJyazoAKxMs7VugWuqiU9ZgkVXvLmM7cxs88jf
  |    To see the transaction in the transaction explorer, please open this url in your browser:
@@ -2465,7 +2465,7 @@ near contract \
  |    Contract code has been successfully deployed.
  |    The "increment" call to <volodymyr.testnet> on behalf of <volodymyr.testnet> succeeded.
 
- |    Gas burned: 10.4 Tgas
+ |    Gas used: 10.4 Tgas
  |    Transaction fee: 0.0010399389813202 NEAR (approximately $0.00341099 USD, using $3.28 USD/NEAR exchange rate)
  |    Transaction ID: 3kq668vjhE1ZFFSKegNARfjy8ZhCeit8cPvuY8tELSGF
  |    To see the transaction in the transaction explorer, please open this url in your browser:
