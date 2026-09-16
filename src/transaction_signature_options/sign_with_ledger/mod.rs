@@ -9,6 +9,20 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 #[cfg(feature = "ledger-ble")]
 pub mod ble_helpers;
 
+/// Validate the device response before passing it to the signature implementation.
+pub(crate) fn parse_ledger_signature(
+    bytes: &[u8],
+) -> color_eyre::eyre::Result<near_crypto::Signature> {
+    let bytes: &[u8; 64] = bytes.try_into().map_err(|_| {
+        color_eyre::eyre::eyre!(
+            "Invalid Ledger signature length: expected 64 bytes, received {}",
+            bytes.len()
+        )
+    })?;
+    near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, bytes)
+        .wrap_err("Failed to decode Ledger Ed25519 signature")
+}
+
 const SW_BUFFER_OVERFLOW: &str = "0x6990";
 const ERR_OVERFLOW_MEMO: &str = "Buffer overflow on Ledger device occurred. \
 Transaction is too large for signature. \
@@ -287,10 +301,7 @@ fn sign_transaction_with_usb(
                 .wrap_err("Delegate action is not expected to fail on serialization")?,
             seed_phrase_hd_path_raw.clone(),
         ) {
-            Ok(signature) => {
-                near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                    .wrap_err("Signature is not expected to fail on deserialization")?
-            }
+            Ok(signature) => parse_ledger_signature(&signature)?,
             Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
                 return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
             }
@@ -326,10 +337,7 @@ fn sign_transaction_with_usb(
             .wrap_err("Transaction is not expected to fail on serialization")?,
         seed_phrase_hd_path_raw.clone(),
     ) {
-        Ok(signature) => {
-            near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                .wrap_err("Signature is not expected to fail on deserialization")?
-        }
+        Ok(signature) => parse_ledger_signature(&signature)?,
         Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
             return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
         }
@@ -553,10 +561,7 @@ fn sign_transaction_with_ble(
                 .wrap_err("Delegate action is not expected to fail on serialization")?,
             seed_phrase_hd_path_raw.clone(),
         ) {
-            Ok(signature) => {
-                near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                    .wrap_err("Signature is not expected to fail on deserialization")?
-            }
+            Ok(signature) => parse_ledger_signature(&signature)?,
             Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
                 return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
             }
@@ -592,10 +597,7 @@ fn sign_transaction_with_ble(
             .wrap_err("Transaction is not expected to fail on serialization")?,
         seed_phrase_hd_path_raw.clone(),
     ) {
-        Ok(signature) => {
-            near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &signature)
-                .wrap_err("Signature is not expected to fail on deserialization")?
-        }
+        Ok(signature) => parse_ledger_signature(&signature)?,
         Err(NEARLedgerError::APDUExchangeError(msg)) if msg.contains(SW_BUFFER_OVERFLOW) => {
             return Err(color_eyre::Report::msg(ERR_OVERFLOW_MEMO));
         }
@@ -696,4 +698,33 @@ pub fn input_seed_phrase_hd_path()
             .with_starting_input("44'/397'/0'/0'/1'")
             .prompt()?,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_ledger_signature;
+
+    #[test]
+    fn ledger_signature_rejects_invalid_lengths() {
+        for length in [0, 63, 65] {
+            let error = parse_ledger_signature(&vec![0; length]).unwrap_err();
+            assert_eq!(
+                error.to_string(),
+                format!("Invalid Ledger signature length: expected 64 bytes, received {length}")
+            );
+        }
+    }
+
+    #[test]
+    fn ledger_signature_preserves_valid_ed25519_signature() {
+        let secret_key = near_crypto::SecretKey::from_seed(near_crypto::KeyType::ED25519, "ledger");
+        let message = b"Ledger signature boundary";
+        let signature = secret_key.sign(message);
+        let near_crypto::Signature::ED25519(ed25519_signature) = &signature else {
+            panic!("Expected Ed25519 signature");
+        };
+        let decoded = parse_ledger_signature(&ed25519_signature.to_bytes()).unwrap();
+        assert_eq!(decoded, signature);
+        assert!(decoded.verify(message, &secret_key.public_key()));
+    }
 }
