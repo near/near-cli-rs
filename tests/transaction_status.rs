@@ -77,7 +77,7 @@ async fn test_failed_transaction_reports_receipt_totals_and_logs_once()
     }
     assert!(outcome.receipts_outcome.len() > 1, "{stderr}");
 
-    assert!(stderr.contains(&format!("Gas burned: {gas}")), "{stderr}");
+    assert!(stderr.contains(&format!("Gas used: {gas}")), "{stderr}");
     assert!(
         stderr.contains(&format!("Transaction fee: {}", fee.exact_amount_display())),
         "{stderr}"

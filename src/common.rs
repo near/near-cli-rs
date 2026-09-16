@@ -2271,7 +2271,7 @@ pub fn print_transaction_status(
         };
     }
 
-    transaction_execution_info.push_str(&format!("\nGas burned: {total_gas_burnt}"));
+    transaction_execution_info.push_str(&format!("\nGas used: {total_gas_burnt}"));
 
     transaction_execution_info.push_str(&format!(
         "\nTransaction fee: {}{}",
