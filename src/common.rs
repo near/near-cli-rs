@@ -2211,7 +2211,7 @@ pub fn print_transaction_status(
                 }
             }
             near_primitives::views::FinalExecutionStatus::Failure(tx_execution_error) => {
-                return match tx_execution_error {
+                break match tx_execution_error {
                     near_primitives::errors::TxExecutionError::ActionError(action_error) => {
                         convert_action_error_to_cli_result(action_error)
                     }
@@ -2310,6 +2310,9 @@ pub fn print_transaction_status(
                 "Function execution logs:{}",
                 crate::common::indent_payload(&format!("{logs_info}\n "))
             );
+            if result.is_err() {
+                continue;
+            }
             if returned_value_bytes.is_empty() {
                 tracing::info!(
                     parent: &tracing::Span::none(),
