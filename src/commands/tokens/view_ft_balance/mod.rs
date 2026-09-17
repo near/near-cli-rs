@@ -149,7 +149,7 @@ struct FTCalculatedValue {
     usd_value: Option<f64>, // Used strictly for sorting and filtering
 }
 
-fn parse_raw_amount_to_string(amount_str: &str, decimals: u8) -> Option<String> {
+pub fn parse_raw_amount_to_string(amount_str: &str, decimals: u8) -> Option<String> {
     let decimals = decimals as usize;
 
     if amount_str.is_empty() || !amount_str.chars().all(|c| c.is_ascii_digit()) {
