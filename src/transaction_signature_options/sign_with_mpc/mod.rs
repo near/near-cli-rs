@@ -377,7 +377,6 @@ pub struct DepositContext {
     gas: crate::common::NearGas,
     deposit: crate::types::near_token::NearToken,
     original_payload_transaction: Transaction,
-    mpc_sign_request: mpc_sign_request::MpcSignRequest,
     mpc_sign_request_serialized: Vec<u8>,
     global_context: crate::GlobalContext,
     network_config: crate::config::NetworkConfig,
@@ -452,7 +451,6 @@ impl DepositContext {
             gas: previous_context.gas,
             deposit: scope.deposit,
             original_payload_transaction: mpc_tx_payload,
-            mpc_sign_request,
             mpc_sign_request_serialized,
             global_context: previous_context.tx_context.global_context,
             network_config: previous_context.tx_context.network_config,
@@ -556,7 +554,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                         near_primitives::views::FinalExecutionStatus::SuccessValue(result) => {
                             let sign_result: mpc_sign_result::SignResult =
                                 serde_json::from_slice(&result)?;
-                            let signature: near_crypto::Signature = sign_result.into();
+                            let signature: near_crypto::Signature = sign_result.try_into()?;
 
                             near_primitives::transaction::SignedTransaction::new(
                                 signature,
@@ -594,7 +592,6 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             move |outcome_view, network_config| {
                 let global_context = global_context_for_after_send.clone();
                 let unsigned_transaction = original_transaction_for_after_send.clone();
-                let mpc_sign_request = item.mpc_sign_request.clone();
 
                 // NOTE: checking if outcome view status is not failure is not necessary, as this
                 // callback will be called only after `crate::common::print_transaction_status`,
@@ -609,9 +606,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                                     dao_sign_with_mpc_after_send_flow(
                                         &global_context,
                                         network_config,
-                                        outcome_view,
                                         &unsigned_transaction,
-                                        &mpc_sign_request
                                     )?;
                                 }
 
@@ -654,9 +649,7 @@ pub fn near_key_type_to_mpc_domain_id(key_type: near_crypto::KeyType) -> u64 {
 pub fn dao_sign_with_mpc_after_send_flow(
     global_context: &crate::GlobalContext,
     network_config: &crate::config::NetworkConfig,
-    outcome_view: &near_primitives::views::FinalExecutionOutcomeView,
     unsigned_mpc_transaction: &near_primitives::transaction::Transaction,
-    original_sign_request: &mpc_sign_request::MpcSignRequest,
 ) -> color_eyre::eyre::Result<()> {
     use tracing_indicatif::suspend_tracing_indicatif;
 
@@ -673,36 +666,32 @@ pub fn dao_sign_with_mpc_after_send_flow(
                 return Ok(());
             }
             Err(err) => {
-                eprintln!("{}", format!("{err}").red());
+                suspend_tracing_indicatif(|| eprintln!("{}", format!("{err}").red()));
                 continue;
             }
         };
 
-        let signed_transaction = match fetch_mpc_contract_response_from_dao_tx(
+        match fetch_mpc_signature_from_dao_tx(
             network_config,
-            original_sign_request,
             transaction_hash,
-            "near".parse()?,
-            outcome_view.transaction.receiver_id.clone(),
+            unsigned_mpc_transaction,
         ) {
-            Ok(sign_result) => {
-                let signature: near_crypto::Signature = sign_result.into();
-
-                near_primitives::transaction::SignedTransaction::new(
+            Ok(signature) => {
+                break near_primitives::transaction::SignedTransaction::new(
                     signature,
                     unsigned_mpc_transaction.clone(),
-                )
+                );
             }
             Err(err) => {
-                eprintln!(
-                    "{}",
-                    format!("Failed to get signature from MPC contract:\n   {err}").red()
-                );
+                suspend_tracing_indicatif(|| {
+                    eprintln!(
+                        "{}",
+                        format!("Failed to get signature from MPC contract:\n   {err:#}").red()
+                    )
+                });
                 continue;
             }
-        };
-
-        break signed_transaction;
+        }
     };
 
     let submit_context = super::SubmitContext {
@@ -727,19 +716,20 @@ pub fn dao_sign_with_mpc_after_send_flow(
 }
 
 #[tracing::instrument(name = "Fetching executed DAO proposal ...", skip_all)]
-fn fetch_mpc_contract_response_from_dao_tx(
+fn fetch_mpc_signature_from_dao_tx(
     network_config: &crate::config::NetworkConfig,
-    original_sign_request: &mpc_sign_request::MpcSignRequest,
     tx_hash: near_primitives::hash::CryptoHash,
-    sender_account_id: near_primitives::types::AccountId,
-    dao_address: near_primitives::types::AccountId,
-) -> color_eyre::eyre::Result<mpc_sign_result::SignResult> {
+    unsigned_mpc_transaction: &near_primitives::transaction::Transaction,
+) -> color_eyre::eyre::Result<near_crypto::Signature> {
     tracing::info!(target: "near_teach_me", "Fetching executed DAO proposal ...");
 
+    // NOTE: `sender_account_id` is only used by the RPC node to route the request to the
+    // shard tracking the sender. With a relayed (meta) transaction the sender is the relayer,
+    // which we don't know. RPC nodes track all shards, so any valid account ID works here.
     let request = near_jsonrpc_client::methods::tx::RpcTransactionStatusRequest {
         transaction_info: near_jsonrpc_client::methods::tx::TransactionInfo::TransactionId {
             tx_hash,
-            sender_account_id,
+            sender_account_id: "near".parse()?,
         },
         wait_until: near_primitives::views::TxExecutionStatus::Final,
     };
@@ -752,12 +742,6 @@ fn fetch_mpc_contract_response_from_dao_tx(
         .ok_or(color_eyre::eyre::eyre!("No final execution outcome"))?
         .into_outcome();
 
-    if exec_outcome_view.transaction.receiver_id != *dao_address {
-        return Err(color_eyre::eyre::eyre!(
-            "Transaction receiver is not dao account!"
-        ));
-    }
-
     if !matches!(
         exec_outcome_view.status,
         near_primitives::views::FinalExecutionStatus::SuccessValue(_)
@@ -765,68 +749,71 @@ fn fetch_mpc_contract_response_from_dao_tx(
         return Err(color_eyre::eyre::eyre!("Transaction did not succeed"));
     }
 
-    let act_proposal_args = exec_outcome_view
-        .transaction
-        .actions
-        .iter()
-        .find_map(|action| {
-            if let near_primitives::views::ActionView::FunctionCall {
-                method_name, args, ..
-            } = action
-                && method_name == "act_proposal"
-            {
-                return Some(args);
+    find_mpc_signature_in_receipts(
+        &exec_outcome_view.receipts_outcome,
+        unsigned_mpc_transaction,
+        &network_config.get_mpc_contract_account_id()?,
+    )
+}
+
+/// Scans `receipts` for a successful outcome whose value is an MPC sign result that
+/// verifies as a signature of `unsigned_mpc_transaction` under its own public key.
+fn find_mpc_signature_in_receipts(
+    receipts: &[near_primitives::views::ExecutionOutcomeWithIdView],
+    unsigned_mpc_transaction: &near_primitives::transaction::Transaction,
+    mpc_contract_address: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<near_crypto::Signature> {
+    let expected_hash = unsigned_mpc_transaction.get_hash_and_size().0;
+    let expected_public_key = unsigned_mpc_transaction.public_key();
+
+    let mut candidates_found = 0usize;
+
+    for receipt in receipts {
+        let near_primitives::views::ExecutionStatusView::SuccessValue(bytes) =
+            &receipt.outcome.status
+        else {
+            continue;
+        };
+
+        let Ok(sign_result) = serde_json::from_slice::<mpc_sign_result::SignResult>(bytes) else {
+            continue;
+        };
+        candidates_found += 1;
+
+        let signature = match near_crypto::Signature::try_from(sign_result) {
+            Ok(signature) => signature,
+            Err(err) => {
+                tracing::debug!(
+                    "Receipt <{}> from <{}> looks like an MPC sign result but is malformed: {err}",
+                    receipt.id,
+                    receipt.outcome.executor_id
+                );
+                continue;
             }
-            None
-        })
-        .ok_or(color_eyre::eyre::eyre!("No act_proposal action found"))?;
+        };
 
-    let act_proposal_args: serde_json::Value = serde_json::from_slice(act_proposal_args)?;
-
-    let proposal = act_proposal_args
-        .get("proposal")
-        .ok_or(color_eyre::eyre::eyre!(
-            "Couldn't find proposal in \"act_proposal\""
-        ))?;
-
-    let proposal_kind: super::submit_dao_proposal::dao_kind_arguments::ProposalKind =
-        serde_json::from_value(proposal.clone())?;
-
-    let mpc_sign_request = proposal_kind.try_to_mpc_sign_request(network_config)?;
-
-    if mpc_sign_request != *original_sign_request {
-        return Err(color_eyre::eyre::eyre!(
-            "Fetched sign request from DAO proposal doesn't match original that was made in this session"
-        ));
-    };
-
-    let mut sign_response_opt = None;
-    let mpc_contract_address = network_config
-        .get_mpc_contract_account_id()
-        .expect("Already checked it before calling");
-
-    for receipt in exec_outcome_view.receipts_outcome {
-        if receipt.outcome.executor_id == mpc_contract_address
-            && let near_primitives::views::ExecutionStatusView::SuccessValue(success_response) =
-                receipt.outcome.status
-        {
-            sign_response_opt = Some(success_response);
-            break;
+        if signature.verify(expected_hash.as_ref(), expected_public_key) {
+            if receipt.outcome.executor_id != *mpc_contract_address {
+                tracing::warn!(
+                    "Valid MPC signature was found in a receipt executed by <{}>, not by the configured MPC contract <{}>",
+                    receipt.outcome.executor_id,
+                    mpc_contract_address
+                );
+            }
+            return Ok(signature);
         }
     }
 
-    let Some(sign_response_vec) = sign_response_opt else {
+    if candidates_found == 0 {
         return Err(color_eyre::eyre::eyre!(
-            "Couldn't find response from MPC contract"
+            "Couldn't find a response from MPC contract <{mpc_contract_address}> among the receipts of this transaction"
         ));
-    };
+    }
 
-    let mpc_contract_sign_result: mpc_sign_result::SignResult =
-        serde_json::from_slice(&sign_response_vec).map_err(|_| {
-            color_eyre::eyre::eyre!("Couldn't parse sign response from MPC contract")
-        })?;
-
-    Ok(mpc_contract_sign_result)
+    Err(color_eyre::eyre::eyre!(
+        "Found {candidates_found} MPC sign result(s) in the receipts of this transaction, but none of them is a valid signature for the transaction prepared in this session (signer <{}>, public key <{expected_public_key}>). Make sure you entered the hash of the transaction that executed this exact DAO proposal.",
+        unsigned_mpc_transaction.signer_id(),
+    ))
 }
 
 fn prompt_and_submit(submit_context: super::SubmitContext) -> color_eyre::eyre::Result<()> {
