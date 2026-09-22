@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.2](https://github.com/near/near-cli-rs/compare/v0.30.1...v0.30.2) - 2026-09-22
+
+### Added
+
+- colour receipt log headers and mark failed receipts ([#675](https://github.com/near/near-cli-rs/pull/675))
+
+### Fixed
+
+- show account import verification errors ([#651](https://github.com/near/near-cli-rs/pull/651))
+- support ML-DSA key handles offline ([#650](https://github.com/near/near-cli-rs/pull/650))
+- normalize imported ML-DSA key IDs ([#649](https://github.com/near/near-cli-rs/pull/649))
+- sum receipt gas and fees before printing, print function logs once ([#673](https://github.com/near/near-cli-rs/pull/673))
+- print transaction ID and explorer link when a transaction fails ([#672](https://github.com/near/near-cli-rs/pull/672))
+
+### Other
+
+- switch from fast_clap fork back to upstream clap 4.6.7 ([#671](https://github.com/near/near-cli-rs/pull/671))
+- *(construct-transaction)* allow more actions ([#667](https://github.com/near/near-cli-rs/pull/667))
+
 ## [0.30.1](https://github.com/near/near-cli-rs/compare/v0.30.0...v0.30.1) - 2026-09-02
 
 ### Added
