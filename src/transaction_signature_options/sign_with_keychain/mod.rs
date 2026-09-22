@@ -89,7 +89,7 @@ impl SignKeychainContext {
                 .clone()
                 .wrap_err("Signer public key is required to sign a transaction in offline mode")?;
             let keychain_key_id =
-                crate::common::normalize_keychain_key_id(&signer_public_key.to_string())?;
+                near_crypto::PublicKeyHandle::from(&signer_public_key.0).to_string();
             let res = keyring::Entry::new(
                 &service_name,
                 &format!(

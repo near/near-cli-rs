@@ -1112,7 +1112,7 @@ impl GeneratedKeyPair {
     /// key would blow past filesystem name limits and would never match the
     /// handle the chain reports for the key.
     pub fn keychain_key_id(&self) -> color_eyre::eyre::Result<String> {
-        normalize_keychain_key_id(self.public_key_str())
+        Ok(near_crypto::PublicKeyHandle::from(&self.public_key()?).to_string())
     }
 
     /// JSON written to the keychain / legacy keychain credentials file. Ed25519
@@ -2352,20 +2352,20 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties_buf: &str,
-    public_key_str: &str,
+    public_key: &near_crypto::PublicKey,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
     match save_access_key_to_keychain(
         network_config.clone(),
         key_pair_properties_buf,
-        public_key_str,
+        public_key,
         account_id,
     ) {
         Ok(message) => Ok(message),
         Err(err) => {
             let info_str = format!(
                 "{}\n{}\n",
-                format!("Failed to save the access key <{public_key_str}> to the keychain.\n{err}")
+                format!("Failed to save the access key <{public_key}> to the keychain.\n{err}")
                     .red(),
                 "The data for the access key will be stored in the legacy keychain.".red()
             );
@@ -2378,29 +2378,20 @@ pub fn save_access_key_to_keychain_or_save_to_legacy_keychain(
                 network_config.clone(),
                 credentials_home_dir,
                 key_pair_properties_buf,
-                public_key_str,
+                public_key,
                 account_id,
             )
         }
     }
 }
 
-pub(crate) fn normalize_keychain_key_id(public_key_str: &str) -> color_eyre::eyre::Result<String> {
-    let public_key_handle = near_crypto::PublicKey::from_str(public_key_str)
-        .map(|public_key| near_crypto::PublicKeyHandle::from(&public_key))
-        .or_else(|_| near_crypto::PublicKeyHandle::from_str(public_key_str))
-        .wrap_err("Failed to parse public key or public key handle")?;
-
-    Ok(public_key_handle.to_string())
-}
-
 pub fn save_access_key_to_keychain(
     network_config: crate::config::NetworkConfig,
     key_pair_properties_buf: &str,
-    public_key_str: &str,
+    public_key: &near_crypto::PublicKey,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
-    let keychain_key_id = normalize_keychain_key_id(public_key_str)?;
+    let keychain_key_id = near_crypto::PublicKeyHandle::from(public_key).to_string();
     let service_name = std::borrow::Cow::Owned(format!(
         "near-{}-{}",
         network_config.network_name, account_id
@@ -2418,11 +2409,11 @@ pub fn save_access_key_to_legacy_keychain(
     network_config: crate::config::NetworkConfig,
     credentials_home_dir: std::path::PathBuf,
     key_pair_properties_buf: &str,
-    public_key_str: &str,
+    public_key: &near_crypto::PublicKey,
     account_id: &str,
 ) -> color_eyre::eyre::Result<String> {
     let dir_name = network_config.network_name.as_str();
-    let keychain_key_id = normalize_keychain_key_id(public_key_str)?;
+    let keychain_key_id = near_crypto::PublicKeyHandle::from(public_key).to_string();
     let file_with_key_name: std::path::PathBuf =
         format!("{}.json", keychain_key_id.replace(':', "_")).into();
     let mut path_with_key_name = std::path::PathBuf::from(&credentials_home_dir);
