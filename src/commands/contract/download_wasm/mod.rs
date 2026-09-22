@@ -323,11 +323,20 @@ fn download_contract_code(
     Ok(())
 }
 
-#[tracing::instrument(name = "Trying to download contract code ...", skip_all)]
 pub fn get_code(
     contract_type: &ContractType,
     network_config: &crate::config::NetworkConfig,
     block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<Vec<u8>> {
+    get_code_with_hash(contract_type, network_config, block_reference, None)
+}
+
+#[tracing::instrument(name = "Trying to download contract code ...", skip_all)]
+pub(crate) fn get_code_with_hash(
+    contract_type: &ContractType,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
+    expected_code_hash: Option<near_primitives::hash::CryptoHash>,
 ) -> color_eyre::eyre::Result<Vec<u8>> {
     tracing::info!(target: "near_teach_me", "Trying to download contract code ...");
     let (request, hash_to_match) = match contract_type.clone() {
@@ -347,6 +356,16 @@ pub fn get_code(
             Some(code_hash),
         ),
     };
+
+    // A deployment receipt may execute after the transaction's outcome block.
+    // Keep searching until the action's code is visible, rather than returning
+    // an empty or previous contract from the first successful query.
+    if let (Some(contract_hash), Some(expected_hash)) = (hash_to_match, expected_code_hash)
+        && contract_hash != expected_hash
+    {
+        color_eyre::eyre::bail!("Expected code hash conflicts with the global contract code hash");
+    }
+    let hash_to_match = hash_to_match.or(expected_code_hash);
 
     let block = network_config
         .json_rpc_client()
