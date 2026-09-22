@@ -192,3 +192,6 @@ libudev-dev = { version = "*", targets = [
     "x86_64-unknown-linux-gnu",
     "aarch64-unknown-linux-gnu",
 ] }
+
+[patch.crates-io]
+near-verify-rs = { git = "https://github.com/near/near-verify-rs", rev = "a4f26090c5572411ab370872399df6e52f8a2643" }
