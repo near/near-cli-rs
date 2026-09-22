@@ -18,26 +18,30 @@ pub struct SignResultSecp256K1 {
     pub recovery_id: u8,
 }
 
-impl From<SignResultSecp256K1> for Secp256K1Signature {
-    fn from(value: SignResultSecp256K1) -> Self {
-        // Get r and s from the sign result
+impl TryFrom<SignResultSecp256K1> for Secp256K1Signature {
+    type Error = color_eyre::eyre::Error;
+
+    fn try_from(value: SignResultSecp256K1) -> Result<Self, Self::Error> {
+        // `big_r` is a SEC1 compressed point: a one-byte prefix (02/03) followed by the
+        // 32-byte x coordinate, which is the `r` component of the signature.
         let big_r = value.big_r.affine_point;
-        let s = value.s.scalar;
+        let r = big_r.get(2..).ok_or_else(|| {
+            color_eyre::eyre::eyre!("MPC secp256k1 sign result has a too short `big_r`")
+        })?;
 
-        // Remove first two bytes
-        let r = &big_r[2..];
+        let r_bytes = <[u8; 32]>::from_hex(r).map_err(|err| {
+            color_eyre::eyre::eyre!("Invalid hex in `big_r` of MPC sign result: {err}")
+        })?;
+        let s_bytes = <[u8; 32]>::from_hex(&value.s.scalar).map_err(|err| {
+            color_eyre::eyre::eyre!("Invalid hex in `s` of MPC sign result: {err}")
+        })?;
 
-        // Convert hex to bytes
-        let r_bytes = <[u8; 32]>::from_hex(r).expect("Invalid hex in r");
-        let s_bytes = <[u8; 32]>::from_hex(s).expect("Invalid hex in s");
-
-        // Add individual bytes together in the correct order
         let mut signature_bytes = [0u8; 65];
         signature_bytes[..32].copy_from_slice(&r_bytes);
         signature_bytes[32..64].copy_from_slice(&s_bytes);
         signature_bytes[64] = value.recovery_id;
 
-        Secp256K1Signature::from(signature_bytes)
+        Ok(Secp256K1Signature::from(signature_bytes))
     }
 }
 
@@ -48,20 +52,27 @@ pub struct SignResultEd25519 {
     pub signature: Vec<u8>,
 }
 
-impl From<SignResultEd25519> for ed25519_dalek::Signature {
-    fn from(value: SignResultEd25519) -> Self {
-        let signature_bytes: [u8; ed25519_dalek::SIGNATURE_LENGTH] = value
-            .signature
-            .try_into()
-            .expect("Invalid signature length for Ed25519");
+impl TryFrom<SignResultEd25519> for ed25519_dalek::Signature {
+    type Error = color_eyre::eyre::Error;
+
+    fn try_from(value: SignResultEd25519) -> Result<Self, Self::Error> {
+        let signature_bytes: [u8; ed25519_dalek::SIGNATURE_LENGTH] =
+            value.signature.try_into().map_err(|bytes: Vec<u8>| {
+                color_eyre::eyre::eyre!(
+                    "Invalid ed25519 signature length in MPC sign result: expected {} bytes, got {}",
+                    ed25519_dalek::SIGNATURE_LENGTH,
+                    bytes.len()
+                )
+            })?;
 
         // Sanity check from near_crypto
-        assert!(
-            signature_bytes[ed25519_dalek::SIGNATURE_LENGTH - 1] & 0b1110_0000 == 0,
-            "Signature error: Sanity check failed"
-        );
+        if signature_bytes[ed25519_dalek::SIGNATURE_LENGTH - 1] & 0b1110_0000 != 0 {
+            return Err(color_eyre::eyre::eyre!(
+                "Invalid ed25519 signature in MPC sign result: sanity check failed"
+            ));
+        }
 
-        ed25519_dalek::Signature::from_bytes(&signature_bytes)
+        Ok(ed25519_dalek::Signature::from_bytes(&signature_bytes))
     }
 }
 
@@ -72,11 +83,13 @@ pub enum SignResult {
     Ed25519(SignResultEd25519),
 }
 
-impl From<SignResult> for near_crypto::Signature {
-    fn from(value: SignResult) -> Self {
+impl TryFrom<SignResult> for near_crypto::Signature {
+    type Error = color_eyre::eyre::Error;
+
+    fn try_from(value: SignResult) -> Result<Self, Self::Error> {
         match value {
-            SignResult::Secp256K1(secp) => near_crypto::Signature::SECP256K1(secp.into()),
-            SignResult::Ed25519(ed) => near_crypto::Signature::ED25519(ed.into()),
+            SignResult::Secp256K1(secp) => Ok(near_crypto::Signature::SECP256K1(secp.try_into()?)),
+            SignResult::Ed25519(ed) => Ok(near_crypto::Signature::ED25519(ed.try_into()?)),
         }
     }
 }
