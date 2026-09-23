@@ -70,16 +70,16 @@ impl From<SaveKeypairToLegacyKeychainContext> for crate::commands::ActionContext
                         ) => signed_delegate_action.delegate_action.sender_id.clone()
                     };
                     let key_pair_properties_buf = item.generated_key_pair.keychain_json()?;
-                    let key_id = item.generated_key_pair.keychain_key_id()?;
+                    let public_key = item.generated_key_pair.public_key()?;
                     crate::common::save_access_key_to_legacy_keychain(
                         network_config.clone(),
                         credentials_home_dir.clone(),
                         &key_pair_properties_buf,
-                        &key_id,
+                        &public_key,
                         account_id.as_ref(),
                     )
                     .wrap_err_with(|| {
-                        format!("Failed to save a file with access key: {key_id}")
+                        format!("Failed to save a file with access key: {public_key}")
                     })
                 }
             });

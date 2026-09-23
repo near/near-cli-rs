@@ -12,7 +12,7 @@ use crate::common::RpcQueryResponseExt;
 pub struct SignKeychain {
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
-    signer_public_key: Option<crate::types::public_key::PublicKey>,
+    signer_public_key: Option<crate::types::public_key::PublicKeyOrKeyHandle>,
     #[interactive_clap(long)]
     #[interactive_clap(skip_default_input_arg)]
     nonce: Option<u64>,
@@ -84,14 +84,16 @@ impl SignKeychainContext {
         let want_gas_key = scope.nonce_index.is_some();
 
         let password = if previous_context.global_context.offline {
+            let signer_public_key = scope
+                .signer_public_key
+                .clone()
+                .wrap_err("Signer public key is required to sign a transaction in offline mode")?;
+            let keychain_key_id = signer_public_key.to_string();
             let res = keyring::Entry::new(
                 &service_name,
                 &format!(
                     "{}:{}",
-                    previous_context.prepopulated_transaction.signer_id,
-                    scope.signer_public_key.clone().wrap_err(
-                        "Signer public key is required to sign a transaction in offline mode"
-                    )?
+                    previous_context.prepopulated_transaction.signer_id, keychain_key_id
                 ),
             )?
             .get_password();
@@ -321,11 +323,13 @@ impl From<SignKeychainContext> for super::SubmitContext {
 impl SignKeychain {
     fn input_signer_public_key(
         context: &crate::commands::TransactionContext,
-    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKey>> {
+    ) -> color_eyre::eyre::Result<Option<crate::types::public_key::PublicKeyOrKeyHandle>> {
         if context.global_context.offline {
             return Ok(Some(
-                CustomType::<crate::types::public_key::PublicKey>::new("Enter public_key:")
-                    .prompt()?,
+                CustomType::<crate::types::public_key::PublicKeyOrKeyHandle>::new(
+                    "Enter public key or key handle:",
+                )
+                .prompt()?,
             ));
         }
         Ok(None)
