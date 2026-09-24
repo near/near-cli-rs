@@ -153,19 +153,19 @@ impl From<near_primitives::action::delegate::SignedDelegateAction>
     }
 }
 
-/// A gas key cannot be used to sign a meta-transaction yet: a (v1)
-/// `DelegateAction` only carries a plain `nonce`, so delegating a gas-key
-/// transaction would drop its `nonce_index` and the runtime would reject the
-/// result (`DelegateActionRequiresNonGasKey`). Full support needs DelegateV2,
-/// which is out of the 2.13 scope. Reject the combination up front with a clear
-/// error. Called from every delegate-action path (the shared
+/// A gas key cannot be used to sign a meta-transaction: a `DelegateAction`
+/// only carries a plain `nonce`, so delegating a gas-key transaction would drop
+/// its `nonce_index` and the runtime would reject the result
+/// (`DelegateActionRequiresNonGasKey`). DelegateV2, which could have carried it,
+/// was removed from the protocol in nearcore 2.14 and is now rejected at
+/// validation. Reject the combination up front with a clear error. Called from every delegate-action path (the shared
 /// [`get_signed_delegate_action`] and the two Ledger manual branches).
 pub fn ensure_gas_key_not_delegated(
     unsigned_transaction: &near_primitives::transaction::Transaction,
 ) -> color_eyre::eyre::Result<()> {
     if unsigned_transaction.nonce().nonce_index().is_some() {
         color_eyre::eyre::bail!(
-            "Signing with a gas key is not supported for meta-transactions (--sign-as-delegate-action) yet: a DelegateAction cannot carry the gas key's nonce index (requires DelegateV2). Re-run without --sign-as-delegate-action, or sign with an ordinary access key."
+            "Signing with a gas key is not supported for meta-transactions (--sign-as-delegate-action): a DelegateAction cannot carry the gas key's nonce index. Re-run without --sign-as-delegate-action, or sign with an ordinary access key."
         );
     }
     Ok(())
