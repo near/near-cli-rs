@@ -349,6 +349,10 @@ fn action_transformation(
             // TODO: impl
             Err(color_eyre::eyre::eyre!("Deterministic state init is not yet implemented"))
         }
+        Action::UniversalStateInit(_universal_state_action) => {
+            // TODO: impl
+            Err(color_eyre::eyre::eyre!("Universal state init is not yet implemented"))
+        }
         Action::TransferToGasKey(_) | Action::WithdrawFromGasKey(_) => {
             // TODO: impl
             Err(color_eyre::eyre::eyre!("Gas key actions are not yet supported in transaction reconstruction"))

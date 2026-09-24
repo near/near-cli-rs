@@ -1494,6 +1494,36 @@ pub fn print_unsigned_transaction(
                     withdraw_from_gas_key.amount.exact_amount_display()
                 ));
             }
+            near_primitives::transaction::Action::UniversalStateInit(universal_init_action) => {
+                let universal_account_id = near_primitives::utils::derive_universal_account_id(
+                    &universal_init_action.state_init,
+                );
+                info_str.push_str(&format!(
+                    "\n{:>5} {:<20}",
+                    "--",
+                    format!("create universal account <{universal_account_id}>:")
+                ));
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<12}: {}",
+                    "", "deposit", universal_init_action.deposit
+                ));
+                let state_init_str =
+                    match near_primitives::universal_state_init::UniversalStateInit::from_raw(
+                        &universal_init_action.state_init,
+                    ) {
+                        Ok(state_init) => serde_json::to_string_pretty(&state_init)
+                            .expect("UniversalStateInit is always serializable")
+                            .replace('\n', &format!("\n{:33}", "")),
+                        Err(err) => format!(
+                            "malformed ({} bytes): {err}",
+                            universal_init_action.state_init.0.len()
+                        ),
+                    };
+                info_str.push_str(&format!(
+                    "\n{:>18} {:<12}: {}",
+                    "", "state-init", state_init_str
+                ));
+            }
         }
     }
     info_str.push_str("\n ");
@@ -1633,6 +1663,15 @@ fn print_value_successful_transaction(
                     transaction_info.transaction.signer_id,
                     amount.exact_amount_display(),
                     public_key,
+                ));
+            }
+            near_primitives::views::ActionView::UniversalStateInit {
+                state_init: _,
+                deposit: _,
+            } => {
+                info_str.push_str(&format!(
+                    "\nNew universal account <{}> has been successfully created.",
+                    transaction_info.transaction.receiver_id,
                 ));
             }
         }
