@@ -276,7 +276,7 @@ pub fn verify_account_access_key(
                 } else {
                     return Err(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
+                            Box::new(near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string())))
                         ),
                     ))));
                 }
@@ -599,7 +599,7 @@ pub async fn get_account_state(
                 } else {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
+                            Box::new(near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string())))
                         ),
                     )));
                 }
@@ -1652,7 +1652,7 @@ pub fn rpc_transaction_error(
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError(_) => {
                     Ok("Timeout error transaction".to_string())
                 }
                 near_jsonrpc_client::methods::send_tx::RpcTransactionError::InvalidTransaction { context } => {
