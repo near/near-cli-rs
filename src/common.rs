@@ -22,6 +22,9 @@ pub type CliResult = color_eyre::eyre::Result<()>;
 /// necessary to fix `clippy::result_large_err` warning
 pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::JsonRpcError<E>>>;
 
+/// Number of access keys requested per `view_access_key_list` page.
+pub const ACCESS_KEY_LIST_PAGE_SIZE: std::num::NonZeroU32 = std::num::NonZeroU32::new(100).unwrap();
+
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
 
@@ -3580,22 +3583,57 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             .pb_set_message(&format!("access keys on account <{account_id}>..."));
         tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
 
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                account_id: account_id.clone(),
-            },
-        };
+        // Nodes cap how many keys one response may return, so the list is fetched
+        // page by page. Pages after the first are pinned to the first page's block
+        // so the merged list is a consistent snapshot. Nodes that predate
+        // pagination ignore `limit` and return every key in one page.
+        let mut block_reference = block_reference;
+        let mut after_key = None;
+        let mut keys = vec![];
+        loop {
+            let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference: block_reference.clone(),
+                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                    account_id: account_id.clone(),
+                    after_key: after_key.take(),
+                    limit: Some(ACCESS_KEY_LIST_PAGE_SIZE),
+                },
+            };
 
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
-            account_id
-        );
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
+                account_id
+            );
 
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
+            let response = self
+                .blocking_call(query_view_method_request)
+                .inspect(teach_me_call_response)?;
+            let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(page) =
+                response.kind
+            else {
+                return Ok(response);
+            };
+            let is_last_page = page.last_key.is_none() || page.keys.is_empty();
+            keys.extend(page.keys);
+            if is_last_page {
+                return Ok(near_jsonrpc_primitives::types::query::RpcQueryResponse {
+                    kind: near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
+                        near_primitives::views::AccessKeyList {
+                            keys,
+                            last_key: None,
+                        },
+                    ),
+                    block_height: response.block_height,
+                    block_hash: response.block_hash,
+                });
+            }
+            block_reference = near_primitives::types::BlockReference::BlockId(
+                near_primitives::types::BlockId::Hash(response.block_hash),
+            );
+            after_key = page.last_key;
+        }
     }
 
     #[tracing::instrument(name = "Getting gas key nonces for", skip_all)]

@@ -458,12 +458,51 @@ async fn get_access_keys(
 ) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
+    // Later pages are pinned to the first page's block; see
+    // `JsonRpcClientExt::blocking_call_view_access_key_list`.
+    let mut block_reference = block_reference.clone();
+    let mut after_key = None;
+    let mut keys = vec![];
+    loop {
+        let page = get_access_keys_page(
+            network_name,
+            json_rpc_client,
+            &block_reference,
+            account_id,
+            after_key.take(),
+        )
+        .await?;
+        let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(access_keys) =
+            page.kind
+        else {
+            return Ok(page.access_key_list_view()?.keys);
+        };
+        let is_last_page = access_keys.last_key.is_none() || access_keys.keys.is_empty();
+        keys.extend(access_keys.keys);
+        if is_last_page {
+            return Ok(keys);
+        }
+        block_reference =
+            BlockReference::BlockId(near_primitives::types::BlockId::Hash(page.block_hash));
+        after_key = access_keys.last_key;
+    }
+}
+
+async fn get_access_keys_page(
+    network_name: &str,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    block_reference: &BlockReference,
+    account_id: &near_primitives::types::AccountId,
+    after_key: Option<near_crypto::PublicKeyHandle>,
+) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse> {
     for _ in 0..5 {
         let access_keys_response = json_rpc_client
             .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
                 block_reference: block_reference.clone(),
                 request: near_primitives::views::QueryRequest::ViewAccessKeyList {
                     account_id: account_id.clone(),
+                    after_key: after_key.clone(),
+                    limit: Some(crate::common::ACCESS_KEY_LIST_PAGE_SIZE),
                 },
             })
             .await;
@@ -476,14 +515,11 @@ async fn get_access_keys(
             );
             std::thread::sleep(std::time::Duration::from_millis(100))
         } else {
-            return Ok(access_keys_response
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch ViewAccessKeyList for contract <{account_id}> on network <{network_name}>"
-                    )
-                })?
-                .access_key_list_view()?
-                .keys);
+            return access_keys_response.wrap_err_with(|| {
+                format!(
+                    "Failed to fetch ViewAccessKeyList for contract <{account_id}> on network <{network_name}>"
+                )
+            });
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
