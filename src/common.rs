@@ -858,16 +858,15 @@ pub fn get_public_keys_from_network_config(
                         // In 2.13 the access-key list returns a `PublicKeyHandle`.
                         // ML-DSA-65 keys are stored on-chain only as a hash, so the
                         // full public key needed to build a actions can't be
-                        // recovered here; `full_pubkey()` returns `None` for them and
-                        // they are skipped from the interactive picker.
-                        access_key_info_view
-                            .public_key
-                            .full_pubkey()
-                            .map(|public_key| AccessKeyInfo {
+                        // recovered here; `public_key_from_handle()` returns `None` for
+                        // them and they are skipped from the interactive picker.
+                        public_key_from_handle(&access_key_info_view.public_key).map(|public_key| {
+                            AccessKeyInfo {
                                 public_key,
                                 permission: access_key_info_view.access_key.permission.clone(),
                                 network_name: network_config.network_name.clone(),
-                            })
+                            }
+                        })
                     },
                 ));
                 processed_networks.push(network_config.network_name.to_string());
@@ -879,6 +878,20 @@ pub fn get_public_keys_from_network_config(
     }
 
     Ok((access_key_list, errors))
+}
+
+/// Returns the full public key behind an on-chain key handle, or `None` for
+/// ML-DSA-65 handles, which only carry a hash of the key.
+fn public_key_from_handle(handle: &near_crypto::PublicKeyHandle) -> Option<near_crypto::PublicKey> {
+    match handle {
+        near_crypto::PublicKeyHandle::ED25519(public_key) => {
+            Some(near_crypto::PublicKey::ED25519(public_key.clone()))
+        }
+        near_crypto::PublicKeyHandle::SECP256K1(public_key) => {
+            Some(near_crypto::PublicKey::SECP256K1(public_key.clone()))
+        }
+        near_crypto::PublicKeyHandle::MlDsa65(_) => None,
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
