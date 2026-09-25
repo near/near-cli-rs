@@ -25,6 +25,111 @@ pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::J
 /// Number of access keys requested per `view_access_key_list` page.
 pub const ACCESS_KEY_LIST_PAGE_SIZE: std::num::NonZeroU32 = std::num::NonZeroU32::new(100).unwrap();
 
+// Nodes cap how many keys one `view_access_key_list` response may return, so the
+// list is fetched page by page. Pages after the first are pinned to the first
+// page's block so the merged list is a consistent snapshot. Nodes that predate
+// pagination ignore `limit` and return every key in one page.
+
+/// Builds a `view_access_key_list` request for one page.
+pub fn access_key_list_page_request(
+    account_id: &near_primitives::types::AccountId,
+    block_reference: near_primitives::types::BlockReference,
+    after_key: Option<near_crypto::PublicKeyHandle>,
+) -> near_jsonrpc_client::methods::query::RpcQueryRequest {
+    near_jsonrpc_client::methods::query::RpcQueryRequest {
+        block_reference,
+        request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+            account_id: account_id.clone(),
+            after_key,
+            limit: Some(ACCESS_KEY_LIST_PAGE_SIZE),
+        },
+    }
+}
+
+pub enum AccessKeyListStep {
+    /// Fetch the next page with these parameters.
+    Next {
+        block_reference: near_primitives::types::BlockReference,
+        after_key: near_crypto::PublicKeyHandle,
+    },
+    /// The walk is over: the merged list, or a response of an unexpected kind
+    /// passed through as-is.
+    Done(near_jsonrpc_primitives::types::query::RpcQueryResponse),
+}
+
+/// Accumulates the pages of an access key list.
+#[derive(Default)]
+pub struct AccessKeyListPages {
+    keys: Vec<near_primitives::views::AccessKeyInfoView>,
+    first_block: Option<(
+        near_primitives::types::BlockHeight,
+        near_primitives::hash::CryptoHash,
+    )>,
+}
+
+impl AccessKeyListPages {
+    /// Appends the keys of one page and decides what to fetch next.
+    pub fn push(
+        &mut self,
+        response: near_jsonrpc_primitives::types::query::RpcQueryResponse,
+    ) -> AccessKeyListStep {
+        let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(page) =
+            response.kind
+        else {
+            return AccessKeyListStep::Done(response);
+        };
+        let (block_height, block_hash) = *self
+            .first_block
+            .get_or_insert((response.block_height, response.block_hash));
+        // An empty page with a cursor would never make progress.
+        let is_empty_page = page.keys.is_empty();
+        self.keys.extend(page.keys);
+        match page.last_key {
+            Some(after_key) if !is_empty_page => AccessKeyListStep::Next {
+                block_reference: near_primitives::types::BlockReference::BlockId(
+                    near_primitives::types::BlockId::Hash(block_hash),
+                ),
+                after_key,
+            },
+            _ => AccessKeyListStep::Done(near_jsonrpc_primitives::types::query::RpcQueryResponse {
+                kind: near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
+                    near_primitives::views::AccessKeyList {
+                        keys: std::mem::take(&mut self.keys),
+                        last_key: None,
+                    },
+                ),
+                block_height,
+                block_hash,
+            }),
+        }
+    }
+}
+
+/// Fetches every page of an account's access key list with `fetch` and returns
+/// them merged into a single `AccessKeyList` response.
+pub fn paginate_access_key_list<E>(
+    account_id: &near_primitives::types::AccountId,
+    block_reference: near_primitives::types::BlockReference,
+    mut fetch: impl FnMut(
+        near_jsonrpc_client::methods::query::RpcQueryRequest,
+    ) -> Result<near_jsonrpc_primitives::types::query::RpcQueryResponse, E>,
+) -> Result<near_jsonrpc_primitives::types::query::RpcQueryResponse, E> {
+    let mut pages = AccessKeyListPages::default();
+    let mut request = access_key_list_page_request(account_id, block_reference, None);
+    loop {
+        match pages.push(fetch(request)?) {
+            AccessKeyListStep::Next {
+                block_reference,
+                after_key,
+            } => {
+                request =
+                    access_key_list_page_request(account_id, block_reference, Some(after_key));
+            }
+            AccessKeyListStep::Done(response) => return Ok(response),
+        }
+    }
+}
+
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
 
@@ -3583,23 +3688,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             .pb_set_message(&format!("access keys on account <{account_id}>..."));
         tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
 
-        // Nodes cap how many keys one response may return, so the list is fetched
-        // page by page. Pages after the first are pinned to the first page's block
-        // so the merged list is a consistent snapshot. Nodes that predate
-        // pagination ignore `limit` and return every key in one page.
-        let mut block_reference = block_reference;
-        let mut after_key = None;
-        let mut keys = vec![];
-        loop {
-            let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                    account_id: account_id.clone(),
-                    after_key: after_key.take(),
-                    limit: Some(ACCESS_KEY_LIST_PAGE_SIZE),
-                },
-            };
-
+        paginate_access_key_list(account_id, block_reference, |query_view_method_request| {
             tracing::info!(
                 target: "near_teach_me",
                 parent: &tracing::Span::none(),
@@ -3607,33 +3696,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                 account_id
             );
 
-            let response = self
-                .blocking_call(query_view_method_request)
-                .inspect(teach_me_call_response)?;
-            let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(page) =
-                response.kind
-            else {
-                return Ok(response);
-            };
-            let is_last_page = page.last_key.is_none() || page.keys.is_empty();
-            keys.extend(page.keys);
-            if is_last_page {
-                return Ok(near_jsonrpc_primitives::types::query::RpcQueryResponse {
-                    kind: near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-                        near_primitives::views::AccessKeyList {
-                            keys,
-                            last_key: None,
-                        },
-                    ),
-                    block_height: response.block_height,
-                    block_hash: response.block_hash,
-                });
-            }
-            block_reference = near_primitives::types::BlockReference::BlockId(
-                near_primitives::types::BlockId::Hash(response.block_hash),
-            );
-            after_key = page.last_key;
-        }
+            self.blocking_call(query_view_method_request)
+                .inspect(teach_me_call_response)
+        })
     }
 
     #[tracing::instrument(name = "Getting gas key nonces for", skip_all)]
@@ -4309,4 +4374,143 @@ pub fn parse_borsh_base64_state_init(
     use borsh::BorshDeserialize;
     near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(bytes)
         .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn key(seed: &str) -> near_crypto::PublicKeyHandle {
+        near_crypto::SecretKey::from_seed(near_crypto::KeyType::ED25519, seed)
+            .public_key()
+            .into()
+    }
+
+    fn key_info(
+        public_key: &near_crypto::PublicKeyHandle,
+    ) -> near_primitives::views::AccessKeyInfoView {
+        near_primitives::views::AccessKeyInfoView {
+            public_key: public_key.clone(),
+            access_key: near_primitives::views::AccessKeyView {
+                nonce: 0,
+                permission: near_primitives::views::AccessKeyPermissionView::FullAccess,
+            },
+        }
+    }
+
+    fn page(
+        keys: &[near_crypto::PublicKeyHandle],
+        last_key: Option<&near_crypto::PublicKeyHandle>,
+        block_height: u64,
+    ) -> near_jsonrpc_primitives::types::query::RpcQueryResponse {
+        near_jsonrpc_primitives::types::query::RpcQueryResponse {
+            kind: near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
+                near_primitives::views::AccessKeyList {
+                    keys: keys.iter().map(key_info).collect(),
+                    last_key: last_key.cloned(),
+                },
+            ),
+            block_height,
+            block_hash: near_primitives::hash::hash(&block_height.to_le_bytes()),
+        }
+    }
+
+    fn fetch_pages(
+        block_reference: near_primitives::types::BlockReference,
+        pages: Vec<near_jsonrpc_primitives::types::query::RpcQueryResponse>,
+    ) -> (
+        near_jsonrpc_primitives::types::query::RpcQueryResponse,
+        Vec<near_jsonrpc_client::methods::query::RpcQueryRequest>,
+    ) {
+        let account_id: near_primitives::types::AccountId = "alice.near".parse().unwrap();
+        let mut pages = pages.into_iter();
+        let mut requests = vec![];
+        let merged = paginate_access_key_list(&account_id, block_reference, |request| {
+            requests.push(request);
+            pages.next().ok_or("fetched past the last page")
+        })
+        .unwrap();
+        (merged, requests)
+    }
+
+    #[test]
+    fn paginate_access_key_list_merges_pages() {
+        let keys: Vec<_> = (0..5).map(|i| key(&format!("key-{i}"))).collect();
+        let first_page = page(&keys[0..2], Some(&keys[1]), 10);
+        let first_block_hash = first_page.block_hash;
+        let (merged, requests) = fetch_pages(
+            near_primitives::types::Finality::Final.into(),
+            vec![
+                first_page,
+                page(&keys[2..4], Some(&keys[3]), 11),
+                page(&keys[4..5], None, 12),
+            ],
+        );
+
+        let expected_cursors = [None, Some(&keys[1]), Some(&keys[3])];
+        assert_eq!(requests.len(), expected_cursors.len());
+        for (i, (request, expected_after_key)) in requests.iter().zip(expected_cursors).enumerate()
+        {
+            let near_primitives::views::QueryRequest::ViewAccessKeyList {
+                account_id,
+                after_key,
+                limit,
+            } = &request.request
+            else {
+                panic!("request {i} is not ViewAccessKeyList");
+            };
+            assert_eq!(account_id.as_str(), "alice.near");
+            assert_eq!(after_key.as_ref(), expected_after_key, "request {i}");
+            assert_eq!(*limit, Some(ACCESS_KEY_LIST_PAGE_SIZE), "request {i}");
+            let expected_block_reference = if i == 0 {
+                near_primitives::types::Finality::Final.into()
+            } else {
+                near_primitives::types::BlockReference::BlockId(
+                    near_primitives::types::BlockId::Hash(first_block_hash),
+                )
+            };
+            assert_eq!(
+                request.block_reference, expected_block_reference,
+                "request {i}"
+            );
+        }
+
+        assert_eq!(merged.block_hash, first_block_hash);
+        let merged = merged.access_key_list_view().unwrap();
+        assert_eq!(merged.last_key, None);
+        assert_eq!(
+            merged
+                .keys
+                .iter()
+                .map(|k| k.public_key.clone())
+                .collect::<Vec<_>>(),
+            keys
+        );
+    }
+
+    #[test]
+    fn paginate_access_key_list_single_page_from_node_without_pagination() {
+        let keys: Vec<_> = (0..3).map(|i| key(&format!("key-{i}"))).collect();
+        let (merged, requests) = fetch_pages(
+            near_primitives::types::Finality::Final.into(),
+            vec![page(&keys, None, 10)],
+        );
+        assert_eq!(requests.len(), 1);
+        assert_eq!(merged.block_height, 10);
+        assert_eq!(merged.access_key_list_view().unwrap().keys.len(), 3);
+    }
+
+    #[test]
+    fn paginate_access_key_list_stops_on_empty_page_with_cursor() {
+        let keys: Vec<_> = (0..2).map(|i| key(&format!("key-{i}"))).collect();
+        let (merged, requests) = fetch_pages(
+            near_primitives::types::Finality::Final.into(),
+            vec![
+                page(&keys, Some(&keys[1]), 10),
+                page(&[], Some(&keys[1]), 11),
+            ],
+        );
+        assert_eq!(requests.len(), 2);
+        assert_eq!(merged.access_key_list_view().unwrap().keys.len(), 2);
+    }
 }
