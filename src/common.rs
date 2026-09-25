@@ -4303,6 +4303,9 @@ pub async fn fetch_access_key_list<E>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryResponse};
+    use near_primitives::types::{BlockId, BlockReference, Finality};
+    use near_primitives::views::{AccessKeyInfoView, AccessKeyList, AccessKeyView, QueryRequest};
 
     #[test]
     fn fetch_access_key_list_follows_pages() {
@@ -4322,18 +4325,18 @@ mod tests {
             let mut requests = vec![];
             let response = futures::executor::block_on(fetch_access_key_list(
                 &"alice.near".parse().unwrap(),
-                near_primitives::types::Finality::Final.into(),
+                Finality::Final.into(),
                 async |request| {
                     requests.push(request);
                     let (keys, last_key) = pages.next().unwrap();
-                    Ok::<_, ()>(near_jsonrpc_primitives::types::query::RpcQueryResponse {
-                        kind: near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(
-                            near_primitives::views::AccessKeyList {
+                    Ok::<_, ()>(RpcQueryResponse {
+                        kind: QueryResponseKind::AccessKeyList(
+                            AccessKeyList {
                                 keys: keys
                                     .iter()
-                                    .map(|public_key| near_primitives::views::AccessKeyInfoView {
+                                    .map(|public_key| AccessKeyInfoView {
                                         public_key: public_key.clone(),
-                                        access_key: near_primitives::views::AccessKeyView {
+                                        access_key: AccessKeyView {
                                             nonce: 0,
                                             permission: near_primitives::views::AccessKeyPermissionView::FullAccess,
                                         },
@@ -4351,10 +4354,8 @@ mod tests {
             let requests: Vec<_> = requests
                 .into_iter()
                 .map(|request| match request.request {
-                    near_primitives::views::QueryRequest::ViewAccessKeyList {
-                        after_key,
-                        limit,
-                        ..
+                    QueryRequest::ViewAccessKeyList {
+                        after_key, limit, ..
                     } => (request.block_reference, after_key, limit),
                     _ => unreachable!(),
                 })
@@ -4369,11 +4370,8 @@ mod tests {
             (keys, requests)
         };
         let limit = std::num::NonZeroU32::new(100);
-        let first =
-            near_primitives::types::BlockReference::from(near_primitives::types::Finality::Final);
-        let pinned = near_primitives::types::BlockReference::from(
-            near_primitives::types::BlockId::Hash(block_hash),
-        );
+        let first = BlockReference::from(Finality::Final);
+        let pinned = BlockReference::from(BlockId::Hash(block_hash));
 
         assert_eq!(
             fetch(vec![(&keys[..2], Some(&keys[1])), (&keys[2..], None)]),
