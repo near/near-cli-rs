@@ -2058,25 +2058,25 @@ pub fn convert_action_error_to_cli_result(
         )),
         near_primitives::errors::ActionErrorKind::TotalPromiseInputSizeExceeded { size, limit } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: The combined size ({}) of the promise results passed to this receipt exceeded the limit ({}).",
+                "Error: The total size ({}) of the promise inputs exceeded the limit ({}).",
                 size,
                 limit
             ))
         }
         near_primitives::errors::ActionErrorKind::ReceiptStorageProofSizeExceeded { limit } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: The receipt touched too much contract state: its storage proof exceeded the limit of {} bytes.",
+                "Error: The storage proof size of the receipt exceeded the limit ({}).",
                 limit
             ))
         }
         near_primitives::errors::ActionErrorKind::MalformedUniversalStateInit => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: The state init of a UniversalStateInit action is not a valid universal account state init."
+                "Error: Malformed UniversalStateInit."
             ))
         }
         near_primitives::errors::ActionErrorKind::AccountNotInitialized { account_id } => {
             color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-                "Error: Account <{}> is an uninitialized universal account (it has no access keys, code or data yet). Initialize it with a UniversalStateInit action first.",
+                "Error: Account <{}> is not initialized.",
                 account_id
             ))
         }
@@ -2229,7 +2229,7 @@ pub fn convert_invalid_tx_error_to_cli_result(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of DeployContract and DeployGlobalContract actions ({}) in one receipt exceeded the limit ({}).", number_of_deploy_actions, limit))
                 },
                 near_primitives::errors::ActionsValidationError::FunctionCallEmptyMethodName => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The method name in a Function Call action must not be empty."))
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The method name is empty in a Function Call action."))
                 },
                 near_primitives::errors::ActionsValidationError::InvalidUniversalStateInitReceiver { receiver_id, derived_id } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid receiver account id <{}> for universal account id <{}>.", receiver_id, derived_id))
@@ -2241,19 +2241,19 @@ pub fn convert_invalid_tx_error_to_cli_result(
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: UniversalStateInit contains value of length {} but at most {} is allowed.", length, limit))
                 },
                 near_primitives::errors::ActionsValidationError::MalformedUniversalStateInit => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The state init bytes of a UniversalStateInit action do not decode into a valid universal account state init."))
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Malformed UniversalStateInit."))
                 },
                 near_primitives::errors::ActionsValidationError::RemovedProtocolFeature { protocol_feature, version } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is no longer supported in version {}", protocol_feature, version))
                 },
                 near_primitives::errors::ActionsValidationError::WithdrawFromGasKeyNotAllowedInDelegate => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A WithdrawFromGasKey action cannot be included in a delegate action (meta-transaction)."))
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A WithdrawFromGasKey action is not allowed in a delegate action."))
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfStateInitKeysExceeded { number_of_keys, limit } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The state init actions in one receipt add {} access keys in total, which exceeds the limit ({}).", number_of_keys, limit))
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of state init access keys ({}) in one receipt exceeded the limit ({}).", number_of_keys, limit))
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfStateInitEntriesExceeded { number_of_entries, limit } => {
-                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The state init actions in one receipt add {} storage entries in total, which exceeds the limit ({}).", number_of_entries, limit))
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of state init entries ({}) in one receipt exceeded the limit ({}).", number_of_entries, limit))
                 },
             }
         },
