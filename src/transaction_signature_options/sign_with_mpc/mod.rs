@@ -546,7 +546,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
                             Ok(Some(outcome_view)) => outcome_view,
                             Ok(None) => {
                                 return Err(color_eyre::eyre::eyre!(
-                                    "No execution outcome received for MPC sign request"
+                                    "MPC sign request has no final outcome yet. Check its status with the command above instead of sending a new request"
                                 ));
                             }
                             Err(error) => return Err(error),
