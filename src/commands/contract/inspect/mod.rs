@@ -458,48 +458,24 @@ async fn get_access_keys(
 ) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
-    let mut block_reference = block_reference.clone();
-    let mut after_key = None;
-    let mut pages = crate::common::AccessKeyListPages::default();
-    loop {
-        let page = get_access_keys_page(
-            network_name,
-            json_rpc_client,
-            &block_reference,
-            account_id,
-            after_key.take(),
-        )
-        .await?;
-        match pages.push(page) {
-            crate::common::AccessKeyListStep::Next {
-                block_reference: next_block_reference,
-                after_key: next_after_key,
-            } => {
-                block_reference = next_block_reference;
-                after_key = Some(next_after_key);
-            }
-            crate::common::AccessKeyListStep::Done(response) => {
-                return Ok(response.access_key_list_view()?.keys);
-            }
-        }
-    }
+    Ok(
+        crate::common::fetch_access_key_list(account_id, block_reference.clone(), |request| {
+            get_access_keys_page(network_name, json_rpc_client, account_id, request)
+        })
+        .await?
+        .access_key_list_view()?
+        .keys,
+    )
 }
 
 async fn get_access_keys_page(
     network_name: &str,
     json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    block_reference: &BlockReference,
     account_id: &near_primitives::types::AccountId,
-    after_key: Option<near_crypto::PublicKeyHandle>,
+    request: near_jsonrpc_client::methods::query::RpcQueryRequest,
 ) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse> {
     for _ in 0..5 {
-        let access_keys_response = json_rpc_client
-            .call(crate::common::access_key_list_page_request(
-                account_id,
-                block_reference.clone(),
-                after_key.clone(),
-            ))
-            .await;
+        let access_keys_response = json_rpc_client.call(&request).await;
 
         if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
             &access_keys_response
