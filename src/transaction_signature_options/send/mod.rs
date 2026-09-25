@@ -66,12 +66,10 @@ impl SendContext {
                         .map_err(color_eyre::Report::msg)?;
                     }
                     None => {
-                        let tx_hash = signed_transaction.get_hash();
                         eprintln!("\nTransaction sent successfully (wait level: {wait_until:?}).");
-                        eprintln!("Transaction ID: {tx_hash}");
-                        eprintln!(
-                            "To see the transaction in the transaction explorer, please open this url in your browser:\n{}{}\n",
-                            previous_context.network_config.explorer_transaction_url, tx_hash,
+                        print_transaction_id(
+                            &previous_context.network_config,
+                            signed_transaction.get_hash(),
                         );
                     }
                 }
@@ -165,6 +163,16 @@ pub fn sending_signed_transaction(
                     .final_execution_outcome
                     .map(|outcome| outcome.into_outcome());
             }
+            Err(ref err) if let Some(status) = crate::common::pending_transaction_status(err) => {
+                eprintln!(
+                    "\nTransaction sent, but it is not final yet (reached: {:?}).",
+                    status.final_execution_status
+                );
+                print_transaction_id(network_config, signed_transaction.get_hash());
+                return Err(color_eyre::eyre::eyre!(
+                    "Transaction did not reach the requested wait level ({wait_until:?}) before the RPC timed out"
+                ));
+            }
             Err(ref err) => match crate::common::rpc_transaction_error(err) {
                 Ok(message) => {
                     if let Some(retries_left) = retries.next() {
@@ -184,6 +192,22 @@ pub fn sending_signed_transaction(
     };
 
     Ok(transaction_info)
+}
+
+fn print_transaction_id(
+    network_config: &crate::config::NetworkConfig,
+    tx_hash: near_primitives::hash::CryptoHash,
+) {
+    eprintln!("Transaction ID: {tx_hash}");
+    eprintln!(
+        "To see the transaction in the transaction explorer, please open this url in your browser:\n{}{}\n",
+        network_config.explorer_transaction_url, tx_hash,
+    );
+    eprintln!(
+        "To check the transaction status, run:\n$ {} transaction view-status {tx_hash} network-config {}\n",
+        crate::common::get_near_exec_path(),
+        network_config.network_name,
+    );
 }
 
 #[tracing::instrument(name = "Waiting 5 seconds before retrying", skip_all)]

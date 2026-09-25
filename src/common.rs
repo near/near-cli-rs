@@ -1679,6 +1679,21 @@ fn print_value_successful_transaction(
     info_str
 }
 
+/// Returns the last known transaction status when the RPC timed out after the transaction was
+/// accepted but before it reached the requested wait level. Other timeouts return `None`.
+pub fn pending_transaction_status(
+    err: &near_jsonrpc_client::errors::JsonRpcError<
+        near_jsonrpc_client::methods::send_tx::RpcTransactionError,
+    >,
+) -> Option<&near_jsonrpc_client::methods::send_tx::RpcTransactionResponse> {
+    match err.handler_error()? {
+        near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError(Some(
+            near_jsonrpc_primitives::types::transactions::TimeoutErrorCause::Pending { status },
+        )) => Some(status),
+        _ => None,
+    }
+}
+
 pub fn rpc_transaction_error(
     err: &near_jsonrpc_client::errors::JsonRpcError<
         near_jsonrpc_client::methods::send_tx::RpcTransactionError,
@@ -4303,7 +4318,9 @@ pub async fn fetch_access_key_list<E>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use near_jsonrpc_client::methods::send_tx::{RpcTransactionError, RpcTransactionResponse};
     use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryResponse};
+    use near_jsonrpc_primitives::types::transactions::TimeoutErrorCause;
     use near_primitives::types::{BlockId, BlockReference, Finality};
     use near_primitives::views::{AccessKeyInfoView, AccessKeyList, AccessKeyView, QueryRequest};
 
@@ -4391,5 +4408,31 @@ mod tests {
                 vec![(first, None, limit), (pinned, Some(keys[2].clone()), limit)]
             )
         );
+    }
+
+    fn timeout_error(
+        cause: Option<TimeoutErrorCause>,
+    ) -> near_jsonrpc_client::errors::JsonRpcError<RpcTransactionError> {
+        near_jsonrpc_client::errors::JsonRpcError::ServerError(
+            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                RpcTransactionError::TimeoutError(cause),
+            ),
+        )
+    }
+
+    #[test]
+    fn only_pending_timeouts_stop_retrying() {
+        let pending = Some(TimeoutErrorCause::Pending {
+            status: Box::new(RpcTransactionResponse {
+                final_execution_outcome: None,
+                final_execution_status: near_primitives::views::TxExecutionStatus::Included,
+            }),
+        });
+        assert!(pending_transaction_status(&timeout_error(pending)).is_some());
+        for cause in [None, Some(TimeoutErrorCause::NotObserved)] {
+            let err = timeout_error(cause);
+            assert!(pending_transaction_status(&err).is_none());
+            assert!(rpc_transaction_error(&err).is_ok());
+        }
     }
 }
