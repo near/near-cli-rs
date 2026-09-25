@@ -47,31 +47,22 @@ impl SendContext {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                match sending_signed_transaction(
+                if let Some(transaction_info) = sending_signed_transaction(
                     &previous_context.network_config,
                     &signed_transaction,
-                    wait_until.clone(),
+                    wait_until,
                 )? {
-                    Some(transaction_info) => {
-                        crate::common::print_transaction_status(
-                            &transaction_info,
-                            &previous_context.network_config,
-                            previous_context.global_context.verbosity,
-                        )?;
+                    crate::common::print_transaction_status(
+                        &transaction_info,
+                        &previous_context.network_config,
+                        previous_context.global_context.verbosity,
+                    )?;
 
-                        (previous_context.on_after_sending_transaction_callback)(
-                            &transaction_info,
-                            &previous_context.network_config,
-                        )
-                        .map_err(color_eyre::Report::msg)?;
-                    }
-                    None => {
-                        eprintln!("\nTransaction sent successfully (wait level: {wait_until:?}).");
-                        print_transaction_id(
-                            &previous_context.network_config,
-                            signed_transaction.get_hash(),
-                        );
-                    }
+                    (previous_context.on_after_sending_transaction_callback)(
+                        &transaction_info,
+                        &previous_context.network_config,
+                    )
+                    .map_err(color_eyre::Report::msg)?;
                 }
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
@@ -159,9 +150,14 @@ pub fn sending_signed_transaction(
             .inspect(crate::common::teach_me_call_response);
         match transaction_info_result {
             Ok(response) => {
-                break response
+                let transaction_info = response
                     .final_execution_outcome
                     .map(|outcome| outcome.into_outcome());
+                if transaction_info.is_none() {
+                    eprintln!("\nTransaction sent successfully (wait level: {wait_until:?}).");
+                    print_transaction_id(network_config, signed_transaction.get_hash());
+                }
+                break transaction_info;
             }
             Err(ref err) if let Some(status) = crate::common::pending_transaction_status(err) => {
                 eprintln!(
@@ -169,9 +165,7 @@ pub fn sending_signed_transaction(
                     status.final_execution_status
                 );
                 print_transaction_id(network_config, signed_transaction.get_hash());
-                return Err(color_eyre::eyre::eyre!(
-                    "Transaction did not reach the requested wait level ({wait_until:?}) before the RPC timed out"
-                ));
+                break None;
             }
             Err(ref err) => match crate::common::rpc_transaction_error(err) {
                 Ok(message) => {
