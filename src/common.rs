@@ -276,7 +276,7 @@ pub fn verify_account_access_key(
                 } else {
                     return Err(AccountStateError::JsonRpcError(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
+                            Box::new(near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string())))
                         ),
                     ))));
                 }
@@ -599,7 +599,7 @@ pub async fn get_account_state(
                 } else {
                     return Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(near_jsonrpc_client::errors::RpcTransportError::RecvError(
                         near_jsonrpc_client::errors::JsonRpcTransportRecvError::UnexpectedServerResponse(
-                            near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string()))
+                            Box::new(near_jsonrpc_primitives::message::Message::error(near_jsonrpc_primitives::errors::RpcError::parse_error("Transport error: unexpected server response".to_string())))
                         ),
                     )));
                 }
@@ -858,11 +858,13 @@ pub fn get_public_keys_from_network_config(
                         // In 2.13 the access-key list returns a `PublicKeyHandle`.
                         // ML-DSA-65 keys are stored on-chain only as a hash, so the
                         // full public key needed to build a actions can't be
-                        // recovered here; `full_pubkey()` returns `None` for them and
-                        // they are skipped from the interactive picker.
+                        // recovered here; their handle doesn't parse as a public key
+                        // and they are skipped from the interactive picker.
                         access_key_info_view
                             .public_key
-                            .full_pubkey()
+                            .to_string()
+                            .parse()
+                            .ok()
                             .map(|public_key| AccessKeyInfo {
                                 public_key,
                                 permission: access_key_info_view.access_key.permission.clone(),
@@ -1425,32 +1427,18 @@ pub fn print_unsigned_transaction(
             }
             near_primitives::transaction::Action::DeterministicStateInit(
                 deterministic_init_action,
-            ) => {
-                let deterministic_account_id =
-                    near_primitives::utils::derive_near_deterministic_account_id(
-                        &deterministic_init_action.state_init,
-                    );
-                info_str.push_str(&format!(
-                    "\n{:>5} {:<20}",
-                    "--",
-                    format!("create deterministic account <{deterministic_account_id}>:")
-                ));
-                info_str.push_str(&format!(
-                    "\n{:>18} {:<12}: {}",
-                    "", "deposit", deterministic_init_action.deposit
-                ));
-                let state_init_json =
-                    serde_json::to_string_pretty(&DeterministicAccountStateInitView::from(
-                        deterministic_init_action.state_init.clone(),
-                    ))
-                    .expect("DeterministicAccountStateInitView is always serializable");
-                let state_init_indented = state_init_json.replace('\n', &format!("\n{:33}", ""));
-
-                info_str.push_str(&format!(
-                    "\n{:>18} {:<12}: {}",
-                    "", "state-init", state_init_indented
-                ));
-            }
+            ) => push_state_init_info(
+                &mut info_str,
+                "deterministic",
+                near_primitives::utils::derive_near_deterministic_account_id(
+                    &deterministic_init_action.state_init,
+                ),
+                deterministic_init_action.deposit,
+                serde_json::to_string_pretty(&DeterministicAccountStateInitView::from(
+                    deterministic_init_action.state_init.clone(),
+                ))
+                .expect("DeterministicAccountStateInitView is always serializable"),
+            ),
             near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
                 info_str.push_str(&format!(
@@ -1494,10 +1482,51 @@ pub fn print_unsigned_transaction(
                     withdraw_from_gas_key.amount.exact_amount_display()
                 ));
             }
+            near_primitives::transaction::Action::UniversalStateInit(universal_init_action) => {
+                push_state_init_info(
+                    &mut info_str,
+                    "universal",
+                    near_primitives::utils::derive_universal_account_id(
+                        &universal_init_action.state_init,
+                    ),
+                    universal_init_action.deposit,
+                    near_primitives::universal_state_init::UniversalStateInit::from_raw(
+                        &universal_init_action.state_init,
+                    )
+                    .map_or_else(
+                        |err| format!("malformed: {err}"),
+                        |state_init| {
+                            serde_json::to_string_pretty(&state_init)
+                                .expect("UniversalStateInit is always serializable")
+                        },
+                    ),
+                );
+            }
         }
     }
     info_str.push_str("\n ");
     info_str
+}
+
+fn push_state_init_info(
+    info_str: &mut String,
+    kind: &str,
+    account_id: near_primitives::types::AccountId,
+    deposit: near_token::NearToken,
+    state_init_json: String,
+) {
+    info_str.push_str(&format!(
+        "\n{:>5} {:<20}",
+        "--",
+        format!("create {kind} account <{account_id}>:")
+    ));
+    info_str.push_str(&format!("\n{:>18} {:<12}: {}", "", "deposit", deposit));
+    info_str.push_str(&format!(
+        "\n{:>18} {:<12}: {}",
+        "",
+        "state-init",
+        state_init_json.replace('\n', &format!("\n{:33}", ""))
+    ));
 }
 
 fn print_value_successful_transaction(
@@ -1635,6 +1664,15 @@ fn print_value_successful_transaction(
                     public_key,
                 ));
             }
+            near_primitives::views::ActionView::UniversalStateInit {
+                state_init: _,
+                deposit: _,
+            } => {
+                info_str.push_str(&format!(
+                    "\nNew universal account <{}> has been successfully created.",
+                    transaction_info.transaction.receiver_id,
+                ));
+            }
         }
     }
     info_str.push('\n');
@@ -1652,7 +1690,7 @@ pub fn rpc_transaction_error(
         }
         near_jsonrpc_client::errors::JsonRpcError::ServerError(rpc_server_error) => match rpc_server_error {
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(rpc_transaction_error) => match rpc_transaction_error {
-                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError => {
+                near_jsonrpc_client::methods::send_tx::RpcTransactionError::TimeoutError(_) => {
                     Ok("Timeout error transaction".to_string())
                 }
                 near_jsonrpc_client::methods::send_tx::RpcTransactionError::InvalidTransaction { context } => {
@@ -1910,6 +1948,30 @@ pub fn convert_action_error_to_cli_result(
             nonce_index,
             num_nonces
         )),
+        near_primitives::errors::ActionErrorKind::TotalPromiseInputSizeExceeded { size, limit } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: The total size ({}) of the promise inputs exceeded the limit ({}).",
+                size,
+                limit
+            ))
+        }
+        near_primitives::errors::ActionErrorKind::ReceiptStorageProofSizeExceeded { limit } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: The storage proof size of the receipt exceeded the limit ({}).",
+                limit
+            ))
+        }
+        near_primitives::errors::ActionErrorKind::MalformedUniversalStateInit => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Malformed UniversalStateInit."
+            ))
+        }
+        near_primitives::errors::ActionErrorKind::AccountNotInitialized { account_id } => {
+            color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+                "Error: Account <{}> is not initialized.",
+                account_id
+            ))
+        }
     }
 }
 
@@ -2057,6 +2119,33 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfDeployActionsExceeded { number_of_deploy_actions, limit } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of DeployContract and DeployGlobalContract actions ({}) in one receipt exceeded the limit ({}).", number_of_deploy_actions, limit))
+                },
+                near_primitives::errors::ActionsValidationError::FunctionCallEmptyMethodName => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The method name is empty in a Function Call action."))
+                },
+                near_primitives::errors::ActionsValidationError::InvalidUniversalStateInitReceiver { receiver_id, derived_id } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Invalid receiver account id <{}> for universal account id <{}>.", receiver_id, derived_id))
+                },
+                near_primitives::errors::ActionsValidationError::UniversalStateInitKeyLengthExceeded { length, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: UniversalStateInit key length is {} but the limit is {}.", length, limit))
+                },
+                near_primitives::errors::ActionsValidationError::UniversalStateInitValueLengthExceeded { length, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: UniversalStateInit contains value of length {} but at most {} is allowed.", length, limit))
+                },
+                near_primitives::errors::ActionsValidationError::MalformedUniversalStateInit => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Malformed UniversalStateInit."))
+                },
+                near_primitives::errors::ActionsValidationError::RemovedProtocolFeature { protocol_feature, version } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is no longer supported in version {}", protocol_feature, version))
+                },
+                near_primitives::errors::ActionsValidationError::WithdrawFromGasKeyNotAllowedInDelegate => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: A WithdrawFromGasKey action is not allowed in a delegate action."))
+                },
+                near_primitives::errors::ActionsValidationError::TotalNumberOfStateInitKeysExceeded { number_of_keys, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of state init access keys ({}) in one receipt exceeded the limit ({}).", number_of_keys, limit))
+                },
+                near_primitives::errors::ActionsValidationError::TotalNumberOfStateInitEntriesExceeded { number_of_entries, limit } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of state init entries ({}) in one receipt exceeded the limit ({}).", number_of_entries, limit))
                 },
             }
         },
@@ -3477,22 +3566,21 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
             .pb_set_message(&format!("access keys on account <{account_id}>..."));
         tracing::info!(target: "near_teach_me", "Getting a list of access keys on account <{account_id}>...");
 
-        let query_view_method_request = near_jsonrpc_client::methods::query::RpcQueryRequest {
+        futures::executor::block_on(fetch_access_key_list(
+            account_id,
             block_reference,
-            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                account_id: account_id.clone(),
+            async |query_view_method_request| {
+                tracing::info!(
+                    target: "near_teach_me",
+                    parent: &tracing::Span::none(),
+                    "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
+                    account_id
+                );
+
+                self.blocking_call(query_view_method_request)
+                    .inspect(teach_me_call_response)
             },
-        };
-
-        tracing::info!(
-            target: "near_teach_me",
-            parent: &tracing::Span::none(),
-            "I am making HTTP call to NEAR JSON RPC to get a list of keys for account <{}>, learn more https://docs.near.org/api/rpc/access-keys#view-access-key-list",
-            account_id
-        );
-
-        self.blocking_call(query_view_method_request)
-            .inspect(teach_me_call_response)
+        ))
     }
 
     #[tracing::instrument(name = "Getting gas key nonces for", skip_all)]
@@ -4168,4 +4256,140 @@ pub fn parse_borsh_base64_state_init(
     use borsh::BorshDeserialize;
     near_primitives::deterministic_account_id::DeterministicAccountStateInit::try_from_slice(bytes)
         .map_err(|e| color_eyre::eyre::eyre!("Failed to borsh-deserialize state init: {e}"))
+}
+
+/// Fetches all pages of an account's access key list with `fetch` and merges
+/// them into one response. Pages after the first are pinned to the first page's block.
+pub async fn fetch_access_key_list<E>(
+    account_id: &near_primitives::types::AccountId,
+    mut block_reference: near_primitives::types::BlockReference,
+    mut fetch: impl AsyncFnMut(
+        near_jsonrpc_client::methods::query::RpcQueryRequest,
+    )
+        -> Result<near_jsonrpc_primitives::types::query::RpcQueryResponse, E>,
+) -> Result<near_jsonrpc_primitives::types::query::RpcQueryResponse, E> {
+    let mut keys = vec![];
+    let mut after_key = None;
+    loop {
+        let mut response = fetch(near_jsonrpc_client::methods::query::RpcQueryRequest {
+            block_reference,
+            request: near_primitives::views::QueryRequest::ViewAccessKeyList {
+                account_id: account_id.clone(),
+                after_key,
+                limit: std::num::NonZeroU32::new(100),
+            },
+        })
+        .await?;
+        let near_jsonrpc_primitives::types::query::QueryResponseKind::AccessKeyList(page) =
+            &mut response.kind
+        else {
+            return Ok(response);
+        };
+        let is_empty_page = page.keys.is_empty();
+        keys.append(&mut page.keys);
+        match page.last_key.take() {
+            Some(last_key) if !is_empty_page => {
+                after_key = Some(last_key);
+                block_reference = near_primitives::types::BlockId::Hash(response.block_hash).into();
+            }
+            _ => {
+                page.keys = keys;
+                return Ok(response);
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryResponse};
+    use near_primitives::types::{BlockId, BlockReference, Finality};
+    use near_primitives::views::{AccessKeyInfoView, AccessKeyList, AccessKeyView, QueryRequest};
+
+    #[test]
+    fn fetch_access_key_list_follows_pages() {
+        let keys: Vec<near_crypto::PublicKeyHandle> = (0..3)
+            .map(|i| {
+                near_crypto::SecretKey::from_seed(near_crypto::KeyType::ED25519, &i.to_string())
+                    .public_key()
+                    .into()
+            })
+            .collect();
+        let block_hash = near_primitives::hash::hash(b"block");
+        let fetch = |pages: Vec<(
+            &[near_crypto::PublicKeyHandle],
+            Option<&near_crypto::PublicKeyHandle>,
+        )>| {
+            let mut pages = pages.into_iter();
+            let mut requests = vec![];
+            let response = futures::executor::block_on(fetch_access_key_list(
+                &"alice.near".parse().unwrap(),
+                Finality::Final.into(),
+                async |request| {
+                    requests.push(request);
+                    let (keys, last_key) = pages.next().unwrap();
+                    Ok::<_, ()>(RpcQueryResponse {
+                        kind: QueryResponseKind::AccessKeyList(
+                            AccessKeyList {
+                                keys: keys
+                                    .iter()
+                                    .map(|public_key| AccessKeyInfoView {
+                                        public_key: public_key.clone(),
+                                        access_key: AccessKeyView {
+                                            nonce: 0,
+                                            permission: near_primitives::views::AccessKeyPermissionView::FullAccess,
+                                        },
+                                    })
+                                    .collect(),
+                                last_key: last_key.cloned(),
+                            },
+                        ),
+                        block_height: 1,
+                        block_hash,
+                    })
+                },
+            ))
+            .unwrap();
+            let requests: Vec<_> = requests
+                .into_iter()
+                .map(|request| match request.request {
+                    QueryRequest::ViewAccessKeyList {
+                        after_key, limit, ..
+                    } => (request.block_reference, after_key, limit),
+                    _ => unreachable!(),
+                })
+                .collect();
+            let keys: Vec<_> = response
+                .access_key_list_view()
+                .unwrap()
+                .keys
+                .into_iter()
+                .map(|key| key.public_key)
+                .collect();
+            (keys, requests)
+        };
+        let limit = std::num::NonZeroU32::new(100);
+        let first = BlockReference::from(Finality::Final);
+        let pinned = BlockReference::from(BlockId::Hash(block_hash));
+
+        assert_eq!(
+            fetch(vec![(&keys[..2], Some(&keys[1])), (&keys[2..], None)]),
+            (
+                keys.clone(),
+                vec![
+                    (first.clone(), None, limit),
+                    (pinned.clone(), Some(keys[1].clone()), limit),
+                ]
+            )
+        );
+        // An empty page ends the walk even if it carries a cursor.
+        assert_eq!(
+            fetch(vec![(&keys[..], Some(&keys[2])), (&[], Some(&keys[2]))]),
+            (
+                keys.clone(),
+                vec![(first, None, limit), (pinned, Some(keys[2].clone()), limit)]
+            )
+        );
+    }
 }
