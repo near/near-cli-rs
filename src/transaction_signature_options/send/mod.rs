@@ -183,6 +183,8 @@ pub fn sending_signed_transaction(
                             retries_left
                         ));
                     } else {
+                        eprintln!("\nCould not confirm whether the transaction was included.");
+                        print_transaction_id(network_config, signed_transaction.get_hash());
                         return Err(color_eyre::eyre::eyre!(err.to_string()));
                     }
                 }
