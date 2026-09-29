@@ -458,15 +458,24 @@ async fn get_access_keys(
 ) -> color_eyre::eyre::Result<Vec<near_primitives::views::AccessKeyInfoView>> {
     tracing::Span::current().pb_set_message(&format!("{account_id} access keys ..."));
     tracing::info!(target: "near_teach_me", "Getting a list of {account_id} access keys ...");
+    Ok(
+        crate::common::fetch_access_key_list(account_id, block_reference.clone(), |request| {
+            get_access_keys_page(network_name, json_rpc_client, account_id, request)
+        })
+        .await?
+        .access_key_list_view()?
+        .keys,
+    )
+}
+
+async fn get_access_keys_page(
+    network_name: &str,
+    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
+    account_id: &near_primitives::types::AccountId,
+    request: near_jsonrpc_client::methods::query::RpcQueryRequest,
+) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse> {
     for _ in 0..5 {
-        let access_keys_response = json_rpc_client
-            .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-                block_reference: block_reference.clone(),
-                request: near_primitives::views::QueryRequest::ViewAccessKeyList {
-                    account_id: account_id.clone(),
-                },
-            })
-            .await;
+        let access_keys_response = json_rpc_client.call(&request).await;
 
         if let Err(near_jsonrpc_client::errors::JsonRpcError::TransportError(_)) =
             &access_keys_response
@@ -476,14 +485,11 @@ async fn get_access_keys(
             );
             std::thread::sleep(std::time::Duration::from_millis(100))
         } else {
-            return Ok(access_keys_response
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to fetch ViewAccessKeyList for contract <{account_id}> on network <{network_name}>"
-                    )
-                })?
-                .access_key_list_view()?
-                .keys);
+            return access_keys_response.wrap_err_with(|| {
+                format!(
+                    "Failed to fetch ViewAccessKeyList for contract <{account_id}> on network <{network_name}>"
+                )
+            });
         }
     }
     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(format!(
