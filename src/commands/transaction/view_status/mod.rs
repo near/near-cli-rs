@@ -1,4 +1,5 @@
 use color_eyre::eyre::Context;
+use color_eyre::owo_colors::OwoColorize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use crate::common::JsonRpcClientExt;
@@ -29,6 +30,18 @@ impl TransactionInfoContext {
                 move |network_config| {
                     let query_view_transaction_status =
                         get_transaction_info(network_config, tx_hash)?;
+                    if query_view_transaction_status.final_execution_status
+                        != near_primitives::views::TxExecutionStatus::Final
+                    {
+                        eprintln!(
+                            "{}",
+                            format!(
+                                "The transaction is not final yet (reached: {:?}). The status below may change.",
+                                query_view_transaction_status.final_execution_status
+                            )
+                            .yellow()
+                        );
+                    }
                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe =
                         previous_context.verbosity
                     {
@@ -74,6 +87,11 @@ pub fn get_transaction_info(
                 wait_until: near_primitives::views::TxExecutionStatus::Final,
             },
         )
+        .or_else(|err| {
+            crate::common::pending_transaction_status(&err)
+                .cloned()
+                .ok_or(err)
+        })
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query for view transaction on network <{}>",
