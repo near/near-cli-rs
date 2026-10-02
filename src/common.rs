@@ -334,6 +334,41 @@ pub fn verify_account_access_key(
     }
 }
 
+/// Check only the selected connection, including when several aliases share a network name.
+/// RPC failures offer retry/skip; only an explicit UnknownAccount response means absence.
+pub(crate) fn is_account_exist_on_network(
+    network_config: &crate::config::NetworkConfig,
+    account_id: &near_primitives::types::AccountId,
+) -> color_eyre::eyre::Result<bool> {
+    let runtime = tokio::runtime::Runtime::new()?;
+    loop {
+        match runtime.block_on(get_account_state(
+            network_config,
+            account_id,
+            near_primitives::types::BlockReference::latest(),
+        )) {
+            Ok(_) => return Ok(true),
+            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
+                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
+                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
+                ),
+            )) => return Ok(false),
+            Err(err) => {
+                tracing::warn!("{err}");
+                let retry = suspend_tracing_indicatif(|| {
+                    need_check_account(format!(
+                        "Failed to check account <{account_id}> on network <{}>.",
+                        network_config.network_name
+                    ))
+                })?;
+                if !retry {
+                    return Ok(true);
+                }
+            }
+        }
+    }
+}
+
 #[tracing::instrument(name = "Checking the existence of the account ...", skip_all)]
 pub fn is_account_exist(
     context: &crate::GlobalContext,

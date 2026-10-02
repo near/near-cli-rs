@@ -113,12 +113,11 @@ fn warn_on_implicit_account_id_missmatch(
 }
 
 fn check_account_id(
-    global_context: &crate::GlobalContext,
     chosen_network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     public_key: &near_crypto::PublicKey,
 ) -> crate::CliResult {
-    if !crate::common::is_account_exist(global_context, account_id.clone())? {
+    if !crate::common::is_account_exist_on_network(chosen_network_config, account_id)? {
         // Implicit AccountId always exists. If the public key that was passed to this function is
         // the same public key that was used to generate implicit AccountId, then we don't need
         // to return error as implicit AccountId will be instantiated on the first transaction.
@@ -128,7 +127,8 @@ fn check_account_id(
             return Ok(());
         }
         return color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
-            "Couldn't find account <{account_id}> on any known network"
+            "Couldn't find account <{account_id}> on network <{}>",
+            chosen_network_config.network_name
         ));
     }
 

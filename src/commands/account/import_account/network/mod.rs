@@ -66,7 +66,6 @@ impl NetworkForImportAccountOutputContext {
 
         if scope.check_account_id {
             super::check_account_id(
-                &previous_context.global_context,
                 &network_config,
                 &previous_context.account_id,
                 previous_context.key_store_property.public_key(),
