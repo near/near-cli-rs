@@ -47,33 +47,22 @@ impl SendContext {
             super::SignedTransactionOrSignedDelegateAction::SignedTransaction(
                 signed_transaction,
             ) => {
-                match sending_signed_transaction(
+                if let Some(transaction_info) = sending_signed_transaction(
                     &previous_context.network_config,
                     &signed_transaction,
-                    wait_until.clone(),
+                    wait_until,
                 )? {
-                    Some(transaction_info) => {
-                        crate::common::print_transaction_status(
-                            &transaction_info,
-                            &previous_context.network_config,
-                            previous_context.global_context.verbosity,
-                        )?;
+                    crate::common::print_transaction_status(
+                        &transaction_info,
+                        &previous_context.network_config,
+                        previous_context.global_context.verbosity,
+                    )?;
 
-                        (previous_context.on_after_sending_transaction_callback)(
-                            &transaction_info,
-                            &previous_context.network_config,
-                        )
-                        .map_err(color_eyre::Report::msg)?;
-                    }
-                    None => {
-                        let tx_hash = signed_transaction.get_hash();
-                        eprintln!("\nTransaction sent successfully (wait level: {wait_until:?}).");
-                        eprintln!("Transaction ID: {tx_hash}");
-                        eprintln!(
-                            "To see the transaction in the transaction explorer, please open this url in your browser:\n{}{}\n",
-                            previous_context.network_config.explorer_transaction_url, tx_hash,
-                        );
-                    }
+                    (previous_context.on_after_sending_transaction_callback)(
+                        &transaction_info,
+                        &previous_context.network_config,
+                    )
+                    .map_err(color_eyre::Report::msg)?;
                 }
             }
             super::SignedTransactionOrSignedDelegateAction::SignedDelegateAction(
@@ -161,9 +150,22 @@ pub fn sending_signed_transaction(
             .inspect(crate::common::teach_me_call_response);
         match transaction_info_result {
             Ok(response) => {
-                break response
+                let transaction_info = response
                     .final_execution_outcome
                     .map(|outcome| outcome.into_outcome());
+                if transaction_info.is_none() {
+                    eprintln!("\nTransaction sent successfully (wait level: {wait_until:?}).");
+                    print_transaction_id(network_config, signed_transaction.get_hash());
+                }
+                break transaction_info;
+            }
+            Err(ref err) if let Some(status) = crate::common::pending_transaction_status(err) => {
+                eprintln!(
+                    "\nTransaction sent, but it is not final yet (reached: {:?}).",
+                    status.final_execution_status
+                );
+                print_transaction_id(network_config, signed_transaction.get_hash());
+                break None;
             }
             Err(ref err) => match crate::common::rpc_transaction_error(err) {
                 Ok(message) => {
@@ -175,6 +177,8 @@ pub fn sending_signed_transaction(
                             retries_left
                         ));
                     } else {
+                        eprintln!("\nCould not confirm whether the transaction was included.");
+                        print_transaction_id(network_config, signed_transaction.get_hash());
                         return Err(color_eyre::eyre::eyre!(err.to_string()));
                     }
                 }
@@ -184,6 +188,22 @@ pub fn sending_signed_transaction(
     };
 
     Ok(transaction_info)
+}
+
+fn print_transaction_id(
+    network_config: &crate::config::NetworkConfig,
+    tx_hash: near_primitives::hash::CryptoHash,
+) {
+    eprintln!("Transaction ID: {tx_hash}");
+    eprintln!(
+        "To see the transaction in the transaction explorer, please open this url in your browser:\n{}{}\n",
+        network_config.explorer_transaction_url, tx_hash,
+    );
+    eprintln!(
+        "To check the transaction status, run:\n$ {} transaction view-status {tx_hash} network-config {}\n",
+        crate::common::get_near_exec_path(),
+        network_config.network_name,
+    );
 }
 
 #[tracing::instrument(name = "Waiting 5 seconds before retrying", skip_all)]

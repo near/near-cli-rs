@@ -206,10 +206,9 @@ impl StateInitFromJsonContext {
         previous_context: crate::GlobalContext,
         scope: &<StateInitFromJson as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let state_init = serde_json::from_str::<crate::common::DeterministicAccountStateInitView>(
-            &scope.state_init_json,
-        )
-        .map(Into::into)
+        let state_init = serde_json::from_str::<
+            near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+        >(&scope.state_init_json)
         .wrap_err("Failed to parse JSON-serialized StateInit")?;
         Ok(Self(StateInitDataContext::new(
             previous_context,
@@ -248,10 +247,10 @@ impl StateInitFromJsonFileContext {
                 scope.file_path.0.display()
             )
         })?;
-        let state_init =
-            serde_json::from_str::<crate::common::DeterministicAccountStateInitView>(&json_str)
-                .map(Into::into)
-                .wrap_err("Failed to parse JSON-serialized StateInit")?;
+        let state_init = serde_json::from_str::<
+            near_primitives::deterministic_account_id::DeterministicAccountStateInit,
+        >(&json_str)
+        .wrap_err("Failed to parse JSON-serialized StateInit")?;
         Ok(Self(StateInitDataContext::new(
             previous_context,
             state_init,
@@ -502,10 +501,9 @@ impl InspectStateInitJsonContext {
     ) -> color_eyre::eyre::Result<Self> {
         println!(
             "{}",
-            serde_json::to_string_pretty(&crate::common::DeterministicAccountStateInitView::from(
-                previous_context.state_init
-            ))
-            .map_err(|e| color_eyre::eyre::eyre!("Failed to serialize state-init to JSON: {e}"))?
+            serde_json::to_string_pretty(&previous_context.state_init).map_err(
+                |e| color_eyre::eyre::eyre!("Failed to serialize state-init to JSON: {e}")
+            )?
         );
         Ok(Self)
     }
