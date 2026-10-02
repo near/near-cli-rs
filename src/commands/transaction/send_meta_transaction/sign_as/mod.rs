@@ -4,7 +4,6 @@ use inquire::Select;
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::SignedMetaTransactionContext)]
 #[interactive_clap(output_context = RelayerAccountIdContext)]
-#[interactive_clap(skip_default_from_cli)]
 pub struct RelayerAccountId {
     #[interactive_clap(skip_default_input_arg)]
     /// What is the relayer account ID?
@@ -77,137 +76,50 @@ impl RelayerAccountId {
     fn input_relayer_account_id(
         context: &super::SignedMetaTransactionContext,
     ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-        crate::common::input_signer_account_id_from_used_account_list(
-            &context.global_context.config.credentials_home_dir,
-            "What is the relayer account ID?",
-        )
-    }
-}
-
-impl interactive_clap::FromCli for RelayerAccountId {
-    type FromCliContext = super::SignedMetaTransactionContext;
-    type FromCliError = color_eyre::eyre::Error;
-
-    fn from_cli(
-        optional_clap_variant: Option<<Self as interactive_clap::ToCli>::CliVariant>,
-        context: Self::FromCliContext,
-    ) -> interactive_clap::ResultFromCli<
-        <Self as interactive_clap::ToCli>::CliVariant,
-        Self::FromCliError,
-    > {
-        use ClapNamedArgNetworkForTransactionArgsForRelayerAccountId::NetworkConfig;
-        use interactive_clap::ResultFromCli;
-        let mut cli = optional_clap_variant.unwrap_or_default();
-        // Explicit sign-as values and offline commands have always bypassed this prompt.
-        let check_relayer = cli.relayer_account_id.is_none() && !context.global_context.offline;
-        if cli.relayer_account_id.is_none() {
-            cli.relayer_account_id = match Self::input_relayer_account_id(&context) {
-                Ok(Some(account)) => Some(account),
-                Ok(None) => return ResultFromCli::Cancel(Some(cli)),
-                Err(err) => return ResultFromCli::Err(Some(cli), err),
+        loop {
+            let relayer_account_id = if let Some(account_id) =
+                crate::common::input_signer_account_id_from_used_account_list(
+                    &context.global_context.config.credentials_home_dir,
+                    "What is the relayer account ID?",
+                )? {
+                account_id
+            } else {
+                return Ok(None);
             };
-        }
 
-        // Resolve the connection before checking the interactively entered account.
-        let mut network_cli = match cli.network_config.take() {
-            Some(NetworkConfig(network)) => network,
-            None => Default::default(),
-        };
-        if network_cli.network_name.is_none() {
-            network_cli.network_name = match crate::common::input_network_name(
-                &context.global_context.config,
-                &[cli
-                    .relayer_account_id
-                    .clone()
-                    .expect("relayer is set")
-                    .into()],
-            ) {
-                Ok(Some(name)) => Some(name),
-                Ok(None) => {
-                    cli.network_config = Some(NetworkConfig(network_cli.clone()));
-                    return ResultFromCli::Cancel(Some(cli));
-                }
-                Err(err) => {
-                    cli.network_config = Some(NetworkConfig(network_cli.clone()));
-                    return ResultFromCli::Err(Some(cli), err);
-                }
-            };
-        }
-        cli.network_config = Some(NetworkConfig(network_cli.clone()));
-        if check_relayer {
-            let network_name = network_cli.network_name.as_ref().expect("network is set");
-            let Some(network) = context
-                .global_context
-                .config
-                .network_connection
-                .get(network_name)
-            else {
-                return ResultFromCli::Err(
-                    Some(cli),
-                    color_eyre::eyre::eyre!("Failed to get network config!"),
-                );
-            };
-            loop {
-                let account = cli.relayer_account_id.clone().expect("relayer is set");
-                match crate::common::is_account_exist_on_network(network, &account.clone().into()) {
-                    Ok(true) => break,
-                    Err(err) => return ResultFromCli::Err(Some(cli), err),
-                    Ok(false) => {}
-                }
+            if context.global_context.offline {
+                return Ok(Some(relayer_account_id));
+            }
+
+            if !crate::common::is_account_exist(
+                &context.global_context,
+                relayer_account_id.clone().into(),
+            )? {
                 tracing::warn!(
                     "{}",
                     format!(
-                        "The account <{account}> does not exist on network <{}>.",
-                        network.network_name
+                        "The account <{relayer_account_id}> does not exist on [{}] networks.",
+                        context.global_context.config.network_names().join(", ")
                     )
                     .red()
                 );
-                let enter_another = match Select::new(
+                #[derive(strum_macros::Display)]
+                enum ConfirmOptions {
+                    #[strum(to_string = "Yes, I want to enter a new account name.")]
+                    Yes,
+                    #[strum(to_string = "No, I want to use this account name.")]
+                    No,
+                }
+                let select_choose_input = Select::new(
                     "Do you want to enter another relayer account id?",
-                    vec![
-                        "Yes, I want to enter a new account name.",
-                        "No, I want to use this account name.",
-                    ],
+                    vec![ConfirmOptions::Yes, ConfirmOptions::No],
                 )
-                .prompt()
-                {
-                    Ok(choice) => choice.starts_with("Yes"),
-                    Err(err) => return ResultFromCli::Err(Some(cli), err.into()),
-                };
-                if !enter_another {
-                    break;
+                .prompt()?;
+                if let ConfirmOptions::No = select_choose_input {
+                    return Ok(Some(relayer_account_id));
                 }
-                match Self::input_relayer_account_id(&context) {
-                    // Update the reconstructed command immediately, even if a later step cancels.
-                    Ok(Some(account)) => cli.relayer_account_id = Some(account),
-                    Ok(None) => return ResultFromCli::Cancel(Some(cli)),
-                    Err(err) => return ResultFromCli::Err(Some(cli), err),
-                }
-            }
-        }
-        let scope = InteractiveClapContextScopeForRelayerAccountId {
-            relayer_account_id: cli.relayer_account_id.clone().expect("relayer is set"),
-        };
-        let action_context = match RelayerAccountIdContext::from_previous_context(context, &scope) {
-            Ok(context) => context,
-            Err(err) => return ResultFromCli::Err(Some(cli), err),
-        };
-        match crate::network_for_transaction::NetworkForTransactionArgs::from_cli(
-            Some(network_cli),
-            action_context.into(),
-        ) {
-            ResultFromCli::Ok(network) => {
-                cli.network_config = Some(NetworkConfig(network));
-                ResultFromCli::Ok(cli)
-            }
-            ResultFromCli::Cancel(network) => {
-                cli.network_config = network.map(NetworkConfig);
-                ResultFromCli::Cancel(Some(cli))
-            }
-            ResultFromCli::Back => ResultFromCli::Back,
-            ResultFromCli::Err(network, err) => {
-                cli.network_config = network.map(NetworkConfig);
-                ResultFromCli::Err(Some(cli), err)
+            } else {
+                return Ok(Some(relayer_account_id));
             }
         }
     }

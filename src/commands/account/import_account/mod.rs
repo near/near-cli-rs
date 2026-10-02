@@ -113,11 +113,19 @@ fn warn_on_implicit_account_id_missmatch(
 }
 
 fn check_account_id(
+    global_context: &crate::GlobalContext,
     chosen_network_config: &crate::config::NetworkConfig,
     account_id: &near_primitives::types::AccountId,
     public_key: &near_crypto::PublicKey,
 ) -> crate::CliResult {
-    if !crate::common::is_account_exist_on_network(chosen_network_config, account_id)? {
+    // Keep the existing retry/skip behavior, but search only the selected connection.
+    let mut selected_network_context = global_context.clone();
+    selected_network_context.config.network_connection.clear();
+    selected_network_context.config.network_connection.insert(
+        chosen_network_config.network_name.clone(),
+        chosen_network_config.clone(),
+    );
+    if !crate::common::is_account_exist(&selected_network_context, account_id.clone())? {
         // Implicit AccountId always exists. If the public key that was passed to this function is
         // the same public key that was used to generate implicit AccountId, then we don't need
         // to return error as implicit AccountId will be instantiated on the first transaction.
