@@ -3342,6 +3342,14 @@ pub trait JsonRpcClientExt {
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
 
+    fn blocking_call_view_function_with_metadata(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        method_name: &str,
+        args: Vec<u8>,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse>;
+
     fn blocking_call_view_access_key(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -3463,7 +3471,6 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
 
     /// A helper function to make a view-funcation call using JSON encoding for the function
     /// arguments and function return value.
-    #[tracing::instrument(name = "Getting the result of executing", skip_all)]
     fn blocking_call_view_function(
         &self,
         account_id: &near_primitives::types::AccountId,
@@ -3471,6 +3478,23 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
         args: Vec<u8>,
         block_reference: near_primitives::types::BlockReference,
     ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
+        self.blocking_call_view_function_with_metadata(
+            account_id,
+            function_name,
+            args,
+            block_reference,
+        )?
+        .call_result()
+    }
+
+    #[tracing::instrument(name = "Getting the result of executing", skip_all)]
+    fn blocking_call_view_function_with_metadata(
+        &self,
+        account_id: &near_primitives::types::AccountId,
+        function_name: &str,
+        args: Vec<u8>,
+        block_reference: near_primitives::types::BlockReference,
+    ) -> color_eyre::eyre::Result<near_jsonrpc_primitives::types::query::RpcQueryResponse> {
         tracing::Span::current().pb_set_message(&format!(
             "a read-only function '{function_name}' of the <{account_id}> contract ..."
         ));
@@ -3528,7 +3552,9 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     "JSON RPC Response:\n{}",
                     indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
                 );
-            })
+            })?;
+
+        Ok(query_view_method_response)
     }
 
     #[tracing::instrument(name = "Getting access key information:", skip_all)]

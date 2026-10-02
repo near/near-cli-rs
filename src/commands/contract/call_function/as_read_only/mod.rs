@@ -3,6 +3,7 @@ use std::io::Write;
 
 use crate::common::CallResultExt;
 use crate::common::JsonRpcClientExt;
+use crate::common::RpcQueryResponseExt;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
@@ -130,15 +131,16 @@ fn call_view_function(
 ) -> crate::CliResult {
     tracing::info!(target: "near_teach_me", "Getting a response to a read-only function call ...");
     let args = super::call_function_args_type::function_args(function_args, function_args_type)?;
-    let call_result = network_config
+    let query_response = network_config
         .json_rpc_client()
-        .blocking_call_view_function(account_id, function_name, args, block_reference.clone())
+        .blocking_call_view_function_with_metadata(account_id, function_name, args, block_reference.clone())
         .wrap_err_with(|| {
             format!(
                 "Failed to fetch query for read-only function call: '{}' (contract <{}> on network <{}>)",
                 function_name, account_id, network_config.network_name
             )
         })?;
+    let call_result = query_response.call_result()?;
 
     let info_str = if call_result.result.is_empty() {
         "Empty return value".to_string()
@@ -156,6 +158,8 @@ fn call_view_function(
         std::io::stdout().write_all(&call_result.result)?;
     } else {
         tracing_indicatif::suspend_tracing_indicatif(|| {
+            eprintln!("Block height: {}", query_response.block_height);
+            eprintln!("Block hash: {}", query_response.block_hash);
             eprintln!("Function execution return value (printed to stdout):")
         });
         tracing_indicatif::suspend_tracing_indicatif(|| println!("{info_str}"));
