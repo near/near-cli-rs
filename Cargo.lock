@@ -2534,6 +2534,7 @@ dependencies = [
 name = "near-cli-rs"
 version = "0.30.1"
 dependencies = [
+ "base64 0.22.1",
  "bip39",
  "borsh",
  "bs58 0.5.1",
