@@ -1,18 +1,38 @@
 use std::io::Write;
 
 use color_eyre::eyre::Context;
+use strum::{EnumDiscriminants, EnumIter, EnumMessage};
+
+mod save_to_keychain;
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = crate::GlobalContext)]
 #[interactive_clap(output_context = SaveWithUseAutoGenerationContext)]
 pub struct SaveWithUseAutoGeneration {
-    #[interactive_clap(named_arg)]
-    /// Specify a folder to save the implicit account file
-    save_to_folder: super::SaveToFolder,
+    #[interactive_clap(subcommand)]
+    save_mode: SaveMode,
 }
 
 #[derive(Clone)]
-struct SaveWithUseAutoGenerationContext(super::SaveImplicitAccountContext);
+pub struct SaveWithUseAutoGenerationContext {
+    file_context: super::SaveImplicitAccountContext,
+    global_context: crate::GlobalContext,
+}
+
+#[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
+#[interactive_clap(context = SaveWithUseAutoGenerationContext)]
+#[strum_discriminants(derive(EnumMessage, EnumIter))]
+/// Where do you want to save the generated implicit account?
+pub enum SaveMode {
+    #[strum_discriminants(strum(
+        message = "save-to-keychain - Save securely in the system keychain"
+    ))]
+    /// Save securely in the system keychain without a plaintext export
+    SaveToKeychain(save_to_keychain::SaveToKeychain),
+    #[strum_discriminants(strum(message = "save-to-folder   - Export a plaintext account file"))]
+    /// Specify a folder to save the implicit account file
+    SaveToFolder(super::SaveToFolder),
+}
 
 impl SaveWithUseAutoGenerationContext {
     pub fn from_previous_context(
@@ -52,15 +72,18 @@ impl SaveWithUseAutoGenerationContext {
                     Ok(())
                 }
             });
-        Ok(Self(super::SaveImplicitAccountContext {
-            config: previous_context.config,
-            on_after_getting_folder_path_callback,
-        }))
+        Ok(Self {
+            file_context: super::SaveImplicitAccountContext {
+                config: previous_context.config.clone(),
+                on_after_getting_folder_path_callback,
+            },
+            global_context: previous_context,
+        })
     }
 }
 
 impl From<SaveWithUseAutoGenerationContext> for super::SaveImplicitAccountContext {
     fn from(item: SaveWithUseAutoGenerationContext) -> Self {
-        item.0
+        item.file_context
     }
 }
