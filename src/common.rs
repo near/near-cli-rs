@@ -4025,23 +4025,49 @@ pub fn input_non_signer_account_id_from_used_account_list(
     input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
 }
 
-fn input_account_id_from_used_account_list(
+fn used_account_id_suggestions(accounts: &[String], input: &str) -> Vec<String> {
+    let mut matches = accounts
+        .iter()
+        .filter_map(|account| {
+            let rank = if account == input {
+                0
+            } else if account.starts_with(input) {
+                1
+            } else {
+                let mut chars = account.bytes();
+                if !input
+                    .bytes()
+                    .all(|ch| chars.any(|candidate| candidate == ch))
+                {
+                    return None;
+                }
+                2
+            };
+            Some((rank, account))
+        })
+        .collect::<Vec<_>>();
+    // Stable sorting preserves most-recently-used order within each rank,
+    // including the entire history when the input is empty.
+    matches.sort_by_key(|(rank, _)| *rank);
+    matches
+        .into_iter()
+        .map(|(_, account)| account.clone())
+        .collect()
+}
+
+fn used_account_id_prompt<'a>(
     credentials_home_dir: &std::path::Path,
-    message: &str,
+    message: &'a str,
     account_is_signer: bool,
-) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+) -> Text<'a, 'static> {
     let used_account_list = get_used_account_list(credentials_home_dir)
         .into_iter()
         .filter(|account| !account_is_signer || account.used_as_signer)
         .map(|account| account.account_id.to_string())
         .collect::<Vec<_>>();
-    let account_id_str = match Text::new(message)
+    Text::new(message)
         .with_autocomplete(move |val: &str| {
-            Ok(used_account_list
-                .iter()
-                .filter(|s| s.contains(val))
-                .cloned()
-                .collect())
+            Ok(used_account_id_suggestions(&used_account_list, val))
         })
         .with_validator(|account_id_str: &str| {
             match near_primitives::types::AccountId::validate(account_id_str) {
@@ -4051,15 +4077,22 @@ fn input_account_id_from_used_account_list(
                 )),
             }
         })
-        .prompt()
-    {
-        Ok(value) => value,
-        Err(
-            inquire::error::InquireError::OperationCanceled
-            | inquire::error::InquireError::OperationInterrupted,
-        ) => return Ok(None),
-        Err(err) => return Err(err.into()),
-    };
+}
+
+fn input_account_id_from_used_account_list(
+    credentials_home_dir: &std::path::Path,
+    message: &str,
+    account_is_signer: bool,
+) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
+    let account_id_str =
+        match used_account_id_prompt(credentials_home_dir, message, account_is_signer).prompt() {
+            Ok(value) => value,
+            Err(
+                inquire::error::InquireError::OperationCanceled
+                | inquire::error::InquireError::OperationInterrupted,
+            ) => return Ok(None),
+            Err(err) => return Err(err.into()),
+        };
     let account_id = crate::types::account_id::AccountId::from_str(&account_id_str)?;
     update_used_account_list(credentials_home_dir, account_id.as_ref(), account_is_signer);
     Ok(Some(account_id))
@@ -4279,6 +4312,147 @@ mod tests {
     use near_jsonrpc_primitives::types::transactions::TimeoutErrorCause;
     use near_primitives::types::{BlockId, BlockReference, Finality};
     use near_primitives::views::{AccessKeyInfoView, AccessKeyList, AccessKeyView, QueryRequest};
+
+    fn account_suggestions(accounts: &[&str], input: &str) -> Vec<String> {
+        used_account_id_suggestions(
+            &accounts
+                .iter()
+                .map(|account| account.to_string())
+                .collect::<Vec<_>>(),
+            input,
+        )
+    }
+
+    #[test]
+    fn used_accounts_match_subsequences() {
+        assert_eq!(
+            account_suggestions(&["intents.near", "alice.near"], "intenear"),
+            ["intents.near"]
+        );
+        // Characters must occur in order and cannot be reused.
+        assert!(account_suggestions(&["intents.near"], "nearint").is_empty());
+        assert!(account_suggestions(&["intents.near"], "nnn").is_empty());
+    }
+
+    #[test]
+    fn used_accounts_rank_exact_then_prefix_then_subsequence_with_recent_ties() {
+        assert_eq!(
+            account_suggestions(
+                &[
+                    "z.alice.near",
+                    "alice.testnet",
+                    "a-l-i-c-e.near",
+                    "alice",
+                    "alice.near"
+                ],
+                "alice",
+            ),
+            [
+                "alice",
+                "alice.testnet",
+                "alice.near",
+                "z.alice.near",
+                "a-l-i-c-e.near"
+            ]
+        );
+    }
+
+    #[test]
+    fn used_accounts_preserve_history_for_empty_input() {
+        assert_eq!(
+            account_suggestions(&["zoe.near", "intents.near", "alice.near"], ""),
+            ["zoe.near", "intents.near", "alice.near"]
+        );
+        assert!(account_suggestions(&[], "").is_empty());
+        assert!(account_suggestions(&[], "alice").is_empty());
+    }
+
+    #[test]
+    fn used_accounts_allow_no_matches() {
+        for input in ["unknown", "intents.near.extra", "INTENEAR", "é"] {
+            assert!(account_suggestions(&["intents.near"], input).is_empty());
+        }
+    }
+
+    fn account_prompt_fixture() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        let accounts = [
+            ("intents.near", false),
+            ("zintent.near", true),
+            ("intent.near", true),
+        ]
+        .into_iter()
+        .map(|(account, used_as_signer)| UsedAccount {
+            account_id: account.parse().unwrap(),
+            used_as_signer,
+        })
+        .collect::<Vec<_>>();
+        std::fs::write(
+            get_used_account_list_path(dir.path()),
+            serde_json::to_vec(&accounts).unwrap(),
+        )
+        .unwrap();
+        dir
+    }
+
+    #[test]
+    fn used_accounts_filter_signers_before_matching() {
+        let dir = account_prompt_fixture();
+        let mut signer = used_account_id_prompt(dir.path(), "Account ID", true)
+            .autocompleter
+            .unwrap();
+        assert_eq!(
+            signer.get_suggestions("").unwrap(),
+            ["zintent.near", "intent.near"]
+        );
+        assert_eq!(
+            signer.get_suggestions("intenear").unwrap(),
+            ["zintent.near", "intent.near"]
+        );
+        let mut non_signer = used_account_id_prompt(dir.path(), "Account ID", false)
+            .autocompleter
+            .unwrap();
+        assert_eq!(
+            non_signer.get_suggestions("intenear").unwrap(),
+            ["intents.near", "zintent.near", "intent.near"]
+        );
+    }
+
+    #[test]
+    fn used_account_prompt_allows_manual_entry_and_validates_account_ids() {
+        let dir = account_prompt_fixture();
+        // Both prompts permit an account absent from history, including a signer.
+        for account_is_signer in [false, true] {
+            let mut prompt = used_account_id_prompt(dir.path(), "Account ID", account_is_signer);
+            let completer = prompt.autocompleter.as_mut().unwrap();
+            assert!(
+                completer
+                    .get_suggestions("new-account.near")
+                    .unwrap()
+                    .is_empty()
+            );
+            assert_eq!(
+                completer.get_completion("new-account.near", None).unwrap(),
+                None
+            );
+            assert_eq!(
+                completer
+                    .get_completion("intenear", Some("intent.near".into()))
+                    .unwrap(),
+                Some("intent.near".into())
+            );
+            assert!(matches!(
+                prompt.validators[0].validate("new-account.near").unwrap(),
+                inquire::validator::Validation::Valid
+            ));
+            for invalid in ["", "UPPER.near", "alice..near"] {
+                assert!(matches!(
+                    prompt.validators[0].validate(invalid).unwrap(),
+                    inquire::validator::Validation::Invalid(_)
+                ));
+            }
+        }
+    }
 
     #[test]
     fn fetch_access_key_list_follows_pages() {
