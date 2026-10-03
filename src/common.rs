@@ -3340,7 +3340,15 @@ pub trait JsonRpcClientExt {
         method_name: &str,
         args: Vec<u8>,
         block_reference: near_primitives::types::BlockReference,
-    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error>;
+    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
+        self.blocking_call_view_function_with_metadata(
+            account_id,
+            method_name,
+            args,
+            block_reference,
+        )?
+        .call_result()
+    }
 
     fn blocking_call_view_function_with_metadata(
         &self,
@@ -3467,24 +3475,6 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                 }
             })
             .map_err(Box::new)
-    }
-
-    /// A helper function to make a view-funcation call using JSON encoding for the function
-    /// arguments and function return value.
-    fn blocking_call_view_function(
-        &self,
-        account_id: &near_primitives::types::AccountId,
-        function_name: &str,
-        args: Vec<u8>,
-        block_reference: near_primitives::types::BlockReference,
-    ) -> Result<near_primitives::views::CallResult, color_eyre::eyre::Error> {
-        self.blocking_call_view_function_with_metadata(
-            account_id,
-            function_name,
-            args,
-            block_reference,
-        )?
-        .call_result()
     }
 
     #[tracing::instrument(name = "Getting the result of executing", skip_all)]

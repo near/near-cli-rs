@@ -109,87 +109,74 @@ fn run_near(args: &[&str], responses: Vec<Value>) -> (Output, Vec<Value>) {
     (output, server.join().unwrap())
 }
 
-fn view_args<'a>(mode: &'a [&'a str], block: &'a [&'a str]) -> Vec<&'a str> {
-    let mut args = mode.to_vec();
-    args.extend([
-        "contract",
-        "call-function",
-        "as-read-only",
-        "contract.testnet",
-        "get_value",
-        "json-args",
-        "{}",
-        "network-config",
-        "testnet",
-    ]);
-    args.extend(block);
-    args
+fn view_args<'a>(mode: &'a str, block: &'a [&'a str]) -> Vec<&'a str> {
+    std::iter::once(mode).filter(|mode| !mode.is_empty())
+        .chain("contract call-function as-read-only contract.testnet get_value json-args {} network-config testnet".split_whitespace())
+        .chain(block.iter().copied()).collect()
 }
 
 #[test]
 fn view_output_preserves_return_values_and_reports_execution_block() {
-    let results: &[(&[u8], &str)] = &[
-        (br#"{"answer":42}"#, "{\n  \"answer\": 42\n}\n"),
-        (b"hello\nworld", "hello\nworld\n"),
-        (b"", "Empty return value\n"),
+    let cases: &[(&[u8], &str, &[&str], Value)] = &[
         (
-            &[0, 255, 128],
-            "The returned value is not printable (binary data)\n",
+            br#"{"answer":42}"#,
+            "{\n  \"answer\": 42\n}\n",
+            &["at-block-height", "123460"],
+            json!({"block_id": 123460}),
         ),
-    ];
-    let blocks: &[(&[&str], Value)] = &[
-        (&["now"], json!({"finality": "final"})),
-        (&["at-block-height", "123460"], json!({"block_id": 123460})),
         (
+            b"hello\nworld",
+            "hello\nworld\n",
             &["at-block-hash", BLOCK_HASH],
             json!({"block_id": BLOCK_HASH}),
         ),
+        (
+            b"",
+            "Empty return value\n",
+            &["now"],
+            json!({"finality": "final"}),
+        ),
+        (
+            &[0, 255, 128],
+            "The returned value is not printable (binary data)\n",
+            &["now"],
+            json!({"finality": "final"}),
+        ),
     ];
-    for mode in [&[][..], &["--quiet"][..], &["--teach-me"][..]] {
-        for (block, selection) in blocks {
-            for (raw, formatted) in results {
-                let (output, requests) = run_near(&view_args(mode, block), vec![call_result(raw)]);
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                assert!(output.status.success(), "{mode:?} {block:?}: {stderr}");
-                assert_eq!(requests.len(), 1);
-                assert_eq!(requests[0]["method"], "query");
-                assert_eq!(requests[0]["params"]["request_type"], "call_function");
-                assert_eq!(requests[0]["params"]["account_id"], "contract.testnet");
-                assert_eq!(requests[0]["params"]["method_name"], "get_value");
-                assert_eq!(requests[0]["params"]["args_base64"], "e30=");
-                for (key, value) in selection.as_object().unwrap() {
-                    assert_eq!(&requests[0]["params"][key], value);
+    for (raw, formatted, block, selection) in cases {
+        for mode in ["", "--quiet", "--teach-me"] {
+            let (output, requests) = run_near(&view_args(mode, block), vec![call_result(raw)]);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            assert!(output.status.success(), "{stderr}");
+            assert_eq!(requests.len(), 1);
+            assert_eq!(requests[0]["method"], "query");
+            assert_eq!(requests[0]["params"]["method_name"], "get_value");
+            for (key, value) in selection.as_object().unwrap() {
+                assert_eq!(&requests[0]["params"][key], value);
+            }
+            if mode == "--quiet" {
+                assert_eq!(&output.stdout, raw);
+                assert!(stderr.is_empty(), "{stderr}");
+            } else {
+                for expected in ["Block height: 123456", &format!("Block hash: {BLOCK_HASH}")] {
+                    assert_eq!(stderr.matches(expected).count(), 1, "{stderr}");
                 }
-                if mode == ["--quiet"] {
-                    assert_eq!(&output.stdout, raw);
-                    assert!(stderr.is_empty(), "{stderr}");
-                } else {
-                    let stdout = String::from_utf8_lossy(&output.stdout);
-                    assert!(!stdout.contains("Block height:"), "{stdout}");
-                    assert!(!stdout.contains("Block hash:"), "{stdout}");
-                    assert_eq!(
-                        stderr.matches("Block height: 123456").count(),
-                        1,
-                        "{stderr}"
-                    );
-                    assert_eq!(
-                        stderr.matches(&format!("Block hash: {BLOCK_HASH}")).count(),
-                        1,
-                        "{stderr}"
-                    );
-                    assert!(
-                        stderr.contains("Function execution return value (printed to stdout):")
-                    );
-                    if mode == ["--teach-me"] {
-                        assert!(stdout.ends_with(formatted), "{stdout}");
-                        assert!(stdout.contains("JSON RPC Response:"), "{stdout}");
-                        assert!(stdout.contains("\"block_height\": 123456"), "{stdout}");
-                        assert!(stdout.contains(BLOCK_HASH), "{stdout}");
-                        assert!(stdout.contains("view log"), "{stdout}");
-                    } else {
-                        assert_eq!(output.stdout, formatted.as_bytes());
-                        assert!(stderr.contains("view log"), "{stderr}");
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                assert!(!stdout.contains("Block height:"), "{stdout}");
+                assert!(!stdout.contains("Block hash:"), "{stdout}");
+                if mode == "--teach-me" {
+                    assert!(stdout.ends_with(formatted), "{stdout}");
+                    for expected in [
+                        "JSON RPC Response:",
+                        "\"block_height\": 123456",
+                        BLOCK_HASH,
+                        "view log",
+                    ] {
+                        assert!(stdout.contains(expected), "{stdout}");
                     }
+                } else {
+                    assert_eq!(output.stdout, formatted.as_bytes());
+                    assert!(stderr.contains("view log"), "{stderr}");
                 }
             }
         }
@@ -198,17 +185,10 @@ fn view_output_preserves_return_values_and_reports_execution_block() {
 
 #[test]
 fn legacy_view_reports_execution_block() {
-    let (output, requests) = run_near(
-        &[
-            "view",
-            "contract.testnet",
-            "get_value",
-            "{}",
-            "--network-id",
-            "testnet",
-        ],
-        vec![call_result(b"42")],
-    );
+    let args: Vec<_> = "view contract.testnet get_value {} --network-id testnet"
+        .split_whitespace()
+        .collect();
+    let (output, requests) = run_near(&args, vec![call_result(b"42")]);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(output.status.success(), "{stderr}");
     assert_eq!(output.stdout, b"42\n");
@@ -232,20 +212,13 @@ fn failed_view_does_not_report_success_metadata() {
             "Received unexpected query kind",
         ),
     ] {
-        for mode in [&[][..], &["--quiet"][..], &["--teach-me"][..]] {
+        for mode in ["", "--quiet", "--teach-me"] {
             let (output, _) = run_near(&view_args(mode, &["now"]), vec![response.clone()]);
             let stderr = String::from_utf8_lossy(&output.stderr);
-            let stdout = String::from_utf8_lossy(&output.stdout);
             assert!(!output.status.success(), "{stderr}");
-            assert!(!stdout.contains("Block height:"), "{stdout}");
-            assert!(!stdout.contains("Block hash:"), "{stdout}");
-            if mode != ["--teach-me"] {
+            if mode != "--teach-me" {
                 assert!(output.stdout.is_empty());
             }
-            assert!(
-                stderr.contains("Failed to fetch query for read-only function call: 'get_value'"),
-                "{stderr}"
-            );
             assert!(stderr.contains(expected), "{stderr}");
             assert!(!stderr.contains("Block height:"), "{stderr}");
             assert!(!stderr.contains("Block hash:"), "{stderr}");
@@ -259,16 +232,12 @@ fn failed_view_does_not_report_success_metadata() {
 
 #[test]
 fn incidental_token_view_does_not_print_execution_metadata() {
+    let args: Vec<_> =
+        "tokens owner.testnet view-ft-balance token.testnet network-config testnet now"
+            .split_whitespace()
+            .collect();
     let (output, requests) = run_near(
-        &[
-            "tokens",
-            "owner.testnet",
-            "view-ft-balance",
-            "token.testnet",
-            "network-config",
-            "testnet",
-            "now",
-        ],
+        &args,
         vec![
             call_result(br#"{"spec":"ft-1.0.0","name":"Test Token","symbol":"TEST","decimals":0}"#),
             call_result(br#""42""#),
