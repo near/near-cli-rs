@@ -390,30 +390,149 @@ fn scripted_from_cli_check_stops_before_signing_and_preserves_flag() {
 
 #[test]
 fn complete_scripts_and_partial_interactive_commands_are_distinguished() {
-    for args in [
-        vec!["send-near", "receiver.near", "1 NEAR"],
-        vec!["send-near", "receiver.near", "1 NEAR", "network-config"],
-        vec![
-            "send-near",
-            "receiver.near",
-            "1 NEAR",
+    let prefix = ["send-near", "receiver.near", "1 NEAR"];
+    let partial: &[&[&str]] = &[
+        &[],
+        &["network-config"],
+        &["network-config", "mainnet"],
+        &["network-config", "mainnet", "sign-with-keychain"],
+        &["network-config", "mainnet", "sign-with-legacy-keychain"],
+        &["network-config", "mainnet", "sign-with-access-key-file"],
+        &[
             "network-config",
             "mainnet",
+            "sign-with-access-key-file",
+            "key.json",
         ],
-    ] {
-        assert!(needs_interactive_input(
-            &CliSendNearCommand::try_parse_from(args).unwrap()
-        ));
+        &[
+            "network-config",
+            "mainnet",
+            "sign-with-access-key-file",
+            "key.json",
+            "save-to-file",
+        ],
+        &[
+            "network-config",
+            "mainnet",
+            "sign-with-plaintext-private-key",
+        ],
+        &[
+            "network-config",
+            "mainnet",
+            "sign-with-seed-phrase",
+            "test seed",
+            "send",
+        ],
+        &["network-config", "mainnet", "sign-later", "display"],
+        &["network-config", "mainnet", "sign-with-mpc"],
+        &["network-config", "mainnet", "submit-as-dao-proposal"],
+    ];
+    for tail in partial {
+        let cli = CliSendNearCommand::try_parse_from(prefix.iter().chain(tail.iter())).unwrap();
+        assert!(needs_interactive_input(&cli), "partial tail: {tail:?}");
     }
-    let cli = CliSendNearCommand::try_parse_from([
-        "send-near",
-        "receiver.near",
-        "1 NEAR",
-        "network-config",
-        "mainnet",
-        "sign-with-keychain",
-        "send",
-    ])
-    .unwrap();
-    assert!(!needs_interactive_input(&cli));
+    let complete: &[&[&str]] = &[
+        &[
+            "network-config",
+            "mainnet",
+            "sign-later",
+            "--signer-public-key",
+            "ed25519:11111111111111111111111111111111",
+            "--nonce",
+            "1",
+            "--block-hash",
+            "11111111111111111111111111111111",
+            "display",
+        ],
+        &[
+            "network-config",
+            "mainnet",
+            "submit-as-dao-proposal",
+            "dao.near",
+            "transfer proposal",
+            "prepaid-gas",
+            "10 Tgas",
+            "attached-deposit",
+            "1 NEAR",
+            "sign-with-keychain",
+            "send",
+        ],
+        &[
+            "network-config",
+            "mainnet",
+            "sign-with-mpc",
+            "admin.near",
+            "ed25519",
+            "derivation-path",
+            "test path",
+            "prepaid-gas",
+            "10 Tgas",
+            "attached-deposit",
+            "1 NEAR",
+            "sign-mpc-with-keychain",
+            "send",
+        ],
+        &["network-config", "mainnet", "sign-with-keychain", "send"],
+        &["network-config", "mainnet", "sign-with-keychain", "display"],
+        &[
+            "network-config",
+            "mainnet",
+            "sign-with-keychain",
+            "save-to-file",
+            "signed.json",
+        ],
+        &[
+            "network-config",
+            "mainnet",
+            "sign-with-access-key-file",
+            "key.json",
+            "send",
+        ],
+        &[
+            "network-config",
+            "mainnet",
+            "sign-with-seed-phrase",
+            "test seed",
+            "--seed-phrase-hd-path",
+            "m/44'/397'/0'",
+            "send",
+        ],
+    ];
+    for tail in complete {
+        let cli = CliSendNearCommand::try_parse_from(prefix.iter().chain(tail.iter())).unwrap();
+        assert!(!needs_interactive_input(&cli), "complete tail: {tail:?}");
+    }
+    #[cfg(feature = "ledger")]
+    {
+        let cli = CliSendNearCommand::try_parse_from(
+            prefix.iter().chain(
+                [
+                    "network-config",
+                    "mainnet",
+                    "sign-with-ledger",
+                    "usb",
+                    "send",
+                ]
+                .iter(),
+            ),
+        )
+        .unwrap();
+        assert!(needs_interactive_input(&cli));
+        let cli = CliSendNearCommand::try_parse_from(
+            prefix.iter().chain(
+                [
+                    "network-config",
+                    "mainnet",
+                    "sign-with-ledger",
+                    "--seed-phrase-hd-path",
+                    "44'/397'/0'/0'/1'",
+                    "usb",
+                    "send",
+                ]
+                .iter(),
+            ),
+        )
+        .unwrap();
+        assert!(!needs_interactive_input(&cli));
+    }
 }

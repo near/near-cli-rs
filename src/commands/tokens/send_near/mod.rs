@@ -183,13 +183,41 @@ impl interactive_clap::FromCli for SendNearCommand {
 }
 
 fn needs_interactive_input(cli: &CliSendNearCommand) -> bool {
-    cli.receiver_account_id.is_none()
-        || cli.amount_in_near.is_none()
-        || match &cli.network_config {
-            None => true,
-            Some(ClapNamedArgNetworkForTransactionArgsForSendNearCommand::NetworkConfig(
-                network,
-            )) => network.network_name.is_none() || network.transaction_signature_options.is_none(),
+    use clap::CommandFactory;
+    use interactive_clap::ToCliArgs;
+    let mut command = CliSendNearCommand::command();
+    let args = std::iter::once("send-near".to_owned()).chain(cli.to_cli_args());
+    match command.try_get_matches_from_mut(args) {
+        Ok(matches) => command_needs_interactive_input(&command, &matches),
+        Err(_) => true,
+    }
+}
+
+fn command_needs_interactive_input(command: &clap::Command, matches: &clap::ArgMatches) -> bool {
+    // interactive-clap makes positional arguments and subcommands optional so it
+    // can prompt for missing values. Follow the entire selected command chain,
+    // including signer credentials and submit/output arguments.
+    let missing_argument = command.get_arguments().any(|arg| {
+        // These long options also always prompt when omitted. Other signing
+        // options (nonce, block hash, etc.) resolve automatically when online.
+        let prompts = arg.is_positional()
+            || arg.get_long() == Some("seed-phrase-hd-path")
+            || (command.get_name() == "sign-later"
+                && matches!(
+                    arg.get_long(),
+                    Some("signer-public-key" | "nonce" | "block-hash")
+                ));
+        prompts && !matches.contains_id(arg.get_id().as_str())
+    });
+    missing_argument
+        || match matches.subcommand() {
+            Some((name, submatches)) => command_needs_interactive_input(
+                command
+                    .find_subcommand(name)
+                    .expect("parsed subcommand exists"),
+                submatches,
+            ),
+            None => command.get_subcommands().next().is_some(),
         }
 }
 
