@@ -1,0 +1,89 @@
+{
+  "capture_method": "Unedited native PNG from Cua Driver get_window_state",
+  "date_utc": "2026-10-03",
+  "driver_version": "0.32.0",
+  "permission_mode": "standard",
+  "ghostty_version": "1.3.1",
+  "ghostty_pid": 823,
+  "ghostty_window_id": 1512,
+  "shell": "Zsh with existing Starship initialization",
+  "font": "JetBrainsMono Nerd Font Mono",
+  "theme": "Catppuccin Mocha",
+  "gui_session_ended": true,
+  "items": [
+    {
+      "pr": 694,
+      "source_head": "9af09b60a1358d3977f0fe35b5e0eb6827b48339",
+      "worktree": "/Users/ricky/Developer/near-cli-rs-issue691-fuzzy",
+      "binary_sha256": "5178c545e2838b0e7c7c77fb59c4b187f9f6eafe9d458ca36bbc22f4eb443eb5",
+      "assets": [
+        {
+          "file": "pr-694-fuzzy-suggestion.png",
+          "sha256": "9c481ff1dfcc326a15b1736b73d8ff249b957ea4e3fa02131e9b7c7c181ccdbf",
+          "dimensions": [
+            1320,
+            410
+          ],
+          "capture_id": "capture_8d265fdde8924d3488197c001b19436b_0000000000000028",
+          "snapshot_id": "s0000002d"
+        }
+      ]
+    },
+    {
+      "pr": 695,
+      "source_head": "cbc3009dbbb2d6ae4c48252445e91c95d348e09c",
+      "worktree": "/Users/ricky/Developer/near-cli-rs-issue690",
+      "binary_sha256": "1a2496b2ad2a18890f28cb4b1dc58b6961cb060aac6d764f34b7f36ec3e9f6f4",
+      "assets": [
+        {
+          "file": "pr-695-check-skip.png",
+          "sha256": "3da20892a7c27db1bf501b7fd2cc2fccdf8bd86a25f2fff83fee3330d34b35bf",
+          "dimensions": [
+            1320,
+            630
+          ],
+          "capture_id": "capture_8d265fdde8924d3488197c001b19436b_000000000000002f",
+          "snapshot_id": "s00000034"
+        },
+        {
+          "file": "pr-695-skipped-signing-menu.png",
+          "sha256": "0f944ced1639cbac845e8af2d0b4f19b8e61437baa7dd9aa8325593956cba556",
+          "dimensions": [
+            1320,
+            630
+          ],
+          "capture_id": "capture_8d265fdde8924d3488197c001b19436b_0000000000000032",
+          "snapshot_id": "s00000037"
+        }
+      ]
+    },
+    {
+      "pr": 696,
+      "source_head": "353209ec57ac8b428c02fd76ef407872e143b3ca",
+      "worktree": "/Users/ricky/Developer/near-cli-rs-issue689-keychain",
+      "binary_sha256": "0d590266bc3fbafbd2d4eed252a5e2c9f16914278264f0df9f319b54ed8cfb21",
+      "assets": [
+        {
+          "file": "pr-696-auto-generation-help.png",
+          "sha256": "e51b446860fe0722ced62696d87b1081eccc76c659e978c189b996d180fba559",
+          "dimensions": [
+            1320,
+            410
+          ],
+          "capture_id": "capture_8d265fdde8924d3488197c001b19436b_000000000000002d",
+          "snapshot_id": "s00000032"
+        },
+        {
+          "file": "pr-696-keychain-help.png",
+          "sha256": "edbf11ed0ac56432ad2b4cc34cc2e17ca7d228a565a8c1fd2aa0b5c89a032dcb",
+          "dimensions": [
+            1320,
+            410
+          ],
+          "capture_id": "capture_8d265fdde8924d3488197c001b19436b_000000000000002c",
+          "snapshot_id": "s00000031"
+        }
+      ]
+    }
+  ]
+}
