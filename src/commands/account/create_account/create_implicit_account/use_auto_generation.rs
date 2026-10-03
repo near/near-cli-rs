@@ -14,10 +14,7 @@ pub struct SaveWithUseAutoGeneration {
 }
 
 #[derive(Clone)]
-pub struct SaveWithUseAutoGenerationContext {
-    file_context: super::SaveImplicitAccountContext,
-    global_context: crate::GlobalContext,
-}
+pub struct SaveWithUseAutoGenerationContext(super::SaveImplicitAccountContext);
 
 #[derive(Debug, Clone, EnumDiscriminants, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = SaveWithUseAutoGenerationContext)]
@@ -72,18 +69,15 @@ impl SaveWithUseAutoGenerationContext {
                     Ok(())
                 }
             });
-        Ok(Self {
-            file_context: super::SaveImplicitAccountContext {
-                config: previous_context.config.clone(),
-                on_after_getting_folder_path_callback,
-            },
-            global_context: previous_context,
-        })
+        Ok(Self(super::SaveImplicitAccountContext {
+            config: previous_context.config,
+            on_after_getting_folder_path_callback,
+        }))
     }
 }
 
 impl From<SaveWithUseAutoGenerationContext> for super::SaveImplicitAccountContext {
     fn from(item: SaveWithUseAutoGenerationContext) -> Self {
-        item.file_context
+        item.0
     }
 }

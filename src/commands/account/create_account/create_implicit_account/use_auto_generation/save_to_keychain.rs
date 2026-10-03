@@ -1,23 +1,16 @@
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
-#[interactive_clap(input_context = super::SaveWithUseAutoGenerationContext)]
-#[interactive_clap(output_context = SaveToKeychainContext)]
+#[interactive_clap(context = super::SaveWithUseAutoGenerationContext)]
 pub struct SaveToKeychain {
     #[interactive_clap(named_arg)]
     /// Select the network whose keychain will store this account
     network_config: crate::network::Network,
 }
 
-#[derive(Clone)]
-struct SaveToKeychainContext(crate::network::NetworkContext);
-
-impl SaveToKeychainContext {
-    fn from_previous_context(
-        previous_context: super::SaveWithUseAutoGenerationContext,
-        _scope: &<SaveToKeychain as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
-    ) -> color_eyre::eyre::Result<Self> {
-        let config = previous_context.global_context.config;
+impl From<super::SaveWithUseAutoGenerationContext> for crate::network::NetworkContext {
+    fn from(previous_context: super::SaveWithUseAutoGenerationContext) -> Self {
+        let config = previous_context.0.config;
         let credentials_home_dir = config.credentials_home_dir.clone();
-        Ok(Self(crate::network::NetworkContext {
+        Self {
             config,
             // An unfunded implicit account has no on-chain network to discover.
             interacting_with_account_ids: vec![],
@@ -59,12 +52,6 @@ impl SaveToKeychainContext {
                 );
                 Ok(())
             }),
-        }))
-    }
-}
-
-impl From<SaveToKeychainContext> for crate::network::NetworkContext {
-    fn from(context: SaveToKeychainContext) -> Self {
-        context.0
+        }
     }
 }

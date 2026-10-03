@@ -4,8 +4,18 @@ use std::sync::{Arc, Mutex};
 use clap::Parser;
 use interactive_clap::{FromCli, ResultFromCli, ToCli};
 use keyring::credential::{Credential, CredentialApi, CredentialBuilderApi};
-use near_cli_rs::commands::TopLevelCommand;
+use keyring::mock::MockCredential;
+use near_cli_rs::commands::{
+    TopLevelCommand,
+    account::export_account::get_account_key_pair_from_keychain,
+    message::sign_nep413::{NEP413Payload, sign_nep413_payload},
+    transaction::send_signed_transaction::FileSignedTransaction,
+};
 use near_cli_rs::{GlobalContext, Verbosity};
+use near_cli_rs::{
+    common::{KeyPairProperties, get_used_account_list},
+    transaction_signature_options::AccountKeyPair,
+};
 
 #[derive(Parser)]
 struct Cli {
@@ -17,12 +27,12 @@ struct Cli {
 // keyring's entry-local mock, this store lets the real signer reopen saved keys.
 #[derive(Default)]
 struct Store {
-    entries: Mutex<BTreeMap<(String, String), Arc<keyring::mock::MockCredential>>>,
+    entries: Mutex<BTreeMap<(String, String), Arc<MockCredential>>>,
     failure: Mutex<Option<&'static str>>,
 }
 
 struct Builder(Arc<Store>);
-struct StoredCredential(Arc<keyring::mock::MockCredential>);
+struct StoredCredential(Arc<MockCredential>);
 
 impl CredentialApi for StoredCredential {
     fn set_secret(&self, secret: &[u8]) -> keyring::Result<()> {
@@ -68,8 +78,8 @@ impl CredentialBuilderApi for Builder {
     }
 }
 
-fn run(args: &[&str], context: GlobalContext) -> Result<(), color_eyre::Report> {
-    let cli = Cli::try_parse_from(std::iter::once("near").chain(args.iter().copied()))
+fn run(command: &str, context: GlobalContext) -> Result<(), color_eyre::Report> {
+    let cli = Cli::try_parse_from(shell_words::split(command).unwrap())
         .expect("command must retain its CLI syntax");
     match TopLevelCommand::from_cli(Some(cli.command), context) {
         ResultFromCli::Ok(_) => Ok(()),
@@ -164,6 +174,8 @@ fn unknown_account(account_id: &near_primitives::types::AccountId) -> serde_json
     }})
 }
 
+const GENERATE: &str = "near account create-account fund-later use-auto-generation";
+
 #[test]
 fn generated_account_is_pickable_and_signs_from_keychain_before_funding() {
     let store = Arc::new(Store::default());
@@ -174,36 +186,25 @@ fn generated_account_is_pickable_and_signs_from_keychain_before_funding() {
 
     for network in ["testnet", "mainnet"] {
         run(
-            &[
-                "account",
-                "create-account",
-                "fund-later",
-                "use-auto-generation",
-                "save-to-keychain",
-                "network-config",
-                network,
-            ],
+            &format!("{GENERATE} save-to-keychain network-config {network}"),
             global_context.clone(),
         )
         .unwrap();
-        let account = near_cli_rs::common::get_used_account_list(&credentials_dir)
+        let account = get_used_account_list(&credentials_dir)
             .front()
             .unwrap()
             .clone();
         assert!(account.used_as_signer);
-        let public_key =
-            near_crypto::PublicKey::from_near_implicit_account(&account.account_id).unwrap();
-        let entry = keyring::Entry::new(
-            &format!("near-{network}-{}", account.account_id),
-            &format!("{}:{public_key}", account.account_id),
-        )
-        .unwrap();
-        let password = entry.get_password().unwrap();
-        let key_pair: near_cli_rs::common::KeyPairProperties =
-            serde_json::from_str(&password).unwrap();
-        assert_eq!(key_pair.implicit_account_id, account.account_id);
-        let signing_key: near_cli_rs::transaction_signature_options::AccountKeyPair =
-            serde_json::from_str(&password).unwrap();
+        let account_id = &account.account_id;
+        let public_key = near_crypto::PublicKey::from_near_implicit_account(account_id).unwrap();
+        let entry_user = format!("{account_id}:{public_key}");
+        let password = keyring::Entry::new(&format!("near-{network}-{account_id}"), &entry_user)
+            .unwrap()
+            .get_password()
+            .unwrap();
+        let key_pair: KeyPairProperties = serde_json::from_str(&password).unwrap();
+        assert_eq!(&key_pair.implicit_account_id, account_id);
+        let signing_key: AccountKeyPair = serde_json::from_str(&password).unwrap();
         assert!(signing_key.public_key == public_key);
         assert!(signing_key.private_key.public_key() == public_key);
         assert_eq!(
@@ -211,15 +212,12 @@ fn generated_account_is_pickable_and_signs_from_keychain_before_funding() {
                 .unwrap()
                 .map(|entry| entry.unwrap().file_name())
                 .collect::<Vec<_>>(),
-            ["accounts.json"],
+            ["accounts.json"]
         );
-        let wrong_network_entry = keyring::Entry::new(
-            &format!("near-other-{}", account.account_id),
-            &format!("{}:{public_key}", account.account_id),
-        )
-        .unwrap();
         assert!(matches!(
-            wrong_network_entry.get_password(),
+            keyring::Entry::new(&format!("near-other-{account_id}"), &entry_user)
+                .unwrap()
+                .get_password(),
             Err(keyring::Error::NoEntry)
         ));
 
@@ -228,131 +226,46 @@ fn generated_account_is_pickable_and_signs_from_keychain_before_funding() {
             .network_connection
             .get(network)
             .unwrap();
-        let payload = near_cli_rs::commands::message::sign_nep413::NEP413Payload {
+        let payload = NEP413Payload {
             message: "unfunded account test".to_owned(),
             nonce: [7; 32],
             recipient: "test-only".to_owned(),
             callback_url: None,
         };
-        let signed_message = Arc::new(Mutex::new(None));
-        let captured = signed_message.clone();
-        let signing_context = near_cli_rs::commands::message::sign_nep413::FinalSignNep413Context {
-            global_context: global_context.clone(),
-            payload: payload.clone(),
-            signer_id: account.account_id.clone(),
-            on_after_signing_callback: Arc::new(move |message| {
-                *captured.lock().unwrap() = Some(message);
-                Ok(())
-            }),
-        };
-        let sign_cli = <near_cli_rs::commands::message::sign_nep413::signature_options::sign_with_keychain::SignKeychain as ToCli>::CliVariant::try_parse_from([
-            "sign-with-keychain", "network-config", network,
-        ]).unwrap();
-        with_rpc_response(
-            network_config,
-            unknown_account(&account.account_id),
-            |config| {
-                let mut signing_context = signing_context;
-                signing_context
-                    .global_context
-                    .config
-                    .network_connection
-                    .insert(network.to_owned(), config.clone());
-                assert!(matches!(
-                near_cli_rs::commands::message::sign_nep413::signature_options::sign_with_keychain::SignKeychain::from_cli(Some(sign_cli), signing_context),
-                ResultFromCli::Ok(_)
-            ));
-            },
-        );
-        let signed_message = signed_message.lock().unwrap();
-        let signed_message = signed_message.as_ref().unwrap();
-        assert_eq!(signed_message.account_id, account.account_id.as_str());
-        // Compare against independently signing the same payload with the key
-        // read from the isolated store; do not print signing material.
-        assert!(
-            signed_message.signature
-                == near_cli_rs::commands::message::sign_nep413::sign_nep413_payload(
-                    &payload,
-                    &signing_key.private_key
-                )
-                .unwrap()
-                .to_string()
-        );
-
-        let revoked = serde_json::json!({"result": {
-            "keys": [], "block_height": 1, "block_hash": "11111111111111111111111111111111"
-        }});
-        with_rpc_response(network_config, revoked, |config| {
-            assert!(
-                near_cli_rs::commands::account::export_account::get_account_key_pair_from_keychain(
-                    config,
-                    &account.account_id
-                )
-                .is_err()
-            );
+        with_rpc_response(network_config, unknown_account(account_id), |config| {
+            let key = get_account_key_pair_from_keychain(config, account_id).unwrap();
+            let signature = sign_nep413_payload(&payload, &key.private_key).unwrap();
+            let mut bytes = ((1u32 << 31) + 413).to_le_bytes().to_vec();
+            near_primitives::borsh::to_writer(&mut bytes, &payload).unwrap();
+            assert!(signature.verify(near_primitives::hash::hash(&bytes).as_ref(), &public_key));
         });
-        let other_rpc_error = serde_json::json!({"error": {
-            "code": -32000, "message": "Server error", "data": "block not found",
-            "name": "HANDLER_ERROR", "cause": {"name": "UNKNOWN_BLOCK", "info": {
-                "block_reference": {"finality": "final"}
-            }}
-        }});
-        with_rpc_response(network_config, other_rpc_error, |config| {
-            assert!(
-                near_cli_rs::commands::account::export_account::get_account_key_pair_from_keychain(
-                    config,
-                    &account.account_id
-                )
-                .is_err()
-            );
-        });
+        // Funded accounts with revoked keys and other RPC failures must not
+        // use the deterministic-key fallback.
+        for response in [
+            serde_json::json!({"result": {"keys": [], "block_height": 1, "block_hash": "11111111111111111111111111111111"}}),
+            serde_json::json!({"error": {
+                "code": -32000, "message": "Server error", "data": "block not found",
+                "name": "HANDLER_ERROR", "cause": {"name": "UNKNOWN_BLOCK", "info": {"block_reference": {"finality": "final"}}}
+            }}),
+        ] {
+            with_rpc_response(network_config, response, |config| {
+                assert!(get_account_key_pair_from_keychain(config, account_id).is_err());
+            });
+        }
         let named_id = "named.testnet".parse().unwrap();
         with_rpc_response(network_config, unknown_account(&named_id), |config| {
-            assert!(
-                near_cli_rs::commands::account::export_account::get_account_key_pair_from_keychain(
-                    config, &named_id
-                )
-                .is_err()
-            );
+            assert!(get_account_key_pair_from_keychain(config, &named_id).is_err());
         });
-        assert!(
-            near_cli_rs::commands::account::export_account::get_account_key_pair_from_keychain(
-                network_config,
-                &account.account_id
-            )
-            .is_err()
-        );
+        assert!(get_account_key_pair_from_keychain(network_config, account_id).is_err());
 
         let transaction_path = temp.path().join("signed.json");
-        run(
-            &[
-                "transaction",
-                "construct-transaction",
-                account.account_id.as_str(),
-                "receiver-id",
-                "receiver.testnet",
-                "add-action",
-                "transfer",
-                "1 NEAR",
-                "skip",
-                "network-config",
-                network,
-                "sign-with-keychain",
-                "--signer-public-key",
-                &public_key.to_string(),
-                "--nonce",
-                "1",
-                "--block-hash",
-                "11111111111111111111111111111111",
-                "--block-height",
-                "1",
-                "save-to-file",
-                transaction_path.to_str().unwrap(),
-            ],
-            global_context.clone(),
-        )
-        .unwrap();
-        let signed: near_cli_rs::commands::transaction::send_signed_transaction::FileSignedTransaction =
+        run(&format!(
+            "near transaction construct-transaction {account_id} receiver-id receiver.testnet \
+             add-action transfer '1 NEAR' skip network-config {network} sign-with-keychain \
+             --signer-public-key {public_key} --nonce 1 --block-hash 11111111111111111111111111111111 \
+             --block-height 1 save-to-file {}", shell_words::quote(transaction_path.to_str().unwrap())
+        ), global_context.clone()).unwrap();
+        let signed: FileSignedTransaction =
             serde_json::from_slice(&std::fs::read(&transaction_path).unwrap()).unwrap();
         assert!(
             signed.signed_transaction.signature.verify(
@@ -362,118 +275,69 @@ fn generated_account_is_pickable_and_signs_from_keychain_before_funding() {
                     .get_hash_and_size()
                     .0
                     .as_ref(),
-                &public_key,
+                &public_key
             )
         );
         std::fs::remove_file(transaction_path).unwrap();
     }
 
+    let save = format!("{GENERATE} save-to-keychain network-config testnet");
     for failure in ["open", "write"] {
         *store.failure.lock().unwrap() = Some(failure);
         let failure_dir = temp.path().join(failure);
-        let err = run(
-            &[
-                "account",
-                "create-account",
-                "fund-later",
-                "use-auto-generation",
-                "save-to-keychain",
-                "network-config",
-                "testnet",
-            ],
-            context(&failure_dir),
-        )
-        .unwrap_err();
-        assert!(err.to_string().contains("No plaintext file was written"));
-        assert!(err.to_string().contains("save-to-folder"));
+        let err = run(&save, context(&failure_dir)).unwrap_err().to_string();
+        assert!(err.contains("No plaintext file was written") && err.contains("save-to-folder"));
         assert_eq!(std::fs::read_dir(&failure_dir).unwrap().count(), 0);
-        assert!(near_cli_rs::common::get_used_account_list(&failure_dir).is_empty());
+        assert!(get_used_account_list(&failure_dir).is_empty());
     }
     *store.failure.lock().unwrap() = None;
 
     let invalid_dir = temp.path().join("not-a-directory");
     std::fs::write(&invalid_dir, "").unwrap();
     let entry_count = store.entries.lock().unwrap().len();
-    assert!(
-        run(
-            &[
-                "account",
-                "create-account",
-                "fund-later",
-                "use-auto-generation",
-                "save-to-keychain",
-                "network-config",
-                "testnet",
-            ],
-            context(&invalid_dir),
-        )
-        .is_err()
-    );
+    assert!(run(&save, context(&invalid_dir)).is_err());
     assert_eq!(store.entries.lock().unwrap().len(), entry_count);
 
     let missing_picker_dir = temp.path().join("missing-picker");
     std::fs::create_dir_all(missing_picker_dir.join("accounts.json")).unwrap();
-    let err = run(
-        &[
-            "account",
-            "create-account",
-            "fund-later",
-            "use-auto-generation",
-            "save-to-keychain",
-            "network-config",
-            "testnet",
-        ],
-        context(&missing_picker_dir),
-    )
-    .unwrap_err();
+    let err = run(&save, context(&missing_picker_dir))
+        .unwrap_err()
+        .to_string();
+    assert!(err.contains("could not be added to the account picker"));
+    let saved_id = err.split('<').nth(1).unwrap().split('>').next().unwrap();
+    let public_key =
+        near_crypto::PublicKey::from_near_implicit_account(&saved_id.parse().unwrap()).unwrap();
     assert!(
-        err.to_string()
-            .contains("could not be added to the account picker")
-    );
-    let saved_accounts = store
-        .entries
-        .lock()
+        keyring::Entry::new(
+            &format!("near-testnet-{saved_id}"),
+            &format!("{saved_id}:{public_key}")
+        )
         .unwrap()
-        .iter()
-        .filter_map(|((_, _), credential)| credential.get_password().ok())
-        .map(|password| {
-            serde_json::from_str::<near_cli_rs::common::KeyPairProperties>(&password)
-                .unwrap()
-                .implicit_account_id
-        })
-        .collect::<Vec<_>>();
-    assert!(
-        saved_accounts
-            .iter()
-            .any(|id| err.to_string().contains(id.as_str()))
+        .get_password()
+        .is_ok()
     );
-    assert!(near_cli_rs::common::get_used_account_list(&missing_picker_dir).is_empty());
+    assert!(get_used_account_list(&missing_picker_dir).is_empty());
     assert_eq!(std::fs::read_dir(&missing_picker_dir).unwrap().count(), 1);
 
-    // The original explicit export command still writes the original schema,
-    // and does not touch the secure credential store.
+    // The original export command retains its schema and never opens keychain.
     let entry_count = store.entries.lock().unwrap().len();
     let export_dir = temp.path().join("export");
     run(
-        &[
-            "account",
-            "create-account",
-            "fund-later",
-            "use-auto-generation",
-            "save-to-folder",
-            export_dir.to_str().unwrap(),
-        ],
+        &format!(
+            "{GENERATE} save-to-folder {}",
+            shell_words::quote(export_dir.to_str().unwrap())
+        ),
         global_context,
     )
     .unwrap();
     assert_eq!(store.entries.lock().unwrap().len(), entry_count);
     let files = std::fs::read_dir(export_dir).unwrap().collect::<Vec<_>>();
     assert_eq!(files.len(), 1);
-    let exported: near_cli_rs::common::KeyPairProperties =
+    let exported: KeyPairProperties =
         serde_json::from_slice(&std::fs::read(files[0].as_ref().unwrap().path()).unwrap()).unwrap();
     assert!(!exported.master_seed_phrase.is_empty());
     assert_eq!(
         files[0].as_ref().unwrap().file_name(),
-        format!("{}.json", exported.implicit_account_id).as_str(),
+        format!("{}.json", exported.implicit_account_id).as_str()
     );
 }

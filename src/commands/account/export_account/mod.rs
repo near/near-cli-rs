@@ -104,12 +104,8 @@ pub fn get_password_from_keychain(
         // but has no access-key list on chain yet. Do not bypass the on-chain
         // list for funded accounts, where the original key may be revoked.
         if matches!(
-            response.as_ref().map_err(|err| err.as_ref()),
-            Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-                near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                    near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. }
-                )
-            ))
+            response.as_ref().err().and_then(|err| err.handler_error()),
+            Some(near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. })
         ) && let Ok(public_key) = near_crypto::PublicKey::from_near_implicit_account(account_id)
         {
             return keyring::Entry::new(&service_name, &format!("{account_id}:{public_key}"))
