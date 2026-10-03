@@ -46,6 +46,18 @@ However, using _near CLI_, you can press _Enter_ anywhere in the command line an
 </a>
 </details>
 
+For native NEAR transfers, interactive commands offer a receiver account check before
+network selection. Choose **Check** (the default) to keep the existing warnings, or
+**Skip** to avoid the receiver lookup and its confirmation prompt, for example when
+funding a fresh implicit account. Scripted commands can set
+`--receiver-validation check` or `--receiver-validation skip` after the amount and
+before `network-config`. An explicit scripted check also runs in quiet mode and
+fails on a missing receiver or network mismatch without asking for confirmation.
+
+Omitting the option preserves the existing scripted, quiet, and offline behavior.
+An explicit check requires online mode; use skip to bypass validation while offline.
+This option applies only to `send-near`.
+
 ## Installation
 
 At this stage of the development of the utility, installation of the program is not required.  
