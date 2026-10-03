@@ -4025,24 +4025,52 @@ pub fn input_non_signer_account_id_from_used_account_list(
     input_account_id_from_used_account_list(credentials_home_dir, message, account_is_signer)
 }
 
+fn used_account_id_autocomplete(
+    accounts: VecDeque<UsedAccount>,
+    account_is_signer: bool,
+) -> impl inquire::Autocomplete {
+    move |input: &str| {
+        let mut matches = accounts
+            .iter()
+            .filter(|account| !account_is_signer || account.used_as_signer)
+            .filter_map(|used_account| {
+                let account = used_account.account_id.as_str();
+                let mut bytes = account.bytes();
+                if !input
+                    .bytes()
+                    .all(|ch| bytes.any(|candidate| candidate == ch))
+                {
+                    return None;
+                }
+                let rank = if account == input {
+                    0
+                } else if account.starts_with(input) {
+                    1
+                } else {
+                    2
+                };
+                Some((rank, account))
+            })
+            .collect::<Vec<_>>();
+        // Stable sorting keeps MRU order for ties and empty input.
+        matches.sort_by_key(|(rank, _)| *rank);
+        Ok(matches
+            .into_iter()
+            .map(|(_, account)| account.to_owned())
+            .collect())
+    }
+}
+
 fn input_account_id_from_used_account_list(
     credentials_home_dir: &std::path::Path,
     message: &str,
     account_is_signer: bool,
 ) -> color_eyre::eyre::Result<Option<crate::types::account_id::AccountId>> {
-    let used_account_list = get_used_account_list(credentials_home_dir)
-        .into_iter()
-        .filter(|account| !account_is_signer || account.used_as_signer)
-        .map(|account| account.account_id.to_string())
-        .collect::<Vec<_>>();
     let account_id_str = match Text::new(message)
-        .with_autocomplete(move |val: &str| {
-            Ok(used_account_list
-                .iter()
-                .filter(|s| s.contains(val))
-                .cloned()
-                .collect())
-        })
+        .with_autocomplete(used_account_id_autocomplete(
+            get_used_account_list(credentials_home_dir),
+            account_is_signer,
+        ))
         .with_validator(|account_id_str: &str| {
             match near_primitives::types::AccountId::validate(account_id_str) {
                 Ok(_) => Ok(inquire::validator::Validation::Valid),
@@ -4274,11 +4302,118 @@ pub async fn fetch_access_key_list<E>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use inquire::Autocomplete;
     use near_jsonrpc_client::methods::send_tx::{RpcTransactionError, RpcTransactionResponse};
     use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryResponse};
     use near_jsonrpc_primitives::types::transactions::TimeoutErrorCause;
     use near_primitives::types::{BlockId, BlockReference, Finality};
     use near_primitives::views::{AccessKeyInfoView, AccessKeyList, AccessKeyView, QueryRequest};
+
+    fn account_autocomplete(
+        accounts: &[(&str, bool)],
+        signers_only: bool,
+    ) -> impl inquire::Autocomplete {
+        used_account_id_autocomplete(
+            accounts
+                .iter()
+                .map(|(id, used_as_signer)| UsedAccount {
+                    account_id: id.parse().unwrap(),
+                    used_as_signer: *used_as_signer,
+                })
+                .collect(),
+            signers_only,
+        )
+    }
+
+    #[test]
+    fn used_accounts_match_subsequences_and_allow_no_matches() {
+        let mut autocomplete = account_autocomplete(&[("intents.near", true)], false);
+        assert_eq!(
+            autocomplete.get_suggestions("intenear").unwrap(),
+            ["intents.near"]
+        );
+        // Characters must occur in order and cannot be reused.
+        for input in [
+            "nearint",
+            "nnnn",
+            "unknown",
+            "intents.near.extra",
+            "INTENEAR",
+            "é",
+        ] {
+            assert!(autocomplete.get_suggestions(input).unwrap().is_empty());
+        }
+        let mut empty = account_autocomplete(&[], false);
+        for input in ["", "alice"] {
+            assert!(empty.get_suggestions(input).unwrap().is_empty());
+        }
+    }
+
+    #[test]
+    fn used_accounts_rank_matches_with_recent_ties_and_empty_input() {
+        let history = [
+            ("z.alice.near", true),
+            ("alice.testnet", true),
+            ("a-l-i-c-e.near", true),
+            ("alice", true),
+            ("alice.near", true),
+        ];
+        let mut autocomplete = account_autocomplete(&history, false);
+        assert_eq!(
+            autocomplete.get_suggestions("alice").unwrap(),
+            [
+                "alice",
+                "alice.testnet",
+                "alice.near",
+                "z.alice.near",
+                "a-l-i-c-e.near"
+            ]
+        );
+        assert_eq!(
+            autocomplete.get_suggestions("").unwrap(),
+            history.map(|(id, _)| id)
+        );
+    }
+
+    #[test]
+    fn used_accounts_filter_signers_before_matching() {
+        let history = [
+            ("intents.near", false),
+            ("zintent.near", true),
+            ("intent.near", true),
+        ];
+        let mut signer = account_autocomplete(&history, true);
+        for input in ["", "intenear"] {
+            assert_eq!(
+                signer.get_suggestions(input).unwrap(),
+                ["zintent.near", "intent.near"]
+            );
+        }
+        let mut non_signer = account_autocomplete(&history, false);
+        assert_eq!(
+            non_signer.get_suggestions("intenear").unwrap(),
+            ["intents.near", "zintent.near", "intent.near"]
+        );
+    }
+
+    #[test]
+    fn used_account_autocomplete_allows_manual_entry() {
+        for signers_only in [false, true] {
+            let mut autocomplete = account_autocomplete(&[("intents.near", true)], signers_only);
+            assert!(
+                autocomplete
+                    .get_suggestions("new-account.near")
+                    .unwrap()
+                    .is_empty()
+            );
+            assert_eq!(
+                autocomplete
+                    .get_completion("new-account.near", None)
+                    .unwrap(),
+                None
+            );
+        }
+    }
 
     #[test]
     fn fetch_access_key_list_follows_pages() {
