@@ -122,6 +122,7 @@ fn with_rpc_response<T>(
                 Err(err) => panic!("accept: {err}"),
             }
         };
+        stream.set_nonblocking(false).unwrap();
         stream
             .set_read_timeout(Some(std::time::Duration::from_secs(5)))
             .unwrap();
