@@ -4331,7 +4331,7 @@ mod tests {
         );
         // Characters must occur in order and cannot be reused.
         assert!(account_suggestions(&["intents.near"], "nearint").is_empty());
-        assert!(account_suggestions(&["intents.near"], "nnn").is_empty());
+        assert!(account_suggestions(&["intents.near"], "nnnn").is_empty());
     }
 
     #[test]
