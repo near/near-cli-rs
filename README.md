@@ -1,8 +1,7 @@
-# PR #688 authentic terminal screenshots
+# PR #688 screenshots
 
-Improved captures: actual interactive Zsh using the existing Starship prompt, installed JetBrainsMono Nerd Font Mono, and the user's Ghostty Catppuccin Mocha palette. These are real terminal-control PTY states, not Ghostty GUI screenshots. No prompts or CLI responses were fabricated. Each PNG is byte-identical to replaying its raw recording marker.
+Real Ghostty window screenshots captured with CuaDriver 0.32.0 on macOS, using the existing Starship prompt, JetBrainsMono Nerd Font Mono, and Catppuccin Mocha theme. The source is unchanged at 7ce8def46fe576854ba76ccfeb4740f93687f9d7 (near-cli-rs 0.30.1).
 
-Source: 7ce8def46fe576854ba76ccfeb4740f93687f9d7; locally built near-cli-rs 0.30.1.
-All calls are read-only wrap.testnet ft_metadata calls on public testnet. The terminal visually combines stdout and stderr; separate byte evidence confirms metadata on stderr, raw quiet stdout, and empty quiet stderr. Zsh's percent marker denotes a missing trailing newline and is not CLI output.
+Read-only wrap.testnet ft_metadata calls at block 271299294, hash 4aYRVYBRJGSVS2Aa6CRgJDxpW8WF9eCxP9v8PFV43SoG. An independent public RPC query confirmed the block metadata and response. Separate stream checks passed: normal metadata on stderr; quiet stdout equals the 138 RPC response bytes and quiet stderr is empty. Zsh's percent marker denotes a missing trailing newline and is not CLI output.
 
-The original mock/plain captures are retained alongside the improved captures for provenance.
+Screenshots are unedited native window captures. Only the four named Ghostty PNGs are newly published; earlier PTY renders remain for provenance. Screenshot assets are kept on this separate docs branch, outside the feature branch.
