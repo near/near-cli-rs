@@ -10,22 +10,15 @@ impl interactive_clap::ToCli for ReceiverValidation {
 }
 
 pub(super) fn input() -> color_eyre::eyre::Result<Option<ReceiverValidation>> {
-    #[derive(strum_macros::Display)]
-    enum Choice {
-        #[strum(to_string = "Check that the receiver account exists (uses RPC)")]
-        Check,
-        #[strum(to_string = "Skip the receiver account check (e.g. for a fresh implicit account)")]
-        Skip,
-    }
     tracing_indicatif::suspend_tracing_indicatif(|| {
         match inquire::Select::new(
             "Do you want to check the receiver account?",
-            vec![Choice::Check, Choice::Skip],
+            vec![ReceiverValidation::Check, ReceiverValidation::Skip],
         )
+        .with_help_message("Skip the lookup when funding a fresh implicit account.")
         .prompt()
         {
-            Ok(Choice::Check) => Ok(Some(ReceiverValidation::Check)),
-            Ok(Choice::Skip) => Ok(Some(ReceiverValidation::Skip)),
+            Ok(choice) => Ok(Some(choice)),
             Err(
                 inquire::error::InquireError::OperationCanceled
                 | inquire::error::InquireError::OperationInterrupted,
