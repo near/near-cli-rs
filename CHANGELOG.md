@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0-rc.1](https://github.com/near/near-cli-rs/compare/v0.30.1...v0.31.0-rc.1) - 2026-10-05
+
+### Added
+
+- handle pending transaction timeouts (nearcore 2.14) ([#683](https://github.com/near/near-cli-rs/pull/683))
+- support nearcore 2.14 ([#682](https://github.com/near/near-cli-rs/pull/682))
+- Added the ability to view the balance of MT-FT tokens ([#657](https://github.com/near/near-cli-rs/pull/657))
+- colour receipt log headers and mark failed receipts ([#675](https://github.com/near/near-cli-rs/pull/675))
+
+### Fixed
+
+- enable `git2` https for `contract verify` ([#681](https://github.com/near/near-cli-rs/pull/681))
+- report unsupported reconstructed actions without panicking ([#662](https://github.com/near/near-cli-rs/pull/662))
+- use deploy action hash when reconstructing transactions ([#659](https://github.com/near/near-cli-rs/pull/659))
+- show account import verification errors ([#651](https://github.com/near/near-cli-rs/pull/651))
+- support ML-DSA key handles offline ([#650](https://github.com/near/near-cli-rs/pull/650))
+- normalize imported ML-DSA key IDs ([#649](https://github.com/near/near-cli-rs/pull/649))
+- sum receipt gas and fees before printing, print function logs once ([#673](https://github.com/near/near-cli-rs/pull/673))
+- print transaction ID and explorer link when a transaction fails ([#672](https://github.com/near/near-cli-rs/pull/672))
+
+### Other
+
+- switch from fast_clap fork back to upstream clap 4.6.7 ([#671](https://github.com/near/near-cli-rs/pull/671))
+- *(construct-transaction)* allow more actions ([#667](https://github.com/near/near-cli-rs/pull/667))
+
 ## [0.30.1](https://github.com/near/near-cli-rs/compare/v0.30.0...v0.30.1) - 2026-09-02
 
 ### Added
