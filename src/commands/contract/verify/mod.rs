@@ -27,6 +27,9 @@ pub struct Contract {
     save_contract_source_code_into: Option<crate::types::path_buf::PathBuf>,
     #[interactive_clap(long)]
     no_image_whitelist: bool,
+    /// Build without network access, after fetching dependencies in a separate container run
+    #[interactive_clap(long)]
+    offline_build: bool,
     #[interactive_clap(subcommand)]
     source_contract_code: SourceContractCode,
 }
@@ -37,6 +40,7 @@ pub struct ContractContext {
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
+    offline_build: bool,
 }
 
 impl ContractContext {
@@ -62,6 +66,7 @@ impl ContractContext {
                 .as_ref()
                 .map(std::path::PathBuf::from),
             no_image_whitelist: scope.no_image_whitelist,
+            offline_build: scope.offline_build,
         })
     }
 }
@@ -120,7 +125,8 @@ impl ContractAccountIdContext {
                     block_reference,
                     previous_context.use_contract_source_code_path.clone(),
                     previous_context.save_contract_source_code_into.clone(),
-                    previous_context.no_image_whitelist
+                    previous_context.no_image_whitelist,
+                    previous_context.offline_build,
                 )?;
 
                 verify_contract(
@@ -182,6 +188,7 @@ fn get_contract_properties_from_repository(
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
+    offline_build: bool,
 ) -> color_eyre::eyre::Result<ContractProperties> {
     tracing::info!(target: "near_teach_me", "Getting the contract properties from the repository ...");
     let contract_source_metadata = tokio::runtime::Runtime::new().unwrap().block_on(
@@ -197,6 +204,7 @@ fn get_contract_properties_from_repository(
         use_contract_source_code_path,
         save_contract_source_code_into,
         no_image_whitelist,
+        offline_build,
     )
 }
 
@@ -206,6 +214,7 @@ fn get_contract_properties_from_docker_build(
     use_contract_source_code_path: Option<std::path::PathBuf>,
     save_contract_source_code_into: Option<std::path::PathBuf>,
     no_image_whitelist: bool,
+    offline_build: bool,
 ) -> color_eyre::eyre::Result<ContractProperties> {
     tracing::info!(target: "near_teach_me", "Getting contract properties from docker build ...");
     let whitelist: Option<Whitelist> = if no_image_whitelist {
@@ -242,12 +251,12 @@ fn get_contract_properties_from_docker_build(
         _,
         color_eyre::eyre::Result<camino::Utf8PathBuf>,
     >(|| {
-        near_verify_rs::logic::nep330_build::run(
-            contract_source_metadata.clone(),
-            target_dir,
-            vec![],
-            false,
-        )
+        let run = if offline_build {
+            near_verify_rs::logic::nep330_build::run_offline
+        } else {
+            near_verify_rs::logic::nep330_build::run
+        };
+        run(contract_source_metadata.clone(), target_dir, vec![], false)
     })?;
     let contract_code = std::fs::read(&contract_path_buf)
         .wrap_err_with(|| format!("Failed to open or read the file: {:?}.", contract_path_buf,))?;
