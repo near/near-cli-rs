@@ -94,12 +94,26 @@ pub fn get_password_from_keychain(
         account_id.as_str()
     ));
     let password = {
-        let access_key_list = network_config
+        let response = network_config
             .json_rpc_client()
             .blocking_call_view_access_key_list(
                 account_id,
                 near_primitives::types::Finality::Final.into(),
-            )
+            );
+        // An unfunded NEAR implicit account already has a deterministic key,
+        // but has no access-key list on chain yet. Do not bypass the on-chain
+        // list for funded accounts, where the original key may be revoked.
+        if matches!(
+            response.as_ref().err().and_then(|err| err.handler_error()),
+            Some(near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. })
+        ) && let Ok(public_key) = near_crypto::PublicKey::from_near_implicit_account(account_id)
+        {
+            return keyring::Entry::new(&service_name, &format!("{account_id}:{public_key}"))
+                .wrap_err("Failed to open keychain")?
+                .get_password()
+                .wrap_err("No access keys found in keychain");
+        }
+        let access_key_list = response
             .wrap_err_with(|| format!("Failed to fetch access key list for {account_id}"))?
             .access_key_list_view()?;
 

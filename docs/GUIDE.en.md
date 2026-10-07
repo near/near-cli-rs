@@ -1000,6 +1000,23 @@ near account \
 
 ##### use-auto-generation - Use auto-generation to create an implicit account
 
+To generate an account directly into the system keychain, select the network where
+it will be used:
+
+```sh
+near account create-account fund-later use-auto-generation save-to-keychain network-config testnet
+```
+
+Only the account ID and public key are printed. The account appears in the signer
+picker immediately, and its key is available for message signing and offline
+transaction signing before funding.
+Fund the account before sending transactions on chain. Choose the same network
+when signing; use `mainnet` instead of `testnet` to save for mainnet.
+
+If the keychain is unavailable, the command fails without exporting a plaintext
+key. To explicitly export a new account, use `save-to-folder <folder-path>` as
+shown below. This existing file export command is unchanged.
+
 This command automatically generates access keys and saves them to a file named _implicit-account-id_.
 In order to execute this command, in the terminal command line type:
 ```txt
