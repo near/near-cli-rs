@@ -1,5 +1,4 @@
-use color_eyre::eyre::WrapErr;
-use near_crypto::Signature;
+use crate::transaction_signature_options::sign_with_ledger::parse_ledger_signature;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -85,8 +84,7 @@ impl UsbSignNep413Context {
         )
         .map_err(|err| color_eyre::eyre::eyre!("Ledger signing error: {:?}", err))?;
 
-        let signature = Signature::from_parts(near_crypto::KeyType::ED25519, &signature_bytes)
-            .wrap_err("Signature is not expected to fail on deserialization")?;
+        let signature = parse_ledger_signature(&signature_bytes)?;
 
         let signed_message = super::super::SignedMessage {
             account_id: previous_context.final_context.signer_id.to_string(),
@@ -127,8 +125,7 @@ impl BleSignNep413Context {
             verifying_key.to_bytes(),
         ));
 
-        let signature = Signature::from_parts(near_crypto::KeyType::ED25519, &signature_bytes)
-            .wrap_err("Signature is not expected to fail on deserialization")?;
+        let signature = parse_ledger_signature(&signature_bytes)?;
 
         let signed_message = super::super::SignedMessage {
             account_id: previous_context.final_context.signer_id.to_string(),
