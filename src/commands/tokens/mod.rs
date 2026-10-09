@@ -72,9 +72,9 @@ pub enum TokensActions {
     /// Transfer FT tokens via ft_transfer_call to a receiving contract
     SendFtCall(self::send_ft_call::FtContract),
     #[strum_discriminants(strum(
-        message = "send-mt-ft         - The transfer is carried out in MT-FT tokens"
+        message = "send-mt-ft         - The transfer is carried out in MT-FT tokens (Online mode only)"
     ))]
-    /// The transfer is carried out in MT-FT tokens
+    /// The transfer is carried out in MT-FT tokens (Online mode only)
     SendMtFt(self::send_mt_ft::IntentContractId),
     #[strum_discriminants(strum(
         message = "send-nft           - The transfer is carried out in NFT tokens"

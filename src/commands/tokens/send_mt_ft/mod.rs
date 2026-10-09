@@ -1,7 +1,5 @@
-use color_eyre::eyre::{Context, ContextCompat};
-use color_eyre::owo_colors::OwoColorize;
+use color_eyre::eyre::ContextCompat;
 
-use crate::types::mt_ft_inventory::{nep141_mt_ft_metadata, nep245_mt_ft_metadata};
 use crate::types::mt_ft_properties::{IntentsTokenId, MtFtMetadata, TokenId};
 
 mod amount_mt_ft;
@@ -38,9 +36,9 @@ impl IntentContractIdContext {
         let mt_contract: near_primitives::types::AccountId = scope.mt_contract.clone().into();
 
         if previous_context.global_context.offline {
-            return Err(color_eyre::Report::msg(
-                "Cannot enter an exact MT-FT amount to transfer in offline mode when MT-FT metadata does not contain symbol information, because the prompt for entering MT-FT amount will not contain token symbol information, and the amount of decimals in the entered amount will not be validated against the decimals specified in MT-FT metadata.",
-            ));
+            return Err(color_eyre::Report::msg(format!(
+                "You are currently using offline mode.\nIn offline mode, it is not possible to process the token ID <{token_id}> (metadata regarding the symbol and the number of decimal places is missing).\nTherefore, please connect to the internet and use this command again to retrieve the token metadata.",
+            )));
         }
 
         let network_config = crate::common::find_network_where_account_exist(
@@ -49,41 +47,7 @@ impl IntentContractIdContext {
         )?
         .wrap_err_with(|| format!("Contract <{mt_contract}> does not exist in networks"))?;
 
-        let mt_ft_metadata = match &token_id {
-            IntentsTokenId::Nep141(nep141_contract_id) => tokio::runtime::Runtime::new()
-                .wrap_err("Failed to create a new tokio runtime")?
-                .block_on(async {
-                    nep141_mt_ft_metadata(
-                        nep141_contract_id,
-                        &network_config,
-                        near_primitives::types::Finality::Final.into(),
-                    )
-                    .await
-                })
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to get MT-FT metadata for token ID <{token_id}> on network <{}>",
-                        network_config.network_name
-                    )
-                })?,
-            IntentsTokenId::Nep245(nep245_contract_id, token) => tokio::runtime::Runtime::new()
-                .wrap_err("Failed to create a new tokio runtime")?
-                .block_on(async {
-                    nep245_mt_ft_metadata(
-                        nep245_contract_id,
-                        token.clone(),
-                        &network_config,
-                        near_primitives::types::Finality::Final.into(),
-                    )
-                    .await
-                })
-                .wrap_err_with(|| {
-                    format!(
-                        "Failed to get MT-FT metadata for token ID <{token_id}> on network <{}>",
-                        network_config.network_name
-                    )
-                })?,
-        };
+        let mt_ft_metadata = token_id.get_mt_ft_metadata(&network_config)?;
 
         Ok(Self {
             global_context: previous_context.global_context,
@@ -112,8 +76,6 @@ impl IntentContractId {
     skip_all
 )]
 pub fn get_prepopulated_transaction(
-    offline_mode: bool,
-    network_config: &crate::config::NetworkConfig,
     mt_contract: &near_primitives::types::AccountId,
     receiver_account_id: &near_primitives::types::AccountId,
     token_id: TokenId,
@@ -144,25 +106,6 @@ pub fn get_prepopulated_transaction(
             deposit: deposit.into(),
         },
     ));
-
-    if offline_mode {
-        tracing::warn!(
-            target: "near_teach_me",
-            "{}{}",
-            "Offline mode is enabled.".red(),
-            crate::common::indent_payload(&format!("\n{}",
-                format!("The transaction will be created with only the mt_transfer action\nwithout checking whether the mt-contrat account is registered on the <{}> network.\nMake sure that you have enough funds in your account to cover both the mt_transfer action and\nthe deposit if the recipient account is not registered on mt-contract <{}>.",
-                    network_config.network_name,
-                    mt_contract
-                ).yellow()
-            ))
-        );
-        return Ok(crate::commands::PrepopulatedTransaction {
-            signer_id: signer_id.clone(),
-            receiver_id: mt_contract.clone(),
-            actions: vec![action_mt_transfer.clone()],
-        });
-    };
 
     Ok(crate::commands::PrepopulatedTransaction {
         signer_id: signer_id.clone(),

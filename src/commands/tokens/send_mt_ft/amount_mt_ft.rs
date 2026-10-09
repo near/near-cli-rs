@@ -137,8 +137,6 @@ impl MtFtTransferParamsContext {
                     }
 
                     super::get_prepopulated_transaction(
-                        previous_context.global_context.offline,
-                        network_config,
                         &mt_contract,
                         &receiver_account_id,
                         token_id.clone().to_string(),

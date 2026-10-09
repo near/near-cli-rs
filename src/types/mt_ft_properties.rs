@@ -1,5 +1,9 @@
+use color_eyre::eyre::Context;
+
 use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
+
+use crate::common::{CallResultExt, RpcQueryResponseExt, indent_payload};
 
 pub type TokenId = String;
 
@@ -12,6 +16,49 @@ pub type TokenId = String;
 pub enum IntentsTokenId {
     Nep141(near_primitives::types::AccountId),
     Nep245(near_primitives::types::AccountId, TokenId),
+}
+
+impl IntentsTokenId {
+    pub fn get_mt_ft_metadata(
+        &self,
+        network_config: &crate::config::NetworkConfig,
+    ) -> color_eyre::eyre::Result<MtFtMetadata> {
+        match &self {
+            IntentsTokenId::Nep141(nep141_contract_id) => tokio::runtime::Runtime::new()
+                .wrap_err("Failed to create a new tokio runtime")?
+                .block_on(async {
+                    nep141_mt_ft_metadata(
+                        nep141_contract_id,
+                        network_config,
+                        near_primitives::types::Finality::Final.into(),
+                    )
+                    .await
+                })
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to get MT-FT metadata for token ID <{self}> on network <{}>",
+                        network_config.network_name
+                    )
+                }),
+            IntentsTokenId::Nep245(nep245_contract_id, token) => tokio::runtime::Runtime::new()
+                .wrap_err("Failed to create a new tokio runtime")?
+                .block_on(async {
+                    nep245_mt_ft_metadata(
+                        nep245_contract_id,
+                        token.clone(),
+                        network_config,
+                        near_primitives::types::Finality::Final.into(),
+                    )
+                    .await
+                })
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to get MT-FT metadata for token ID <{self}> on network <{}>",
+                        network_config.network_name
+                    )
+                }),
+        }
+    }
 }
 
 impl interactive_clap::ToCli for IntentsTokenId {
@@ -87,6 +134,168 @@ impl From<MtFtMetadata> for super::ft_properties::FtMetadata {
             decimals: mt_ft_metadata.decimals,
         }
     }
+}
+
+#[tracing::instrument(name = "Getting MT-FT metadata for nep141 contract ...", skip_all, parent = None)]
+pub async fn nep141_mt_ft_metadata(
+    ft_contract_account_id: &near_primitives::types::AccountId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<MtFtMetadata> {
+    tracing::info!(target: "near_teach_me", "Getting MT-FT metadata for nep141 contract ...");
+
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to call the read-only function 'ft_metadata' for the contract <nep141:{ft_contract_account_id}>, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
+    );
+
+    let rpc_query_response = network_config
+        .json_rpc_client()
+        .call(
+            near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference,
+                request: near_primitives::views::QueryRequest::CallFunction {
+                    account_id: ft_contract_account_id.clone(),
+                    method_name: "ft_metadata".to_string(), 
+                    args: near_primitives::types::FunctionArgs::from(vec![]),
+                }
+            }
+        )
+        .await
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'ft_metadata' (contract <{}> on network <{}>)",
+                ft_contract_account_id,
+                network_config.network_name
+            )
+        })?;
+
+    let call_result =rpc_query_response.call_result()
+        .inspect(|call_result| {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response for 'ft_metadata' (contract <nep141:{ft_contract_account_id}>):\n{}",
+                indent_payload(&format!(
+                    "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                    rpc_query_response.block_hash,
+                    rpc_query_response.block_height,
+                    call_result.logs,
+                    call_result.result
+                ))
+            );
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
+                indent_payload(&format!("{}\n ", 
+                    String::from_utf8(call_result.result.clone())
+                        .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
+                ))
+            );
+        })
+        .inspect_err(|_| {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response for 'ft_metadata' (contract <nep141:{ft_contract_account_id}>):\n{}",
+                indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
+            );
+        })?;
+
+    call_result.parse_result_from_json()
+}
+
+#[tracing::instrument(name = "Getting MT-FT metadata for nep245 contract ...", skip_all, parent = None)]
+pub async fn nep245_mt_ft_metadata(
+    nep245_contract_account_id: &near_primitives::types::AccountId,
+    token_id: TokenId,
+    network_config: &crate::config::NetworkConfig,
+    block_reference: near_primitives::types::BlockReference,
+) -> color_eyre::eyre::Result<MtFtMetadata> {
+    tracing::info!(target: "near_teach_me", "Getting MT-FT metadata for nep245 contract ...");
+
+    #[derive(serde::Deserialize)]
+    struct MetadataResponse {
+        base: MtFtMetadata,
+    }
+
+    tracing::info!(
+        target: "near_teach_me",
+        parent: &tracing::Span::none(),
+        "I am making HTTP call to NEAR JSON RPC to call the read-only function 'mt_metadata_token_all' for the contract <nep245:{nep245_contract_account_id}:{token_id}>, learn more https://docs.near.org/api/rpc/contracts#call-a-contract-function",
+    );
+
+    let args = serde_json::to_vec(&serde_json::json!({
+        "token_ids": [token_id],
+    }))?;
+
+    let rpc_query_response = network_config
+        .json_rpc_client()
+        .call(
+            near_jsonrpc_client::methods::query::RpcQueryRequest {
+                block_reference,
+                request: near_primitives::views::QueryRequest::CallFunction {
+                    account_id: nep245_contract_account_id.clone(),
+                    method_name: "mt_metadata_token_all".to_string(), 
+                    args: near_primitives::types::FunctionArgs::from(args),
+                }
+            }
+        )
+        .await
+        .wrap_err_with(||{
+            format!("Failed to fetch query for view method: 'mt_metadata_token_all' (contract <{}> on network <{}>)",
+                nep245_contract_account_id,
+                network_config.network_name
+            )
+        })?;
+
+    let call_result =rpc_query_response.call_result()
+        .inspect(|call_result| {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response for 'mt_metadata_token_all' (contract <nep245:{}:{}>):\n{}",
+                nep245_contract_account_id,
+                token_id,
+                indent_payload(&format!(
+                    "{{\n  \"block_hash\": {}\n  \"block_height\": {}\n  \"logs\": {:?}\n  \"result\": {:?}\n}}",
+                    rpc_query_response.block_hash,
+                    rpc_query_response.block_height,
+                    call_result.logs,
+                    call_result.result
+                ))
+            );
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
+                indent_payload(&format!("{}\n ", 
+                    String::from_utf8(call_result.result.clone())
+                        .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
+                ))
+            );
+        })
+        .inspect_err(|_| {
+            tracing::info!(
+                target: "near_teach_me",
+                parent: &tracing::Span::none(),
+                "JSON RPC Response for 'mt_metadata_token_all' (contract <nep245:{}:{}>):\n{}",
+                nep245_contract_account_id,
+                token_id,
+                indent_payload("Internal error: Received unexpected query kind in response to a view-function query call")
+            );
+        })?;
+
+    // Parse as array and get first element
+    let metadata_array: Vec<MetadataResponse> = call_result.parse_result_from_json()?;
+    let mt_ft_metadata = metadata_array
+        .into_iter()
+        .next()
+        .ok_or_else(|| color_eyre::eyre::eyre!("Empty metadata array returned"))?
+        .base;
+
+    Ok(mt_ft_metadata)
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
