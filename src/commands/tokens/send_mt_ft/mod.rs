@@ -113,3 +113,74 @@ pub fn get_prepopulated_transaction(
         actions: vec![action_mt_transfer.clone()],
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::get_prepopulated_transaction;
+    use crate::types::{
+        ft_properties::FungibleToken, mt_ft_properties::MtFtTransfer, near_token::NearToken,
+    };
+    use std::str::FromStr;
+
+    fn account_id(value: &str) -> near_primitives::types::AccountId {
+        near_primitives::types::AccountId::from_str(value).unwrap()
+    }
+
+    fn assert_mt_transfer_action(memo: &str, expected_memo: Option<&str>) {
+        let mt_contract = account_id("intents.near");
+        let receiver_account_id = account_id("receiver.near");
+        let signer_id = account_id("sender.near");
+        let token_id = "nep141:wrap.near".to_string();
+        let amount = FungibleToken::from_params_ft(123_456_789, 6, "USDC".to_string());
+        let deposit = NearToken::from_yoctonear(1);
+        let gas = crate::common::NearGas::from_tgas(100);
+
+        let transaction = get_prepopulated_transaction(
+            &mt_contract,
+            &receiver_account_id,
+            token_id.clone(),
+            &signer_id,
+            &amount,
+            memo,
+            deposit,
+            gas,
+        )
+        .unwrap();
+
+        assert_eq!(transaction.signer_id, signer_id);
+        assert_eq!(transaction.receiver_id, mt_contract);
+        assert_eq!(transaction.actions.len(), 1);
+
+        let action = match &transaction.actions[0] {
+            near_primitives::transaction::Action::FunctionCall(action) => action,
+            other => panic!("Expected FunctionCall action, got {other:?}"),
+        };
+
+        assert_eq!(action.method_name, "mt_transfer");
+        assert_eq!(
+            action.gas,
+            near_primitives::gas::Gas::from_gas(gas.as_gas())
+        );
+        assert_eq!(
+            action.deposit,
+            near_token::NearToken::from_yoctonear(deposit.as_yoctonear())
+        );
+
+        let transfer: MtFtTransfer = serde_json::from_slice(&action.args).unwrap();
+        assert_eq!(transfer.receiver_id, receiver_account_id);
+        assert_eq!(transfer.token_id, token_id);
+        assert_eq!(transfer.amount, amount.amount());
+        assert_eq!(transfer.approval, None);
+        assert_eq!(transfer.memo.as_deref(), expected_memo);
+    }
+
+    #[test]
+    fn creates_mt_transfer_action_with_expected_arguments() {
+        assert_mt_transfer_action("transfer note", Some("transfer note"));
+    }
+
+    #[test]
+    fn omits_empty_memo_from_mt_transfer_action() {
+        assert_mt_transfer_action("", None);
+    }
+}
