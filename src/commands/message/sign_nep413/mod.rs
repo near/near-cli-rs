@@ -1,5 +1,5 @@
+use borsh::{BorshDeserialize, BorshSerialize};
 use near_crypto::{SecretKey, Signature};
-use near_primitives::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_primitives::hash::hash;
 use serde::Serialize;
 
