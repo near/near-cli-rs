@@ -2163,7 +2163,7 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfStateInitEntriesExceeded { number_of_entries, limit } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of state init entries ({}) in one receipt exceeded the limit ({}).", number_of_entries, limit))
-                }, 
+                },
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
