@@ -2511,9 +2511,9 @@ dependencies = [
 
 [[package]]
 name = "near-chain-configs"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b02d416dd7f3b9731a9ef90bab2e2dddba6a4493e3583f2919337cc29010fe29"
+checksum = "032ddf1d28a896a9112e2e063ebf6c1c81cbb83d7fc0d12ae09a435285338e2a"
 dependencies = [
  "anyhow",
  "bytesize",
@@ -2605,9 +2605,9 @@ dependencies = [
 
 [[package]]
 name = "near-config-utils"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1593b584431a6764c900e1db72be5e915c47bdbfcbd13724ded8b2d72128d80"
+checksum = "c8bedb18b40a0f8274edad600f9f033dd8ad051bed91b86ddfd3c482faffee0e"
 dependencies = [
  "anyhow",
  "json_comments",
@@ -2617,9 +2617,9 @@ dependencies = [
 
 [[package]]
 name = "near-crypto"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c445cb596526df8dd4e67cf2638f68eabcfd682046148c793ae7fc8555ee398"
+checksum = "1c0abe19db28bf22ae4981c4a3eadb835254003e7f3a4278cf60cb167aec61e2"
 dependencies = [
  "aws-lc-rs",
  "blake2",
@@ -2645,9 +2645,9 @@ dependencies = [
 
 [[package]]
 name = "near-fmt"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e8883dd28fdbdb6cd06181eebd371a5b26ec68085ee3771cd242056242fc6f6"
+checksum = "21875d31b4c4ca60e9323209f14a69e6fc1edf359217b5885fbfc7c6eeac90ff"
 dependencies = [
  "near-primitives-core",
 ]
@@ -2665,9 +2665,9 @@ dependencies = [
 
 [[package]]
 name = "near-indexer-primitives"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc72ebb00849454f2361ec3b4262eb4bc4f19fb1c98cdbb70c11be3fede35f2e"
+checksum = "34ce020d133d0e0295b7799b79e5d959e8482b90e45e2181897c47f69a7d78ee"
 dependencies = [
  "near-primitives",
  "serde",
@@ -2676,8 +2676,7 @@ dependencies = [
 [[package]]
 name = "near-jsonrpc-client"
 version = "0.23.0-rc.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfad20075318526d085d4bc58559b3a5bf3015f19e574dc6a6b306de608bfabc"
+source = "git+https://github.com/near/near-jsonrpc-client-rs/?branch=chore%2Fprimitives-38-rc.4#13caf80b87d12e1d929283496ab172fc76522983"
 dependencies = [
  "borsh",
  "lazy_static",
@@ -2694,9 +2693,9 @@ dependencies = [
 
 [[package]]
 name = "near-jsonrpc-primitives"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24aba725883aaa4dfff28e496c864d7544401a6621523e8fde8a6d91dbf9cfe2"
+checksum = "a2608ed654d49d742c724717a709e6f979d0cb62eb57b22811877db61001d532"
 dependencies = [
  "arbitrary",
  "near-chain-configs",
@@ -2734,9 +2733,9 @@ dependencies = [
 
 [[package]]
 name = "near-parameters"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c70f1328d522086abd65d657d73fef9e8131c551b350c38d71a952caf0a22c3d"
+checksum = "f68fde75995dddf4adaff6ee735fd197bd45d67005eb81018bc187eee1e01066"
 dependencies = [
  "borsh",
  "enum-map",
@@ -2753,9 +2752,9 @@ dependencies = [
 
 [[package]]
 name = "near-primitives"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4edd339f6b8dd3a10c3e73a382a2644cac7cdce1d716eaec064df36b9fbfdfb7"
+checksum = "019f259f62e81bf063fafc96d7b6c43e50c153656df1aaa5925b9e0ba0dbfe77"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2796,9 +2795,9 @@ dependencies = [
 
 [[package]]
 name = "near-primitives-core"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97d3660cd6c59d5b3402c3a26f4d08866aac716efa5c67b3021a90711d301bd8"
+checksum = "ea014b6e368790f83984d433b17d50e8a4ef6f0dad1bc88d7643e716400a1d9b"
 dependencies = [
  "arbitrary",
  "base64 0.21.7",
@@ -2842,15 +2841,15 @@ dependencies = [
 
 [[package]]
 name = "near-schema-checker-core"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2dd011e3803485ac2fbaffa6930891622df5a7015424044d3d17caad68897c7"
+checksum = "fcc77a692215eb5c7d788d2ceb42896b1be3aacc0da80c8019527d1a2515a996"
 
 [[package]]
 name = "near-schema-checker-lib"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d89902fb6d53457687c129067d3d5b32592999d17e2f8cefe04e9c76b791ab5"
+checksum = "7e4ca8db3db487f50de48ca0d3fc1ee60ddb13d271158bbb13a27dd001225a44"
 dependencies = [
  "near-schema-checker-core",
  "near-schema-checker-macro",
@@ -2858,9 +2857,9 @@ dependencies = [
 
 [[package]]
 name = "near-schema-checker-macro"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de63ce93cbd796507c63c879ece6fcdbc8a34c9e88230815b8eb66785e749fcf"
+checksum = "1003e566851ba74773598015760737a7c8abec51d78f8abbed5f54c708084041"
 
 [[package]]
 name = "near-slip10"
@@ -2876,8 +2875,7 @@ dependencies = [
 [[package]]
 name = "near-socialdb-client"
 version = "0.17.0-rc.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "656c44480fec232a59ebf845a6a1608bbac980d0cf35ef9947fae4f1750f971a"
+source = "git+https://github.com/near/near-socialdb-client-rs/?branch=chore%2Fprimitives-38-rc.4#6bd30d8000bfe8dfe89ff0ae9456dc7b650e025d"
 dependencies = [
  "eyre",
  "near-crypto",
@@ -2892,15 +2890,15 @@ dependencies = [
 
 [[package]]
 name = "near-stdx"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eba237de292604dec573cb67853a49457f5fc4d66d7a1cc7e05752a717c32ed"
+checksum = "913e3a7364cd6d6e6816d276163f16d53cd6506219451fcd137abfa27dd03558"
 
 [[package]]
 name = "near-time"
-version = "0.38.0-rc.2"
+version = "0.38.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1840d483e3d20b34cff4dd3e0283c436b88b6b0005faaf2cb42388be21156eef"
+checksum = "8982ce8931e9dfa5e269f344d87632549abc0d3c209e6fd504e687c31f2a831f"
 dependencies = [
  "parking_lot",
  "serde",
