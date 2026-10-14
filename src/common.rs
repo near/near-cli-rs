@@ -1488,7 +1488,7 @@ pub fn print_unsigned_transaction(
                         &universal_init_action.state_init,
                     ),
                     universal_init_action.deposit,
-                    near_primitives::universal_state_init::UniversalStateInit::from_raw(
+                    near_primitives::universal_state_init::UniversalStateInit::from_raw_lenient(
                         &universal_init_action.state_init,
                     )
                     .map_or_else(
@@ -1857,6 +1857,16 @@ pub fn convert_action_error_to_cli_result(
             ))
         }
         near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
+            near_primitives::errors::ReceiptValidationError::ActionsValidation(
+                near_primitives::errors::ActionsValidationError::TransferToUniversalAccountNotAllowed {
+                    account_id,
+                },
+            ),
+        ) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
+            "Error: A receipt created by the `FunctionCall` action transfers to the universal account <{}>, which this network doesn't allow yet.",
+            account_id
+        )),
+        near_primitives::errors::ActionErrorKind::NewReceiptValidationError(
             receipt_validation_error,
         ) => color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!(
             "Error: Error occurs when a new `ActionReceipt` created by the `FunctionCall` action fails.\n{:?}",
@@ -2159,6 +2169,9 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfStateInitEntriesExceeded { number_of_entries, limit } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of state init entries ({}) in one receipt exceeded the limit ({}).", number_of_entries, limit))
+                },
+                near_primitives::errors::ActionsValidationError::TransferToUniversalAccountNotAllowed { account_id } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: This network doesn't allow transfers to the universal account <{}> yet.", account_id))
                 },
             }
         },
@@ -4390,5 +4403,34 @@ mod tests {
             assert!(pending_transaction_status(&err).is_none());
             assert!(rpc_transaction_error(&err).is_ok());
         }
+    }
+
+    /// The rejection as a nearcore 2.14 node sends it: the details are only in `data`.
+    #[test]
+    fn transfer_to_universal_account_rejection_stops_retrying() {
+        let account_id: near_primitives::types::AccountId =
+            near_primitives::account::id::UniversalAccountId::from_hash([7; 32]).into_account_id();
+        let rpc_error: near_jsonrpc_primitives::errors::RpcError =
+            serde_json::from_value(serde_json::json!({
+                "name": "HANDLER_ERROR",
+                "cause": { "name": "INVALID_TRANSACTION", "info": {} },
+                "code": -32000,
+                "message": "Server error",
+                "data": {
+                    "TxExecutionError": {
+                        "InvalidTxError": {
+                            "ActionsValidation": {
+                                "TransferToUniversalAccountNotAllowed": { "account_id": account_id }
+                            }
+                        }
+                    }
+                }
+            }))
+            .unwrap();
+        let err = near_jsonrpc_client::errors::JsonRpcError::<RpcTransactionError>::from(rpc_error);
+
+        // An error rather than a message, so the send loop fails instead of retrying.
+        let report = rpc_transaction_error(&err).unwrap_err();
+        assert!(report.to_string().contains(account_id.as_str()));
     }
 }

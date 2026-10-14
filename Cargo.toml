@@ -75,12 +75,12 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "=0.38.0-rc.2"
-near-primitives = "=0.38.0-rc.2"
-near-jsonrpc-client = { version = "=0.23.0-rc.2", features = ["any"] }
-near-jsonrpc-primitives = "=0.38.0-rc.2"
-near-parameters = "=0.38.0-rc.2"
-near-socialdb-client = "=0.17.0-rc.2"
+near-crypto = "=0.38.0-rc.4"
+near-primitives = "=0.38.0-rc.4"
+near-jsonrpc-client = { version = "=0.23.0-rc.3", features = ["any"] }
+near-jsonrpc-primitives = "=0.38.0-rc.4"
+near-parameters = "=0.38.0-rc.4"
+near-socialdb-client = "=0.17.0-rc.3"
 
 near-ledger = { version = "0.9.4", optional = true }
 
