@@ -1490,9 +1490,10 @@ pub fn print_unsigned_transaction(
                     universal_init_action.deposit,
                     near_primitives::universal_state_init::UniversalStateInit::from_raw(
                         &universal_init_action.state_init,
+                        near_primitives::universal_state_init::DecodeMode::Strict,
                     )
                     .map_or_else(
-                        |err| format!("malformed: {err}"),
+                        |err| format!("malformed state init: {err}"),
                         |state_init| {
                             serde_json::to_string_pretty(&state_init)
                                 .expect("UniversalStateInit is always serializable")
@@ -2148,6 +2149,9 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 near_primitives::errors::ActionsValidationError::MalformedUniversalStateInit => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Malformed UniversalStateInit."))
                 },
+                near_primitives::errors::ActionsValidationError::TransferToUniversalAccountNotAllowed { account_id } => {
+                    color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Transfer to universal account id ({}) is not allowed in this protocol version", account_id))
+                },
                 near_primitives::errors::ActionsValidationError::RemovedProtocolFeature { protocol_feature, version } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: Protocol Feature {} is no longer supported in version {}", protocol_feature, version))
                 },
@@ -2159,7 +2163,7 @@ pub fn convert_invalid_tx_error_to_cli_result(
                 },
                 near_primitives::errors::ActionsValidationError::TotalNumberOfStateInitEntriesExceeded { number_of_entries, limit } => {
                     color_eyre::eyre::Result::Err(color_eyre::eyre::eyre!("Error: The combined number of state init entries ({}) in one receipt exceeded the limit ({}).", number_of_entries, limit))
-                },
+                }, 
             }
         },
         near_primitives::errors::InvalidTxError::TransactionSizeExceeded { size, limit } => {
