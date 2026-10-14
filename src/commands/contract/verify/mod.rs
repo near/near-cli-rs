@@ -211,9 +211,14 @@ fn get_contract_properties_from_docker_build(
     let whitelist: Option<Whitelist> = if no_image_whitelist {
         None
     } else {
-        Some(vec![WhitelistEntry {
-            expected_docker_image: "sourcescan/cargo-near".to_string(),
-        }])
+        Some(vec![
+            WhitelistEntry {
+                expected_docker_image: "sourcescan/cargo-near".to_string(),
+            },
+            WhitelistEntry {
+                expected_docker_image: "ghcr.io/near/cargo-near".to_string(),
+            },
+        ])
     };
     contract_source_metadata.validate(whitelist)?;
 
