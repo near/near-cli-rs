@@ -190,7 +190,7 @@ impl MtFtTransferParamsContext {
                                     };
                                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                                         tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
-                                            "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (MT-FT-contract: {mt_contract}) to <{receiver_account_id}>.\nRemaining balance: {remaining_balance}",
+                                            "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (MT-FT-contract: {mt_contract}, token ID: {token_id}) to <{receiver_account_id}>.\nRemaining balance: {remaining_balance}",
                                         ));
                                     }
                                     return Ok(());
@@ -198,7 +198,7 @@ impl MtFtTransferParamsContext {
                     }
                     if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
                         tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
-                            "<{signer_account_id}> has successfully transferred fungible tokens (MT-FT-contract: {token_id}) to <{receiver_account_id}>.",
+                            "<{signer_account_id}> has successfully transferred fungible tokens (MT-FT-contract: {mt_contract}, token ID: {token_id}) to <{receiver_account_id}>.",
                         ));
                     }
                 }
