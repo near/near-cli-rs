@@ -40,23 +40,44 @@ fn transaction_status_prints_json_on_stdout() {
     failure["status"] = json!({"Failure": {"ActionError": {
         "index": 0, "kind": {"AccountDoesNotExist": {"account_id": "missing.near"}}
     }}});
-    for response in [
-        json!({"final_execution_status": "NONE"}),
-        final_outcome(),
-        failure,
+    // nearcore 2.14 reports a transaction that has not reached the requested wait level as a
+    // timeout carrying the last known status; view-status prints that status.
+    let pending_timeout = RpcReply::Error(json!({
+        "name": "HANDLER_ERROR",
+        "cause": {"name": "TIMEOUT_ERROR", "info": {
+            "cause": "PENDING", "status": {"final_execution_status": "INCLUDED"}
+        }},
+        "code": -32000, "message": "Server error"
+    }));
+    for (reply, response) in [
+        (
+            RpcReply::Result(json!({"final_execution_status": "NONE"})),
+            json!({"final_execution_status": "NONE"}),
+        ),
+        (
+            pending_timeout,
+            json!({"final_execution_status": "INCLUDED"}),
+        ),
+        (RpcReply::Result(final_outcome()), final_outcome()),
+        (RpcReply::Result(failure.clone()), failure),
     ] {
         for mode in ["normal", "quiet", "teach-me"] {
-            assert_output_contract(response.clone(), mode);
+            assert_output_contract(reply.clone(), response.clone(), mode);
         }
     }
 }
 
-fn assert_output_contract(response: Value, mode: &str) {
+#[derive(Clone)]
+enum RpcReply {
+    Result(Value),
+    Error(Value),
+}
+
+fn assert_output_contract(reply: RpcReply, response: Value, mode: &str) {
     let quiet = mode == "quiet";
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
     let url = format!("http://{}/", listener.local_addr().unwrap());
-    let rpc_response = response.clone();
     let server = std::thread::spawn(move || {
         let deadline = Instant::now() + Duration::from_secs(15);
         let mut stream = loop {
@@ -95,8 +116,15 @@ fn assert_output_contract(response: Value, mode: &str) {
         assert_eq!(request["method"], "tx");
         assert_eq!(request["params"]["tx_hash"], HASH);
         assert_eq!(request["params"]["wait_until"], "FINAL");
-        let body =
-            json!({"jsonrpc": "2.0", "id": request["id"], "result": rpc_response}).to_string();
+        let body = match reply {
+            RpcReply::Result(result) => {
+                json!({"jsonrpc": "2.0", "id": request["id"], "result": result})
+            }
+            RpcReply::Error(error) => {
+                json!({"jsonrpc": "2.0", "id": request["id"], "error": error})
+            }
+        }
+        .to_string();
         write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
     });
 
@@ -166,6 +194,12 @@ fn assert_output_contract(response: Value, mode: &str) {
         );
     }
     assert_eq!(stderr.contains("Transaction status:"), !quiet);
+    let not_final = response["final_execution_status"] != "FINAL";
+    assert_eq!(
+        stderr.contains("The transaction is not final yet (reached: "),
+        not_final,
+        "{stderr}"
+    );
     if quiet {
         assert_eq!(stdout.lines().count(), 1);
     } else {
