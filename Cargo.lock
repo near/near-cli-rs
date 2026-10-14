@@ -2675,8 +2675,9 @@ dependencies = [
 
 [[package]]
 name = "near-jsonrpc-client"
-version = "0.23.0-rc.2"
-source = "git+https://github.com/near/near-jsonrpc-client-rs/?branch=chore%2Fprimitives-38-rc.4#13caf80b87d12e1d929283496ab172fc76522983"
+version = "0.23.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caa72332c63eaf621d2de8af749025d1c60f594233a0f50ad6eba0c3f1ac8c6b"
 dependencies = [
  "borsh",
  "lazy_static",
@@ -2874,8 +2875,9 @@ dependencies = [
 
 [[package]]
 name = "near-socialdb-client"
-version = "0.17.0-rc.2"
-source = "git+https://github.com/near/near-socialdb-client-rs/?branch=chore%2Fprimitives-38-rc.4#6bd30d8000bfe8dfe89ff0ae9456dc7b650e025d"
+version = "0.17.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cba35f48e0e778a8acb21478886050258eea83390e768d3ec221615b84c1847"
 dependencies = [
  "eyre",
  "near-crypto",
