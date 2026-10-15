@@ -3,6 +3,7 @@ use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 mod send_ft;
 mod send_ft_call;
 mod send_mt_ft;
+mod send_mt_ft_call;
 mod send_near;
 mod send_nft;
 mod view_ft_balance;
@@ -76,6 +77,11 @@ pub enum TokensActions {
     ))]
     /// The transfer is carried out in MT-FT tokens (Online mode only)
     SendMtFt(self::send_mt_ft::IntentContractId),
+    #[strum_discriminants(strum(
+        message = "send-mt-ft-call    - Transfer MT-FT tokens via mt_transfer_call (Online mode only)"
+    ))]
+    /// Transfer MT-FT tokens via mt_transfer_call (Online mode only)
+    SendMtFtCall(self::send_mt_ft_call::IntentContractId),
     #[strum_discriminants(strum(
         message = "send-nft           - The transfer is carried out in NFT tokens"
     ))]
