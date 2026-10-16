@@ -269,52 +269,114 @@ fn build_action_context(
             let mt_ft_metadata = previous_context.mt_ft_metadata.clone();
             let token_id = previous_context.token_id.clone();
             let receiver_account_id = previous_context.receiver_account_id.clone();
+            let requested_amount = previous_context.mt_ft_transfer_amount.amount();
             let verbosity = previous_context.global_context.verbosity;
 
             move |outcome_view, network_config| {
-                if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                    for action in outcome_view.transaction.actions.clone() {
-                        if let near_primitives::views::ActionView::FunctionCall { method_name: _, args, gas: _, deposit: _ } = action
-                            && let Ok(mt_ft_transfer) = serde_json::from_slice::<crate::types::mt_ft_properties::MtFtTransfer>(&args)
-                                && let Ok(mt_ft_balance_str) = tokio::runtime::Runtime::new()
-                                    .expect("Failed to create a new tokio runtime")
-                                    .block_on(
-                                        get_mt_ft_balance(
-                                            network_config,
-                                            &mt_contract,
-                                            &token_id,
-                                            &signer_account_id,
-                                            near_primitives::types::BlockId::Hash(outcome_view.receipts_outcome.last().expect("MT-FT transfer should have at least one receipt outcome, but none was received").block_hash).into()
-                                        )
-                                    )
-                                {
-                                    let ft_transfer_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
-                                        mt_ft_transfer.amount,
-                                        mt_ft_metadata.decimals,
-                                        mt_ft_metadata.symbol.clone()
-                                    );
-                                    let remaining_balance = if let Ok(amount) = mt_ft_balance_str.parse::<u128>() {
-                                        crate::types::ft_properties::FungibleToken::from_params_ft(
-                                            amount,
-                                            mt_ft_metadata.decimals,
-                                            mt_ft_metadata.symbol.clone()
-                                        ).to_string()
-                                    } else {
-                                        "N/A".to_string()
-                                    };
-                                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
-                                        tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
-                                            "<{signer_account_id}> has successfully transferred {ft_transfer_amount} (MT-FT-contract: {mt_contract}, token ID: {token_id}) to <{receiver_account_id}>.\nRemaining balance: {remaining_balance}",
-                                        ));
-                                    }
-                                    return Ok(());
+                let receiver_callback_status = outcome_view
+                    .receipts_outcome
+                    .iter()
+                    .find(|receipt| receipt.outcome.executor_id == receiver_account_id)
+                    .map(|receipt| &receipt.outcome.status);
+                let transferred_amount = match &outcome_view.status {
+                    near_primitives::views::FinalExecutionStatus::SuccessValue(return_value) => {
+                        let receiver_callback_succeeded =
+                            receiver_callback_status.and_then(|status| match status {
+                                near_primitives::views::ExecutionStatusView::SuccessValue(_) => {
+                                    Some(true)
                                 }
+                                near_primitives::views::ExecutionStatusView::Failure(_) => {
+                                    Some(false)
+                                }
+                                near_primitives::views::ExecutionStatusView::Unknown
+                                | near_primitives::views::ExecutionStatusView::SuccessReceiptId(_) => {
+                                    None
+                                }
+                            });
+                        parse_mt_transfer_call_transferred_amount(
+                            return_value,
+                            requested_amount,
+                            receiver_callback_succeeded,
+                        )
                     }
-                    if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
-                        tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
-                            "<{signer_account_id}> has successfully transferred fungible tokens (MT-FT-contract: {mt_contract}, token ID: {token_id}) to <{receiver_account_id}>.",
-                        ));
+                    near_primitives::views::FinalExecutionStatus::Failure(_) => Some(0),
+                    near_primitives::views::FinalExecutionStatus::NotStarted
+                    | near_primitives::views::FinalExecutionStatus::Started => None,
+                };
+                let failure_reason = match &outcome_view.status {
+                    near_primitives::views::FinalExecutionStatus::Failure(error) => {
+                        Some(format!("{error:?}"))
                     }
+                    near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+                        receiver_callback_status.and_then(|status| match status {
+                            near_primitives::views::ExecutionStatusView::Failure(error) => {
+                                Some(format!("{error:?}"))
+                            }
+                            _ => None,
+                        })
+                    }
+                    near_primitives::views::FinalExecutionStatus::NotStarted
+                    | near_primitives::views::FinalExecutionStatus::Started => None,
+                };
+                let remaining_balance = outcome_view
+                    .receipts_outcome
+                    .last()
+                    .and_then(|receipt| {
+                        tokio::runtime::Runtime::new()
+                            .expect("Failed to create a new tokio runtime")
+                            .block_on(get_mt_ft_balance(
+                                network_config,
+                                &mt_contract,
+                                &token_id,
+                                &signer_account_id,
+                                near_primitives::types::BlockId::Hash(receipt.block_hash).into(),
+                            ))
+                            .ok()
+                    })
+                    .and_then(|balance| balance.parse::<u128>().ok())
+                    .map(|amount| {
+                        crate::types::ft_properties::FungibleToken::from_params_ft(
+                            amount,
+                            mt_ft_metadata.decimals,
+                            mt_ft_metadata.symbol.clone(),
+                        )
+                        .to_string()
+                    })
+                    .unwrap_or_else(|| "N/A".to_string());
+
+                if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                    let requested_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
+                        requested_amount,
+                        mt_ft_metadata.decimals,
+                        mt_ft_metadata.symbol.clone(),
+                    );
+                    let transfer_message = match transferred_amount {
+                        Some(amount) if amount > 0 => {
+                            let transferred_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
+                                amount,
+                                mt_ft_metadata.decimals,
+                                mt_ft_metadata.symbol.clone(),
+                            );
+                            format!(
+                                "<{signer_account_id}> has successfully transferred {transferred_amount} (MT-FT-contract: {mt_contract}, token ID: {token_id}) to <{receiver_account_id}>."
+                            )
+                        }
+                        Some(_) => {
+                            format!(
+                                "<{signer_account_id}> could not transfer {requested_amount} (MT-FT-contract: {mt_contract}, token ID: {token_id}) to <{receiver_account_id}>. Reason: {}.",
+                                failure_reason.as_deref().unwrap_or("the full amount was returned to the sender")
+                            )
+                        }
+                        None => {
+                            format!(
+                                "<{signer_account_id}> could not determine the transferred amount of {requested_amount} (MT-FT-contract: {mt_contract}, token ID: {token_id}) to <{receiver_account_id}>."
+                            )
+                        }
+                    };
+
+                    tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
+                        "{transfer_message}\nRemaining balance: {remaining_balance}",
+                    ));
                 }
                 Ok(())
             }
@@ -338,4 +400,91 @@ fn build_action_context(
         sign_as_delegate_action: false,
         on_sending_delegate_action_callback: None,
     })
+}
+
+fn parse_mt_transfer_call_transferred_amount(
+    return_value: &[u8],
+    requested_amount: u128,
+    receiver_callback_succeeded: Option<bool>,
+) -> Option<u128> {
+    let amounts = serde_json::from_slice::<Vec<String>>(return_value).ok()?;
+    let [returned_amount] = amounts.as_slice() else {
+        return None;
+    };
+    let returned_amount = returned_amount.parse::<u128>().ok()?;
+
+    if returned_amount == 0 {
+        return match receiver_callback_succeeded {
+            Some(true) => Some(requested_amount),
+            Some(false) => Some(0),
+            None => None,
+        };
+    }
+
+    requested_amount.checked_sub(returned_amount)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_mt_transfer_call_transferred_amount;
+
+    #[test]
+    fn calculates_transferred_amount_when_resolver_returns_a_refund() {
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["25"]"#, 100, None),
+            Some(75)
+        );
+    }
+
+    #[test]
+    fn treats_zero_return_as_full_transfer_when_receiver_callback_succeeds() {
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["0"]"#, 100, Some(true)),
+            Some(100)
+        );
+    }
+
+    #[test]
+    fn treats_zero_return_as_no_transfer_when_receiver_callback_fails() {
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["0"]"#, 100, Some(false)),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn does_not_infer_transfer_amount_when_receiver_callback_result_is_unknown() {
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["0"]"#, 100, None),
+            None
+        );
+    }
+
+    #[test]
+    fn treats_a_full_refund_as_no_transfer() {
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["100"]"#, 100, None),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn does_not_infer_transfer_amount_from_invalid_or_inconsistent_result() {
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(b"", 100, None),
+            None
+        );
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["not-a-number"]"#, 100, None),
+            None
+        );
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["100","0"]"#, 100, None),
+            None
+        );
+        assert_eq!(
+            parse_mt_transfer_call_transferred_amount(br#"["101"]"#, 100, None),
+            None
+        );
+    }
 }
