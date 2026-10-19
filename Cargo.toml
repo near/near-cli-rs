@@ -42,6 +42,7 @@ futures = "0.3"
 openssl = { version = "0.10", features = ["vendored"] }
 
 bip39 = { version = "2.0.0", features = ["rand"] }
+base64 = "0.22"
 bs58 = "0.5"
 borsh = "1.5.7"
 ed25519-dalek = { version = "2", default-features = false }
