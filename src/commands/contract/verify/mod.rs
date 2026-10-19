@@ -27,7 +27,11 @@ pub struct Contract {
     save_contract_source_code_into: Option<crate::types::path_buf::PathBuf>,
     #[interactive_clap(long)]
     no_image_whitelist: bool,
-    /// Build without network access, after fetching dependencies in a separate container run
+    /// Fetch dependencies online, then build in a separate container without network access
+    ///
+    /// Requires a committed Cargo.lock and the standard /home/near/.cargo image layout.
+    /// Repository Cargo configuration and separate lockfiles used by nested builds are not
+    /// prefetched. Missing dependencies fail the build without an online fallback.
     #[interactive_clap(long)]
     offline_build: bool,
     #[interactive_clap(subcommand)]
@@ -333,4 +337,17 @@ fn get_contract_code_from_contract_account_id(
             return Err(color_eyre::Report::msg("Error call result".to_string()));
         };
     Ok(contract_code_view.code)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Contract;
+
+    #[test]
+    fn offline_build_is_opt_in() {
+        let enabled = Contract::try_parse_from(["verify", "--offline-build"]).unwrap();
+        assert!(enabled.offline_build);
+        let default = Contract::try_parse_from(["verify"]).unwrap();
+        assert!(!default.offline_build);
+    }
 }
