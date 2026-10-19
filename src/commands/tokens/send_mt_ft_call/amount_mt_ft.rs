@@ -318,10 +318,35 @@ fn build_action_context(
                     near_primitives::views::FinalExecutionStatus::NotStarted
                     | near_primitives::views::FinalExecutionStatus::Started => None,
                 };
-                let remaining_balance = outcome_view
+                // Find the MT-contract receipt with the final transaction result to query the balance after resolution.
+                let remaining_balance_block_hash = outcome_view
                     .receipts_outcome
-                    .last()
-                    .and_then(|receipt| {
+                    .iter()
+                    .find(|receipt| {
+                        receipt.outcome.executor_id == mt_contract
+                            && match (&outcome_view.status, &receipt.outcome.status) {
+                                (
+                                    near_primitives::views::FinalExecutionStatus::SuccessValue(
+                                        final_value,
+                                    ),
+                                    near_primitives::views::ExecutionStatusView::SuccessValue(
+                                        receipt_value,
+                                    ),
+                                ) => final_value == receipt_value,
+                                (
+                                    near_primitives::views::FinalExecutionStatus::Failure(
+                                        final_error,
+                                    ),
+                                    near_primitives::views::ExecutionStatusView::Failure(
+                                        receipt_error,
+                                    ),
+                                ) => final_error == receipt_error,
+                                _ => false,
+                            }
+                    })
+                    .map(|receipt| receipt.block_hash);
+                let remaining_balance = remaining_balance_block_hash
+                    .and_then(|block_hash| {
                         tokio::runtime::Runtime::new()
                             .expect("Failed to create a new tokio runtime")
                             .block_on(get_mt_ft_balance(
@@ -329,7 +354,7 @@ fn build_action_context(
                                 &mt_contract,
                                 &token_id,
                                 &signer_account_id,
-                                near_primitives::types::BlockId::Hash(receipt.block_hash).into(),
+                                near_primitives::types::BlockId::Hash(block_hash).into(),
                             ))
                             .ok()
                     })
