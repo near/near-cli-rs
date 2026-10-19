@@ -194,4 +194,4 @@ libudev-dev = { version = "*", targets = [
 ] }
 
 [patch.crates-io]
-near-verify-rs = { git = "https://github.com/near/near-verify-rs", rev = "9435c73ad7533e58f5db95d7f0057ec994741630" }
+near-verify-rs = { git = "https://github.com/near/near-verify-rs", rev = "edc6173e3127fbd9d1aa54c2c84f8394a0ec2c2c" }
