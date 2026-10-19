@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0-rc.2](https://github.com/near/near-cli-rs/compare/v0.31.0-rc.1...v0.31.0-rc.2) - 2026-10-14
+
+### Added
+
+- *(contract verify)* accept ghcr.io/near/cargo-near build images ([#685](https://github.com/near/near-cli-rs/pull/685))
+
+### Fixed
+
+- don't care about the response structure and check only for the signature ([#678](https://github.com/near/near-cli-rs/pull/678))
+
+### Other
+
+- bump nearcore to 2.14.0-rc.4 ([#705](https://github.com/near/near-cli-rs/pull/705))
+- pin transaction and credential compatibility ([#660](https://github.com/near/near-cli-rs/pull/660))
+
 ## [0.31.0-rc.1](https://github.com/near/near-cli-rs/compare/v0.30.1...v0.31.0-rc.1) - 2026-10-05
 
 ### Added
