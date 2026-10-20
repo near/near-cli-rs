@@ -122,6 +122,7 @@ pub struct FtTransferCallParamsContext {
     global_context: crate::GlobalContext,
     signer_account_id: near_primitives::types::AccountId,
     ft_contract_account_id: near_primitives::types::AccountId,
+    ft_metadata: crate::types::ft_properties::FtMetadata,
     receiver_account_id: near_primitives::types::AccountId,
     ft_transfer_amount: crate::types::ft_properties::FungibleTokenTransferAmount,
     memo: String,
@@ -143,6 +144,7 @@ impl FtTransferCallParamsContext {
             global_context: previous_context.global_context,
             signer_account_id: previous_context.signer_account_id,
             ft_contract_account_id: previous_context.ft_contract.ft_contract_account_id,
+            ft_metadata: previous_context.ft_contract.ft_metadata,
             receiver_account_id: previous_context.receiver_account_id,
             ft_transfer_amount: previous_context.ft_transfer_amount,
             memo: scope.memo.trim().to_string(),
@@ -292,38 +294,153 @@ fn build_action_context(
     let on_after_sending_transaction_callback: crate::transaction_signature_options::OnAfterSendingTransactionCallback = std::sync::Arc::new({
         let signer_account_id = previous_context.signer_account_id.clone();
         let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
+        let ft_metadata = previous_context.ft_metadata.clone();
         let receiver_account_id = previous_context.receiver_account_id.clone();
+        let requested_amount = previous_context.ft_transfer_amount.clone();
         let verbosity = previous_context.global_context.verbosity;
 
         move |outcome_view, network_config| {
-            if let near_primitives::views::FinalExecutionStatus::SuccessValue(_) = outcome_view.status {
-                for action in outcome_view.transaction.actions.clone() {
-                    if let near_primitives::views::ActionView::FunctionCall { method_name: _, args, gas: _, deposit: _ } = action
-                        && let Ok(ft_transfer_call) = serde_json::from_slice::<crate::types::ft_properties::FtTransferCall>(&args)
-                            && let Ok(ft_balance) = crate::commands::tokens::send_ft::get_ft_balance_for_account(
-                                network_config,
-                                &signer_account_id,
-                                &ft_contract_account_id,
-                                near_primitives::types::BlockId::Hash(outcome_view.receipts_outcome.last().expect("FT transfer call should have at least one receipt outcome, but none was received").block_hash).into()
-                            ) {
-                                let ft_transfer_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
+            let ft_transfer_call = outcome_view.transaction.actions.iter().find_map(|action| {
+                if let near_primitives::views::ActionView::FunctionCall {
+                    method_name, args, ..
+                } = action
+                    && method_name == "ft_transfer_call"
+                {
+                    serde_json::from_slice::<crate::types::ft_properties::FtTransferCall>(args)
+                        .ok()
+                } else {
+                    None
+                }
+            });
+            let receiver_callback_status = outcome_view
+                .receipts_outcome
+                .iter()
+                .find(|receipt| receipt.outcome.executor_id == receiver_account_id)
+                .map(|receipt| &receipt.outcome.status);
+            let transferred_amount = match &outcome_view.status {
+                near_primitives::views::FinalExecutionStatus::SuccessValue(return_value) => {
+                    ft_transfer_call.as_ref().and_then(|ft_transfer_call| {
+                        parse_ft_transfer_call_transferred_amount(
+                            return_value,
+                            ft_transfer_call.amount,
+                        )
+                    })
+                }
+                near_primitives::views::FinalExecutionStatus::Failure(_) => Some(0),
+                near_primitives::views::FinalExecutionStatus::NotStarted
+                | near_primitives::views::FinalExecutionStatus::Started => None,
+            };
+            let failure_reason = match &outcome_view.status {
+                near_primitives::views::FinalExecutionStatus::Failure(error) => {
+                    Some(format!("{error:?}"))
+                }
+                near_primitives::views::FinalExecutionStatus::SuccessValue(_) => {
+                    receiver_callback_status.and_then(|status| match status {
+                        near_primitives::views::ExecutionStatusView::Failure(error) => {
+                            Some(format!("{error:?}"))
+                        }
+                        _ => None,
+                    })
+                }
+                near_primitives::views::FinalExecutionStatus::NotStarted
+                | near_primitives::views::FinalExecutionStatus::Started => None,
+            };
+            // Find the FT-contract receipt with the final transaction result to query the balance after resolution.
+            let remaining_balance_block_hash = outcome_view
+                .receipts_outcome
+                .iter()
+                .find(|receipt| {
+                    receipt.outcome.executor_id == ft_contract_account_id
+                        && match (&outcome_view.status, &receipt.outcome.status) {
+                            (
+                                near_primitives::views::FinalExecutionStatus::SuccessValue(
+                                    final_value,
+                                ),
+                                near_primitives::views::ExecutionStatusView::SuccessValue(
+                                    receipt_value,
+                                ),
+                            ) => final_value == receipt_value,
+                            (
+                                near_primitives::views::FinalExecutionStatus::Failure(
+                                    final_error,
+                                ),
+                                near_primitives::views::ExecutionStatusView::Failure(
+                                    receipt_error,
+                                ),
+                            ) => final_error == receipt_error,
+                            _ => false,
+                        }
+                })
+                .map(|receipt| receipt.block_hash);
+            let remaining_balance = remaining_balance_block_hash
+                .and_then(|block_hash| {
+                    crate::commands::tokens::send_ft::get_ft_balance_for_account(
+                        network_config,
+                        &signer_account_id,
+                        &ft_contract_account_id,
+                        near_primitives::types::BlockId::Hash(block_hash).into(),
+                    )
+                    .ok()
+                })
+                .map(|balance| balance.to_string())
+                .unwrap_or_else(|| "N/A".to_string());
+
+            if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
+                let requested_amount = match &requested_amount {
+                    crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(amount) => {
+                        Some(amount.clone())
+                    }
+                    crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount => {
+                        ft_transfer_call
+                            .as_ref()
+                            .map(|ft_transfer_call| {
+                                crate::types::ft_properties::FungibleToken::from_params_ft(
                                     ft_transfer_call.amount,
-                                    ft_balance.decimals(),
-                                    ft_balance.symbol().to_string()
-                                );
-                                if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
-                                    tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
-                                        "<{signer_account_id}> has successfully called ft_transfer_call, transferring {ft_transfer_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.\nRemaining balance: {ft_balance}",
-                                    ));
-                                }
-                                return Ok(());
-                            }
-                }
-                if let crate::Verbosity::Interactive | crate::Verbosity::TeachMe = verbosity {
-                    tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
-                        "<{signer_account_id}> has successfully called ft_transfer_call (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.",
-                    ));
-                }
+                                    ft_metadata.decimals,
+                                    ft_metadata.symbol.clone(),
+                                )
+                            })
+                    }
+                };
+                let transfer_message = match transferred_amount {
+                    Some(amount) if amount > 0 => {
+                        let transferred_amount =
+                            crate::types::ft_properties::FungibleToken::from_params_ft(
+                                amount,
+                                ft_metadata.decimals,
+                                ft_metadata.symbol.clone(),
+                            );
+                        format!(
+                            "<{signer_account_id}> has successfully transferred {transferred_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>."
+                        )
+                    }
+                    Some(_) => match &requested_amount {
+                        Some(requested_amount) => format!(
+                            "<{signer_account_id}> could not transfer {requested_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>. Reason: {}.",
+                            failure_reason
+                                .as_deref()
+                                .unwrap_or("the full amount was returned to the sender")
+                        ),
+                        None => format!(
+                            "<{signer_account_id}> could not complete ft_transfer_call (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>. Reason: {}.",
+                            failure_reason
+                                .as_deref()
+                                .unwrap_or("the full amount was returned to the sender")
+                        ),
+                    },
+                    None => match &requested_amount {
+                        Some(requested_amount) => format!(
+                            "<{signer_account_id}> could not determine the transferred amount of {requested_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>."
+                        ),
+                        None => format!(
+                            "<{signer_account_id}> could not determine the transferred amount (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>."
+                        ),
+                    },
+                };
+
+                tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
+                    "{transfer_message}\nRemaining balance: {remaining_balance}",
+                ));
             }
             Ok(())
         }
@@ -347,4 +464,58 @@ fn build_action_context(
         sign_as_delegate_action: false,
         on_sending_delegate_action_callback: None,
     })
+}
+
+fn parse_ft_transfer_call_transferred_amount(
+    resolver_return_value: &[u8],
+    requested_amount: u128,
+) -> Option<u128> {
+    // ft_resolve_transfer returns the amount kept by the receiver; ft_on_transfer returns the unused amount.
+    let transferred_amount = serde_json::from_slice::<String>(resolver_return_value)
+        .ok()?
+        .parse::<u128>()
+        .ok()?;
+    (transferred_amount <= requested_amount).then_some(transferred_amount)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_ft_transfer_call_transferred_amount;
+
+    #[test]
+    fn parses_transferred_amount_from_resolver_result() {
+        assert_eq!(
+            parse_ft_transfer_call_transferred_amount(br#""25""#, 100),
+            Some(25)
+        );
+    }
+
+    #[test]
+    fn returns_zero_when_resolver_reports_a_full_refund() {
+        assert_eq!(
+            parse_ft_transfer_call_transferred_amount(br#""0""#, 100),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn returns_requested_amount_when_resolver_reports_full_acceptance() {
+        assert_eq!(
+            parse_ft_transfer_call_transferred_amount(br#""100""#, 100),
+            Some(100)
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_or_inconsistent_resolver_results() {
+        assert_eq!(parse_ft_transfer_call_transferred_amount(b"", 100), None);
+        assert_eq!(
+            parse_ft_transfer_call_transferred_amount(br#""not-a-number""#, 100),
+            None
+        );
+        assert_eq!(
+            parse_ft_transfer_call_transferred_amount(br#""101""#, 100),
+            None
+        );
+    }
 }
