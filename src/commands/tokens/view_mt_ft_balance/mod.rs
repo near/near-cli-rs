@@ -169,7 +169,7 @@ mod tests {
     fn test_handle_mt_ft_inventory_result_keeps_valid_inventory() {
         let owner_account_id = near_primitives::types::AccountId::from_str("alice.near").unwrap();
         let ft = crate::types::mt_ft_inventory::FT {
-            token_id: crate::types::mt_ft_inventory::IntentsTokenId::from_str("nep141:wrap.near")
+            token_id: crate::types::mt_ft_properties::IntentsTokenId::from_str("nep141:wrap.near")
                 .unwrap(),
         };
         let inventory = crate::types::mt_ft_inventory::MtFtInventory {
@@ -191,7 +191,7 @@ mod tests {
     fn test_handle_mt_ft_inventory_result_skips_failed_inventory() {
         let owner_account_id = near_primitives::types::AccountId::from_str("alice.near").unwrap();
         let ft = crate::types::mt_ft_inventory::FT {
-            token_id: crate::types::mt_ft_inventory::IntentsTokenId::from_str(
+            token_id: crate::types::mt_ft_properties::IntentsTokenId::from_str(
                 "nep245:v2.omni.near:token",
             )
             .unwrap(),
