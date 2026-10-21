@@ -296,7 +296,6 @@ fn build_action_context(
         let ft_contract_account_id = previous_context.ft_contract_account_id.clone();
         let ft_metadata = previous_context.ft_metadata.clone();
         let receiver_account_id = previous_context.receiver_account_id.clone();
-        let requested_amount = previous_context.ft_transfer_amount.clone();
         let verbosity = previous_context.global_context.verbosity;
 
         move |outcome_view, network_config| {
@@ -418,22 +417,13 @@ fn build_action_context(
                 .map(|balance| balance.to_string())
                 .unwrap_or_else(|| "N/A".to_string());
 
-            let requested_amount = match &requested_amount {
-                    crate::types::ft_properties::FungibleTokenTransferAmount::ExactAmount(amount) => {
-                        Some(amount.clone())
-                    }
-                    crate::types::ft_properties::FungibleTokenTransferAmount::MaxAmount => {
-                        ft_transfer_call
-                            .as_ref()
-                            .map(|ft_transfer_call| {
-                                crate::types::ft_properties::FungibleToken::from_params_ft(
-                                    ft_transfer_call.amount,
-                                    ft_metadata.decimals,
-                                    ft_metadata.symbol.clone(),
-                                )
-                            })
-                    }
-            };
+            let requested_amount = ft_transfer_call.as_ref().map(|ft_transfer_call| {
+                crate::types::ft_properties::FungibleToken::from_params_ft(
+                    ft_transfer_call.amount,
+                    ft_metadata.decimals,
+                    ft_metadata.symbol.clone(),
+                )
+            });
             let transfer_message = transfer_message(
                 &signer_account_id,
                 &receiver_account_id,
