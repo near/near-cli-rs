@@ -112,7 +112,7 @@ interactive-clap-derive = "0.3"
 rust_decimal = "1.42.0"
 
 # verify_contract dependencies
-near-verify-rs = { version = "0.3.0", optional = true }
+near-verify-rs = { version = "0.3.4", optional = true }
 camino = { version = "1.1.1", optional = true }
 git2 = { version = "0.21", features = ["https"], optional = true }
 tempfile = { version = "3.10.1", optional = true }
@@ -192,6 +192,3 @@ libudev-dev = { version = "*", targets = [
     "x86_64-unknown-linux-gnu",
     "aarch64-unknown-linux-gnu",
 ] }
-
-[patch.crates-io]
-near-verify-rs = { git = "https://github.com/near/near-verify-rs", rev = "edc6173e3127fbd9d1aa54c2c84f8394a0ec2c2c" }
