@@ -25,6 +25,10 @@ impl AsTextContext {
                 let values =
                     super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
                 let mut info_str = String::new();
+                if values.is_empty() {
+                    info_str.push_str("\n\tempty state");
+                    info_str.push_str("\n\t--------------------------------");
+                }
                 for value in &values {
                     info_str.push_str(&format!("\n\tkey:   {}", key_value_to_string(&value.key)?.green()));
                     info_str.push_str(&format!("\n\tvalue: {}", key_value_to_string(&value.value)?.yellow()));
