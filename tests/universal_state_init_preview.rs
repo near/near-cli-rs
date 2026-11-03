@@ -8,11 +8,12 @@ use near_primitives::universal_state_init::{
     RawStateInit, UniversalStateInit, UniversalStateInitV1,
 };
 
+// The protocol requires the receiver to be the ID derived from the raw bytes.
 fn preview(raw: RawStateInit) -> String {
     near_cli_rs::common::print_unsigned_transaction(
         &near_cli_rs::commands::PrepopulatedTransaction {
             signer_id: "signer.near".parse().unwrap(),
-            receiver_id: "receiver.near".parse().unwrap(),
+            receiver_id: near_primitives::utils::derive_universal_account_id(&raw),
             actions: vec![Action::UniversalStateInit(Box::new(
                 UniversalStateInitAction {
                     state_init: raw,
@@ -62,7 +63,11 @@ fn assert_invalid_preview(raw: RawStateInit) {
     assert!(output.contains("malformed state init:"));
     assert!(output.contains("deposit"));
     assert!(!output.contains("create universal account"));
-    assert!(!output.contains(derived_id.as_str()));
+    // Only the receiver line names the derived ID, and it is flagged there.
+    assert!(output.contains(&format!(
+        "receiver_id:  {derived_id} (from invalid universal state-init)"
+    )));
+    assert_eq!(output.matches(derived_id.as_str()).count(), 1);
 }
 
 // Shared verbatim with near-sdk-rs/near-global-contracts tests/data/universal_state_init.json.

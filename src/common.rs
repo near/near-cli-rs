@@ -1221,9 +1221,28 @@ pub fn print_unsigned_transaction(
 ) -> String {
     let mut info_str = String::new();
     info_str.push_str(&format!("\n{:<13} {}", "signer_id:", transaction.signer_id));
+    // A universal state init's receiver is its derived ID, so flag it here too when the
+    // state init is invalid and the account can never be initialized.
+    let has_invalid_universal_state_init = transaction.actions.iter().any(|action| {
+        matches!(
+            action,
+            near_primitives::transaction::Action::UniversalStateInit(universal_init_action)
+                if near_primitives::universal_state_init::UniversalStateInit::from_raw(
+                    &universal_init_action.state_init,
+                    near_primitives::universal_state_init::DecodeMode::Strict,
+                )
+                .is_err()
+        )
+    });
     info_str.push_str(&format!(
-        "\n{:<13} {}",
-        "receiver_id:", transaction.receiver_id
+        "\n{:<13} {}{}",
+        "receiver_id:",
+        transaction.receiver_id,
+        if has_invalid_universal_state_init {
+            " (from invalid universal state-init)"
+        } else {
+            ""
+        }
     ));
 
     if transaction
