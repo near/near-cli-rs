@@ -31,6 +31,8 @@ impl AsTextContext {
                     info_str.push_str("\n\t--------------------------------");
                 }
                 println!("Contract state (values):{info_str}\n");
+                // Proofs are never requested, so keep printing the empty proof as before.
+                println!("Contract state (proof):\n[]\n");
                 Ok(())
             }
         });

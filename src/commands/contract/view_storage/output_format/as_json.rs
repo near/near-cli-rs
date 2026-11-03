@@ -23,6 +23,8 @@ impl AsJsonContext {
                 let values =
                     super::get_contract_state(&contract_account_id, prefix.clone(), network_config, block_reference.clone())?;
                 println!("Contract state (values):\n{}\n", serde_json::to_string_pretty(&values)?);
+                // Proofs are never requested, so keep printing the empty proof as before.
+                println!("Contract state (proof):\n[]\n");
                 Ok(())
             }
         });
