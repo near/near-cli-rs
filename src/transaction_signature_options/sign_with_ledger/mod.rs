@@ -2,7 +2,6 @@ use color_eyre::eyre::{ContextCompat, WrapErr};
 use inquire::CustomType;
 use near_ledger::NEARLedgerError;
 use near_primitives::action::delegate::SignedDelegateAction;
-use near_primitives::borsh;
 use near_primitives::transaction::TransactionV0;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 

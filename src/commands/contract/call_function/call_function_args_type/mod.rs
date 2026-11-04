@@ -1,3 +1,4 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use std::str::FromStr;
 
 use color_eyre::eyre::Context;
@@ -97,10 +98,9 @@ pub fn function_args(
             serde_json::to_vec(&data_json).wrap_err("Internal error!")
         }
         super::call_function_args_type::FunctionArgsType::TextArgs => Ok(args.into_bytes()),
-        super::call_function_args_type::FunctionArgsType::Base64Args => {
-            Ok(near_primitives::serialize::from_base64(&args)
-                .map_err(|_| color_eyre::eyre::eyre!("Data cannot be decoded with base64"))?)
-        }
+        super::call_function_args_type::FunctionArgsType::Base64Args => Ok(STANDARD
+            .decode(&args)
+            .map_err(|_| color_eyre::eyre::eyre!("Data cannot be decoded with base64"))?),
         super::call_function_args_type::FunctionArgsType::FileArgs => {
             let data_path = std::path::PathBuf::from(args);
             let data = std::fs::read(&data_path)
