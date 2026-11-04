@@ -1221,28 +1221,9 @@ pub fn print_unsigned_transaction(
 ) -> String {
     let mut info_str = String::new();
     info_str.push_str(&format!("\n{:<13} {}", "signer_id:", transaction.signer_id));
-    // A universal state init's receiver is its derived ID, so flag it here too when the
-    // state init is invalid and the account can never be initialized.
-    let has_invalid_universal_state_init = transaction.actions.iter().any(|action| {
-        matches!(
-            action,
-            near_primitives::transaction::Action::UniversalStateInit(universal_init_action)
-                if near_primitives::universal_state_init::UniversalStateInit::from_raw(
-                    &universal_init_action.state_init,
-                    near_primitives::universal_state_init::DecodeMode::Strict,
-                )
-                .is_err()
-        )
-    });
     info_str.push_str(&format!(
-        "\n{:<13} {}{}",
-        "receiver_id:",
-        transaction.receiver_id,
-        if has_invalid_universal_state_init {
-            " (from invalid universal state-init)"
-        } else {
-            ""
-        }
+        "\n{:<13} {}",
+        "receiver_id:", transaction.receiver_id
     ));
 
     if transaction
@@ -1449,14 +1430,14 @@ pub fn print_unsigned_transaction(
             ) => push_state_init_info(
                 &mut info_str,
                 "deterministic",
-                Some(
-                    near_primitives::utils::derive_near_deterministic_account_id(
-                        &deterministic_init_action.state_init,
-                    ),
+                near_primitives::utils::derive_near_deterministic_account_id(
+                    &deterministic_init_action.state_init,
                 ),
                 deterministic_init_action.deposit,
-                serde_json::to_string_pretty(&deterministic_init_action.state_init)
-                    .expect("DeterministicAccountStateInit is always serializable"),
+                Ok(
+                    serde_json::to_string_pretty(&deterministic_init_action.state_init)
+                        .expect("DeterministicAccountStateInit is always serializable"),
+                ),
             ),
             near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
@@ -1502,27 +1483,24 @@ pub fn print_unsigned_transaction(
                 ));
             }
             near_primitives::transaction::Action::UniversalStateInit(universal_init_action) => {
-                let raw = &universal_init_action.state_init;
-                // The derived account ID is meaningful only for canonical bytes, so it is
-                // omitted for anything strict decoding rejects.
-                let (account_id, state_init_json) =
-                    match near_primitives::universal_state_init::UniversalStateInit::from_raw(
-                        raw,
-                        near_primitives::universal_state_init::DecodeMode::Strict,
-                    ) {
-                        Ok(state_init) => (
-                            Some(near_primitives::utils::derive_universal_account_id(raw)),
-                            serde_json::to_string_pretty(&state_init)
-                                .expect("UniversalStateInit is always serializable"),
-                        ),
-                        Err(err) => (None, format!("malformed state init: {err}")),
-                    };
+                // Malformed bytes still derive an ID, so show it with the decode error
+                // rather than failing the whole preview.
                 push_state_init_info(
                     &mut info_str,
                     "universal",
-                    account_id,
+                    near_primitives::utils::derive_universal_account_id(
+                        &universal_init_action.state_init,
+                    ),
                     universal_init_action.deposit,
-                    state_init_json,
+                    near_primitives::universal_state_init::UniversalStateInit::from_raw(
+                        &universal_init_action.state_init,
+                        near_primitives::universal_state_init::DecodeMode::Strict,
+                    )
+                    .map(|state_init| {
+                        serde_json::to_string_pretty(&state_init)
+                            .expect("UniversalStateInit is always serializable")
+                    })
+                    .map_err(|err| err.to_string()),
                 );
             }
         }
@@ -1534,24 +1512,28 @@ pub fn print_unsigned_transaction(
 fn push_state_init_info(
     info_str: &mut String,
     kind: &str,
-    account_id: Option<near_primitives::types::AccountId>,
+    account_id: near_primitives::types::AccountId,
     deposit: near_token::NearToken,
-    state_init_json: String,
+    state_init_json: Result<String, String>,
 ) {
+    let (malformed_note, state_init_str) = match state_init_json {
+        Ok(json) => ("", json),
+        Err(err) => (
+            " (malformed state init)",
+            format!("malformed state init: {err}"),
+        ),
+    };
     info_str.push_str(&format!(
         "\n{:>5} {:<20}",
         "--",
-        match account_id {
-            Some(account_id) => format!("create {kind} account <{account_id}>:"),
-            None => format!("invalid {kind} state-init (no derived account ID):"),
-        }
+        format!("create {kind} account <{account_id}>{malformed_note}:")
     ));
     info_str.push_str(&format!("\n{:>18} {:<12}: {}", "", "deposit", deposit));
     info_str.push_str(&format!(
         "\n{:>18} {:<12}: {}",
         "",
         "state-init",
-        state_init_json.replace('\n', &format!("\n{:33}", ""))
+        state_init_str.replace('\n', &format!("\n{:33}", ""))
     ));
 }
 

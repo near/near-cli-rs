@@ -52,22 +52,20 @@ fn canonical_universal_state_init_preview_keeps_known_account_ids() {
         assert!(output.contains(&format!("create universal account <{expected_id}>:")));
         let json = serde_json::to_string_pretty(&state_init).unwrap();
         assert!(output.contains(&json.replace('\n', &format!("\n{:33}", ""))));
-        assert!(!output.contains("invalid"));
+        assert!(!output.contains("malformed"));
     }
 }
 
 fn assert_invalid_preview(raw: RawStateInit) {
     let derived_id = near_primitives::utils::derive_universal_account_id(&raw);
     let output = preview(raw);
-    assert!(output.contains("invalid universal state-init (no derived account ID):"));
+    // The derived ID is still shown, but the action is flagged as malformed.
+    assert!(output.contains(&format!(
+        "create universal account <{derived_id}> (malformed state init):"
+    )));
     assert!(output.contains("malformed state init:"));
     assert!(output.contains("deposit"));
-    assert!(!output.contains("create universal account"));
-    // Only the receiver line names the derived ID, and it is flagged there.
-    assert!(output.contains(&format!(
-        "receiver_id:  {derived_id} (from invalid universal state-init)"
-    )));
-    assert_eq!(output.matches(derived_id.as_str()).count(), 1);
+    assert!(output.contains(&format!("receiver_id:  {derived_id}\n")));
 }
 
 // Shared verbatim with near-sdk-rs/near-global-contracts tests/data/universal_state_init.json.
@@ -85,7 +83,7 @@ fn shared_canonicality_vectors_control_address_presentation() {
             "{}",
             vector["name"],
         );
-        assert!(!output.contains("invalid"), "{}", vector["name"]);
+        assert!(!output.contains("malformed"), "{}", vector["name"]);
     }
     for vector in vectors["invalid"].as_array().unwrap() {
         let raw = RawStateInit(hex::decode(vector["hex"].as_str().unwrap()).unwrap());
