@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0-rc.3](https://github.com/near/near-cli-rs/compare/v0.31.0-rc.2...v0.31.0-rc.3) - 2026-11-04
+
+### Added
+
+- `contract verify --offline-build` ([#679](https://github.com/near/near-cli-rs/pull/679))
+
+### Fixed
+
+- flag malformed universal state init in transaction preview ([#702](https://github.com/near/near-cli-rs/pull/702))
+- paginate view-storage so large contract state can be read ([#708](https://github.com/near/near-cli-rs/pull/708))
+
+### Other
+
+- *(deps)* update nearcore deps to 2.14 stable ([#715](https://github.com/near/near-cli-rs/pull/715))
+
 ## [0.31.0-rc.2](https://github.com/near/near-cli-rs/compare/v0.31.0-rc.1...v0.31.0-rc.2) - 2026-10-14
 
 ### Added
