@@ -1434,8 +1434,10 @@ pub fn print_unsigned_transaction(
                     &deterministic_init_action.state_init,
                 ),
                 deterministic_init_action.deposit,
-                serde_json::to_string_pretty(&deterministic_init_action.state_init)
-                    .expect("DeterministicAccountStateInit is always serializable"),
+                Ok(
+                    serde_json::to_string_pretty(&deterministic_init_action.state_init)
+                        .expect("DeterministicAccountStateInit is always serializable"),
+                ),
             ),
             near_primitives::transaction::Action::TransferToGasKey(transfer_to_gas_key) => {
                 info_str.push_str(&format!("\n{:>5} {:<20}", "--", "transfer to gas key:"));
@@ -1481,6 +1483,8 @@ pub fn print_unsigned_transaction(
                 ));
             }
             near_primitives::transaction::Action::UniversalStateInit(universal_init_action) => {
+                // Malformed bytes still derive an ID, so show it with the decode error
+                // rather than failing the whole preview.
                 push_state_init_info(
                     &mut info_str,
                     "universal",
@@ -1492,13 +1496,11 @@ pub fn print_unsigned_transaction(
                         &universal_init_action.state_init,
                         near_primitives::universal_state_init::DecodeMode::Strict,
                     )
-                    .map_or_else(
-                        |err| format!("malformed state init: {err}"),
-                        |state_init| {
-                            serde_json::to_string_pretty(&state_init)
-                                .expect("UniversalStateInit is always serializable")
-                        },
-                    ),
+                    .map(|state_init| {
+                        serde_json::to_string_pretty(&state_init)
+                            .expect("UniversalStateInit is always serializable")
+                    })
+                    .map_err(|err| err.to_string()),
                 );
             }
         }
@@ -1512,19 +1514,26 @@ fn push_state_init_info(
     kind: &str,
     account_id: near_primitives::types::AccountId,
     deposit: near_token::NearToken,
-    state_init_json: String,
+    state_init_json: Result<String, String>,
 ) {
+    let (malformed_note, state_init_str) = match state_init_json {
+        Ok(json) => ("", json),
+        Err(err) => (
+            " (malformed state init)",
+            format!("malformed state init: {err}"),
+        ),
+    };
     info_str.push_str(&format!(
         "\n{:>5} {:<20}",
         "--",
-        format!("create {kind} account <{account_id}>:")
+        format!("create {kind} account <{account_id}>{malformed_note}:")
     ));
     info_str.push_str(&format!("\n{:>18} {:<12}: {}", "", "deposit", deposit));
     info_str.push_str(&format!(
         "\n{:>18} {:<12}: {}",
         "",
         "state-init",
-        state_init_json.replace('\n', &format!("\n{:33}", ""))
+        state_init_str.replace('\n', &format!("\n{:33}", ""))
     ));
 }
 
