@@ -63,7 +63,7 @@ tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-wasmparser = "0.243"
+wasmparser = "0.263"
 
 semver = { version = "1.0.4", optional = true }
 self_update = { version = "1.0.0-rc.6", optional = true }
@@ -75,12 +75,12 @@ bytesize = "1.1.0"
 prettytable = "0.10.0"
 textwrap = "0.16.1"
 
-near-crypto = "=0.38.0-rc.4"
-near-primitives = "=0.38.0-rc.4"
-near-jsonrpc-client = { version = "=0.23.0-rc.3", features = ["any"] }
-near-jsonrpc-primitives = "=0.38.0-rc.4"
-near-parameters = "=0.38.0-rc.4"
-near-socialdb-client = "=0.17.0-rc.3"
+near-crypto = "0.38.0"
+near-primitives = "0.38.0"
+near-jsonrpc-client = { version = "0.23.0", features = ["any"] }
+near-jsonrpc-primitives = "0.38.0"
+near-parameters = "0.38.0"
+near-socialdb-client = "0.17.0"
 
 near-ledger = { version = "0.9.4", optional = true }
 
@@ -97,7 +97,7 @@ near-token = { version = "0.3", features = [
 
 near-abi = "0.4.2"
 
-zstd = "0.13"
+zstd = "0.14"
 
 keyring = { version = "3.0.5", features = [
     "apple-native",
@@ -118,7 +118,7 @@ git2 = { version = "0.21", features = ["https"], optional = true }
 tempfile = { version = "3.10.1", optional = true }
 
 [dev-dependencies]
-near-sandbox = "0.4.0-rc.1"
+near-sandbox = "0.4.0"
 tokio-test = "0.4"
 tempfile = "3.10.1"
 insta = "1.40"
