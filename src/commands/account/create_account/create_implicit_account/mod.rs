@@ -1,4 +1,5 @@
 use inquire::CustomType;
+use std::io::Write;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
 mod use_auto_generation;
@@ -82,4 +83,42 @@ pub type OnAfterGettingFolderPathCallback =
 pub struct SaveImplicitAccountContext {
     config: crate::config::Config,
     on_after_getting_folder_path_callback: OnAfterGettingFolderPathCallback,
+}
+
+fn write_secret_key_file(file_path: &std::path::Path, contents: &[u8]) -> std::io::Result<()> {
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+
+        options.mode(0o600);
+        let mut file = options.open(file_path)?;
+        file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
+        file.write_all(contents)
+    }
+
+    #[cfg(not(unix))]
+    options.open(file_path)?.write_all(contents)
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+    #[test]
+    fn secret_key_file_is_owner_only() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let file_path = temp_dir.path().join("implicit-account.json");
+
+        super::write_secret_key_file(&file_path, b"first").unwrap();
+        assert_eq!(file_path.metadata().unwrap().mode() & 0o777, 0o600);
+
+        std::fs::set_permissions(&file_path, std::fs::Permissions::from_mode(0o644)).unwrap();
+        super::write_secret_key_file(&file_path, b"replacement").unwrap();
+
+        assert_eq!(std::fs::read(&file_path).unwrap(), b"replacement");
+        assert_eq!(file_path.metadata().unwrap().mode() & 0o777, 0o600);
+    }
 }
