@@ -466,12 +466,28 @@ pub fn is_receiver_on_wrong_network(
 }
 
 /// Returns `Ok(true)` if the transaction should proceed, `Ok(false)` if the user cancelled.
-#[tracing::instrument(name = "Validating the recipient account", skip_all)]
 pub fn validate_receiver_account_id(
     network_config: &crate::config::NetworkConfig,
     receiver_account_id: &near_primitives::types::AccountId,
     verbosity: crate::Verbosity,
     offline_mode: bool,
+) -> color_eyre::eyre::Result<bool> {
+    validate_receiver_account_id_with_warning(
+        network_config,
+        receiver_account_id,
+        verbosity,
+        offline_mode,
+        handle_validation_warning,
+    )
+}
+
+#[tracing::instrument(name = "Validating the recipient account", skip_all)]
+pub(crate) fn validate_receiver_account_id_with_warning(
+    network_config: &crate::config::NetworkConfig,
+    receiver_account_id: &near_primitives::types::AccountId,
+    verbosity: crate::Verbosity,
+    offline_mode: bool,
+    warning: impl Fn(String) -> color_eyre::eyre::Result<bool>,
 ) -> color_eyre::eyre::Result<bool> {
     tracing::Span::current().pb_set_message(&format!(
         "<{receiver_account_id}> on network <{}> ...",
@@ -487,14 +503,14 @@ pub fn validate_receiver_account_id(
         network_config.linkdrop_account_id.as_ref(),
         receiver_account_id,
     ) {
-        return handle_validation_warning(format!(
+        return warning(format!(
             "<{}> looks like it belongs to a different network than <{}>.",
             receiver_account_id, network_config.network_name
         ));
     }
 
     if offline_mode {
-        return handle_validation_warning(format!(
+        return warning(format!(
             "Skipping account validation for <{}> on <{}> in offline mode.",
             receiver_account_id, network_config.network_name
         ));
@@ -512,7 +528,7 @@ pub fn validate_receiver_account_id(
             near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
                 near_jsonrpc_primitives::types::query::RpcQueryError::UnknownAccount { .. },
             ),
-        )) => handle_validation_warning(format!(
+        )) => warning(format!(
             "<{}> does not exist on <{}>.",
             receiver_account_id, network_config.network_name
         )),
@@ -520,7 +536,7 @@ pub fn validate_receiver_account_id(
     }
 }
 
-fn handle_validation_warning(message: String) -> color_eyre::eyre::Result<bool> {
+pub(crate) fn handle_validation_warning(message: String) -> color_eyre::eyre::Result<bool> {
     tracing::warn!("{}", message.red());
     suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(ask_if_should_proceed)
 }
