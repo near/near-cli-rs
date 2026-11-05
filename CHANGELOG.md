@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0](https://github.com/near/near-cli-rs/compare/v0.30.1...v0.31.0) - 2026-11-04
+
+### Added
+
+- support nearcore 2.14 ([#682](https://github.com/near/near-cli-rs/pull/682))
+- `contract verify --offline-build` ([#679](https://github.com/near/near-cli-rs/pull/679))
+- *(contract verify)* accept ghcr.io/near/cargo-near build images ([#685](https://github.com/near/near-cli-rs/pull/685))
+- handle pending transaction timeouts (nearcore 2.14) ([#683](https://github.com/near/near-cli-rs/pull/683))
+- ability to view the balance of MT-FT tokens ([#657](https://github.com/near/near-cli-rs/pull/657))
+- colour receipt log headers and mark failed receipts ([#675](https://github.com/near/near-cli-rs/pull/675))
+
+### Fixed
+
+- flag malformed universal state init in transaction preview ([#702](https://github.com/near/near-cli-rs/pull/702))
+- paginate view-storage so large contract state can be read ([#708](https://github.com/near/near-cli-rs/pull/708))
+- don't care about the response structure and check only for the signature in `sign_with_mpc` ([#678](https://github.com/near/near-cli-rs/pull/678))
+- enable `git2` https for `contract verify` ([#681](https://github.com/near/near-cli-rs/pull/681))
+- report unsupported reconstructed actions without panicking ([#662](https://github.com/near/near-cli-rs/pull/662))
+- use deploy action hash when reconstructing transactions ([#659](https://github.com/near/near-cli-rs/pull/659))
+- show account import verification errors ([#651](https://github.com/near/near-cli-rs/pull/651))
+- support ML-DSA key handles offline ([#650](https://github.com/near/near-cli-rs/pull/650))
+- normalize imported ML-DSA key IDs ([#649](https://github.com/near/near-cli-rs/pull/649))
+- sum receipt gas and fees before printing, print function logs once ([#673](https://github.com/near/near-cli-rs/pull/673))
+- print transaction ID and explorer link when a transaction fails ([#672](https://github.com/near/near-cli-rs/pull/672))
+
+### Other
+
+- *(deps)* update nearcore deps to 2.14 stable ([#715](https://github.com/near/near-cli-rs/pull/715))
+- *(tests)* pin transaction and credential compatibility ([#660](https://github.com/near/near-cli-rs/pull/660))
+- *(deps)* switch from fast_clap fork back to upstream clap 4.6.7 ([#671](https://github.com/near/near-cli-rs/pull/671))
+- *(construct-transaction)* allow more actions ([#667](https://github.com/near/near-cli-rs/pull/667))
+
 ## [0.31.0-rc.2](https://github.com/near/near-cli-rs/compare/v0.31.0-rc.1...v0.31.0-rc.2) - 2026-10-14
 
 ### Added
