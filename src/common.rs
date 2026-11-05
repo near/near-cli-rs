@@ -740,7 +740,7 @@ impl std::fmt::Display for AccessKeyInfo {
             near_primitives::views::AccessKeyPermissionView::FullAccess => {
                 write!(
                     f,
-                    "{} {}\t{}",
+                    "{} {} {}",
                     self.network_name.blue(),
                     self.public_key.yellow(),
                     "full access".yellow()
@@ -758,7 +758,7 @@ impl std::fmt::Display for AccessKeyInfo {
                 if method_names.is_empty() {
                     write!(
                         f,
-                        "{} {}\t{} {} {}",
+                        "{} {} {} {} {}",
                         self.network_name.blue(),
                         self.public_key.green(),
                         "call any function on".green(),
@@ -768,7 +768,7 @@ impl std::fmt::Display for AccessKeyInfo {
                 } else {
                     write!(
                         f,
-                        "{} {}\t{} {:?} {} {} {}",
+                        "{} {} {} {:?} {} {} {}",
                         self.network_name.blue(),
                         self.public_key.green(),
                         "call".green(),
@@ -792,7 +792,7 @@ impl std::fmt::Display for AccessKeyInfo {
                 };
                 write!(
                     f,
-                    "{} {}\t{} ({}, {})",
+                    "{} {} {} ({}, {})",
                     self.network_name.blue(),
                     self.public_key.cyan(),
                     "gas key for function calls".cyan(),
@@ -806,7 +806,7 @@ impl std::fmt::Display for AccessKeyInfo {
             } => {
                 write!(
                     f,
-                    "{} {}\t{} ({}, {})",
+                    "{} {} {} ({}, {})",
                     self.network_name.blue(),
                     self.public_key.cyan(),
                     "gas key with full access".cyan(),
