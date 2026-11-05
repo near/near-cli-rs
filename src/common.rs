@@ -521,7 +521,14 @@ pub fn validate_receiver_account_id(
 }
 
 fn handle_validation_warning(message: String) -> color_eyre::eyre::Result<bool> {
+    use std::io::IsTerminal;
+
     tracing::warn!("{}", message.red());
+    if !std::io::stdin().is_terminal() {
+        color_eyre::eyre::bail!(
+            "{message}\nCannot confirm recipient validation warning because stdin is not a terminal. Re-run in an interactive terminal to confirm or cancel the transfer."
+        );
+    }
     suspend_tracing_indicatif::<_, color_eyre::eyre::Result<bool>>(ask_if_should_proceed)
 }
 
