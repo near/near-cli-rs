@@ -1,20 +1,25 @@
+mod get_validator_list;
+
+pub use get_validator_list::{
+    RewardFeeFraction, StakingPoolInfo, get_validator_list, get_validators_stake,
+};
+
 use std::collections::{HashSet, VecDeque};
 use std::convert::{TryFrom, TryInto};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::str::FromStr;
 
+use crate::types::partial_protocol_config::get_partial_protocol_config;
 use color_eyre::eyre::{ContextCompat, WrapErr};
 use color_eyre::owo_colors::OwoColorize;
-use futures::{StreamExt, TryStreamExt};
 use near_primitives::action::{GlobalContractDeployMode, GlobalContractIdentifier};
+use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 use prettytable::Table;
 use rust_decimal::prelude::FromPrimitive;
 use serde_with::{base64::Base64, serde_as};
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_indicatif::suspend_tracing_indicatif;
-
-use near_primitives::{hash::CryptoHash, types::BlockReference, views::AccessKeyPermissionView};
 
 pub type CliResult = color_eyre::eyre::Result<()>;
 
@@ -24,8 +29,6 @@ pub type BoxedJsonRpcResult<T, E> = Result<T, Box<near_jsonrpc_client::errors::J
 
 use inquire::{Select, Text};
 use strum::IntoEnumIterator;
-
-use crate::types::partial_protocol_config::get_partial_protocol_config;
 
 const FINAL_COMMAND_FILE_NAME: &str = "near-cli-rs-final-command.log";
 
@@ -2745,52 +2748,6 @@ pub fn input_staking_pool_validator_account_id(
     Ok(Some(validator_account_id))
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct StakingPoolInfo {
-    pub validator_id: near_primitives::types::AccountId,
-    pub fee: Option<RewardFeeFraction>,
-    pub delegators: Option<u64>,
-    pub stake: near_primitives::types::Balance,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
-pub struct RewardFeeFraction {
-    pub numerator: u32,
-    pub denominator: u32,
-}
-
-#[tracing::instrument(name = "Getting a list of validators ...", skip_all)]
-pub fn get_validator_list(
-    network_config: &crate::config::NetworkConfig,
-) -> color_eyre::eyre::Result<Vec<StakingPoolInfo>> {
-    tracing::info!(target: "near_teach_me", "Getting a list of validators ...");
-
-    let json_rpc_client = network_config.json_rpc_client();
-
-    let validators_stake = get_validators_stake(&json_rpc_client)?;
-
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()?;
-    let concurrency = 10;
-
-    let mut validator_list = runtime.block_on(
-        futures::stream::iter(validators_stake.iter())
-            .map(|(validator_account_id, stake)| async {
-                get_staking_pool_info(
-                    &json_rpc_client.clone(),
-                    validator_account_id.clone(),
-                    *stake,
-                )
-                .await
-            })
-            .buffer_unordered(concurrency)
-            .try_collect::<Vec<_>>(),
-    )?;
-    validator_list.sort_by_key(|b| std::cmp::Reverse(b.stake));
-    Ok(validator_list)
-}
-
 #[derive(Debug, serde::Deserialize)]
 struct StakingPool {
     pool_id: near_primitives::types::AccountId,
@@ -2847,121 +2804,6 @@ pub fn fetch_currently_active_staking_pools(
     } else {
         Err(color_eyre::Report::msg("Error call result".to_string()))
     }
-}
-
-#[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
-pub fn get_validators_stake(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-) -> color_eyre::eyre::Result<
-    std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
-> {
-    tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
-    let epoch_validator_info = json_rpc_client
-        .blocking_call(
-            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                epoch_reference: near_primitives::types::EpochReference::Latest,
-            },
-        )
-        .wrap_err("Failed to get epoch validators information request.")?;
-
-    Ok(epoch_validator_info
-        .current_proposals
-        .into_iter()
-        .map(|validator_stake_view| {
-            let validator_stake = validator_stake_view.into_validator_stake();
-            validator_stake.account_and_stake()
-        })
-        .chain(epoch_validator_info.current_validators.into_iter().map(
-            |current_epoch_validator_info| {
-                (
-                    current_epoch_validator_info.account_id,
-                    current_epoch_validator_info.stake,
-                )
-            },
-        ))
-        .chain(
-            epoch_validator_info
-                .next_validators
-                .into_iter()
-                .map(|next_epoch_validator_info| {
-                    (
-                        next_epoch_validator_info.account_id,
-                        next_epoch_validator_info.stake,
-                    )
-                }),
-        )
-        .collect())
-}
-
-async fn get_staking_pool_info(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    validator_account_id: near_primitives::types::AccountId,
-    stake: near_token::NearToken,
-) -> color_eyre::Result<StakingPoolInfo> {
-    let fee = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_reward_fee_fraction".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
-        .await
-    {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<RewardFeeFraction>()
-                .wrap_err(
-                    "Failed to parse return value of view function call for RewardFeeFraction.",
-                )?,
-        ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
-        Err(err) => return Err(err.into()),
-    };
-
-    let delegators = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_number_of_accounts".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
-        .await
-    {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<u64>()
-                .wrap_err("Failed to parse return value of view function call for u64.")?,
-        ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
-        Err(err) => return Err(err.into()),
-    };
-
-    Ok(StakingPoolInfo {
-        validator_id: validator_account_id.clone(),
-        fee,
-        delegators,
-        stake,
-    })
 }
 
 pub fn display_account_info(
@@ -3528,7 +3370,7 @@ impl JsonRpcClientExt for near_jsonrpc_client::JsonRpcClient {
                     target: "near_teach_me",
                     parent: &tracing::Span::none(),
                     "Decoding the \"result\" array of bytes as UTF-8 string (tip: you can use this Python snippet to do it: `\"\".join([chr(c) for c in result])`):\n{}",
-                    indent_payload(&format!("{}\n ", 
+                    indent_payload(&format!("{}\n ",
                         String::from_utf8(call_result.result.clone())
                             .unwrap_or_else(|_| "<decoding failed - the result is not a UTF-8 string>".to_owned())
                     ))
