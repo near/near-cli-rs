@@ -1,7 +1,9 @@
 mod format_validator_stake;
+mod format_validator_status;
 
 use crate::common::{StakingPoolInfo, get_validator_list};
 use format_validator_stake::format_validator_stake;
+use format_validator_status::format_validator_status;
 use prettytable::Table;
 
 fn format_validator_fee(validator: &StakingPoolInfo) -> String {
@@ -29,7 +31,9 @@ fn print_validator_list(network_config: &crate::config::NetworkConfig) -> crate:
     // Print validators as a table
     let mut table = Table::new();
 
-    table.set_titles(prettytable::row![Fg=>"#", "Validator Id", "Fee", "Delegators", "Stake"]);
+    table.set_titles(
+        prettytable::row![Fg=>"#", "Validator Id", "Status", "Fee", "Delegators", "Stake"],
+    );
     table.extend(
         validators
             .into_iter()
@@ -38,6 +42,7 @@ fn print_validator_list(network_config: &crate::config::NetworkConfig) -> crate:
                 prettytable::row![
                     Fg->index + 1,
                     validator.validator_id,
+                    format_validator_status(&validator),
                     format_validator_fee(&validator),
                     format_validator_delegators(&validator),
                     r->format_validator_stake(&validator),

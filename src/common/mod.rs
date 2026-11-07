@@ -1,7 +1,7 @@
 mod get_validator_list;
 
 pub use get_validator_list::{
-    RewardFeeFraction, StakingPoolInfo, get_validator_list, get_validators_stake,
+    RewardFeeFraction, StakingPoolInfo, ValidatorStatus, get_validator_list, get_validators,
 };
 
 use std::collections::{HashSet, VecDeque};

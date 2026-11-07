@@ -1,8 +1,10 @@
 use super::*;
+use crate::common::ValidatorStatus;
 
 fn validator_with_stake(stake: near_token::NearToken) -> StakingPoolInfo {
     StakingPoolInfo {
         validator_id: "test.poolv1.near".parse().unwrap(),
+        status: ValidatorStatus::Active,
         fee: None,
         delegators: None,
         stake,

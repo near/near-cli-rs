@@ -8,6 +8,7 @@ use near_token::NearToken;
 use serde::Deserialize;
 
 use super::shared::staking_pool_info::StakingPoolInfo;
+use super::shared::validator_status::ValidatorStatus;
 use crate::common::{CallResultExt, RpcQueryResponseExt};
 
 /// Returns `None` if the validator account is not a staking pool
@@ -52,6 +53,7 @@ pub(super) async fn get_staking_pool_info(
     json_rpc_client: &JsonRpcClient,
     validator_account_id: AccountId,
     stake: NearToken,
+    status: ValidatorStatus,
 ) -> eyre::Result<StakingPoolInfo> {
     let (fee, delegators) = futures::try_join!(
         call_staking_pool_view_method(
@@ -68,6 +70,7 @@ pub(super) async fn get_staking_pool_info(
 
     Ok(StakingPoolInfo {
         validator_id: validator_account_id,
+        status,
         fee,
         delegators,
         stake,
