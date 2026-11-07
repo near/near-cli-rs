@@ -1,35 +1,23 @@
+#[cfg(test)]
+mod tests;
 
+use crate::common::StakingPoolInfo;
 
-mod tests {
-    
-}
+/// Formats the stake as whole NEAR with thousands separators (e.g. `33,272,032 NEAR`),
+/// since fractions of NEAR are noise for validator-sized stakes.
+pub fn format_validator_stake(validator: &StakingPoolInfo) -> String {
+    const ONE_NEAR: u128 = 10u128.pow(24);
 
-fn validator_with_stake(stake: near_token::NearToken) -> StakingPoolInfo {
-    StakingPoolInfo {
-        validator_id: "test.poolv1.near".parse().unwrap(),
-        fee: None,
-        delegators: None,
-        stake,
+    let digits = ((validator.stake.as_yoctonear() + ONE_NEAR / 2) / ONE_NEAR).to_string();
+    let mut stake = String::with_capacity(digits.len() + digits.len() / 3 + 5);
+
+    for (index, digit) in digits.chars().enumerate() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            stake.push(',');
+        }
+        stake.push(digit);
     }
-}
+    stake.push_str(" NEAR");
 
-#[test]
-fn stake_is_formatted_with_thousands_separators() {
-    for (stake, expected) in [
-        (near_token::NearToken::from_yoctonear(0), "0 NEAR"),
-        (near_token::NearToken::from_millinear(499), "0 NEAR"),
-        (near_token::NearToken::from_millinear(500), "1 NEAR"),
-        (near_token::NearToken::from_near(999), "999 NEAR"),
-        (near_token::NearToken::from_near(1_000), "1,000 NEAR"),
-        (near_token::NearToken::from_near(123_456), "123,456 NEAR"),
-        (
-            near_token::NearToken::from_millinear(33_272_032_170),
-            "33,272,032 NEAR",
-        ),
-    ] {
-        assert_eq!(
-            format_validator_stake(&validator_with_stake(stake)),
-            expected
-        );
-    }
+    stake
 }

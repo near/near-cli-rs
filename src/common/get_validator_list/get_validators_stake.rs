@@ -1,19 +1,22 @@
+use color_eyre::eyre::{self, Context};
+use near_jsonrpc_client::JsonRpcClient;
+use near_jsonrpc_client::methods::validators::RpcValidatorRequest;
+use near_primitives::types::{AccountId, EpochReference};
+use near_token::NearToken;
+use std::collections::HashMap;
+
 use crate::common::JsonRpcClientExt;
-use color_eyre::eyre::Context;
 
 #[tracing::instrument(name = "Getting a stake of validators ...", skip_all)]
 pub fn get_validators_stake(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-) -> color_eyre::eyre::Result<
-    std::collections::HashMap<near_primitives::types::AccountId, near_primitives::types::Balance>,
-> {
+    json_rpc_client: &JsonRpcClient,
+) -> eyre::Result<HashMap<AccountId, NearToken>> {
     tracing::info!(target: "near_teach_me", "Getting a stake of validators ...");
+
     let epoch_validator_info = json_rpc_client
-        .blocking_call(
-            &near_jsonrpc_client::methods::validators::RpcValidatorRequest {
-                epoch_reference: near_primitives::types::EpochReference::Latest,
-            },
-        )
+        .blocking_call(&RpcValidatorRequest {
+            epoch_reference: EpochReference::Latest,
+        })
         .wrap_err("Failed to get epoch validators information request.")?;
 
     Ok(epoch_validator_info

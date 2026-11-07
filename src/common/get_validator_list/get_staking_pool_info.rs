@@ -1,85 +1,74 @@
+use color_eyre::eyre::{self, Context};
+use near_jsonrpc_client::JsonRpcClient;
+use near_jsonrpc_client::errors::{JsonRpcError, JsonRpcServerError};
+use near_jsonrpc_client::methods::query::{RpcQueryError, RpcQueryRequest};
+use near_primitives::types::{AccountId, Finality, FunctionArgs};
+use near_primitives::views::QueryRequest;
+use near_token::NearToken;
+use serde::Deserialize;
+
+use super::shared::staking_pool_info::StakingPoolInfo;
 use crate::common::{CallResultExt, RpcQueryResponseExt};
-use color_eyre::eyre::Context;
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
-pub struct RewardFeeFraction {
-    pub numerator: u32,
-    pub denominator: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct StakingPoolInfo {
-    pub validator_id: near_primitives::types::AccountId,
-    pub fee: Option<RewardFeeFraction>,
-    pub delegators: Option<u64>,
-    pub stake: near_primitives::types::Balance,
+/// Returns `None` if the validator account is not a staking pool
+/// (it has no contract or the contract has no such method).
+async fn call_staking_pool_view_method<T>(
+    json_rpc_client: &JsonRpcClient,
+    validator_account_id: &AccountId,
+    method_name: &str,
+) -> eyre::Result<Option<T>>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    match json_rpc_client
+        .call(RpcQueryRequest {
+            block_reference: Finality::Final.into(),
+            request: QueryRequest::CallFunction {
+                account_id: validator_account_id.clone(),
+                method_name: method_name.to_string(),
+                args: FunctionArgs::from(vec![]),
+            },
+        })
+        .await
+    {
+        Ok(response) => Ok(Some(
+            response
+                .call_result()?
+                .parse_result_from_json()
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to parse return value of <{method_name}> of <{validator_account_id}>."
+                    )
+                })?,
+        )),
+        Err(JsonRpcError::ServerError(JsonRpcServerError::HandlerError(
+            RpcQueryError::NoContractCode { .. } | RpcQueryError::ContractExecutionError { .. },
+        ))) => Ok(None),
+        Err(err) => Err(err.into()),
+    }
 }
 
 pub(super) async fn get_staking_pool_info(
-    json_rpc_client: &near_jsonrpc_client::JsonRpcClient,
-    validator_account_id: near_primitives::types::AccountId,
-    stake: near_token::NearToken,
-) -> color_eyre::Result<StakingPoolInfo> {
-    let fee = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_reward_fee_fraction".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
-        .await
-    {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<RewardFeeFraction>()
-                .wrap_err(
-                    "Failed to parse return value of view function call for RewardFeeFraction.",
-                )?,
-        ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
-        Err(err) => return Err(err.into()),
-    };
+    json_rpc_client: &JsonRpcClient,
+    validator_account_id: AccountId,
+    stake: NearToken,
+) -> eyre::Result<StakingPoolInfo> {
+    let fee = call_staking_pool_view_method(
+        json_rpc_client,
+        &validator_account_id,
+        "get_reward_fee_fraction",
+    )
+    .await?;
 
-    let delegators = match json_rpc_client
-        .call(near_jsonrpc_client::methods::query::RpcQueryRequest {
-            block_reference: near_primitives::types::Finality::Final.into(),
-            request: near_primitives::views::QueryRequest::CallFunction {
-                account_id: validator_account_id.clone(),
-                method_name: "get_number_of_accounts".to_string(),
-                args: near_primitives::types::FunctionArgs::from(vec![]),
-            },
-        })
-        .await
-    {
-        Ok(response) => Some(
-            response
-                .call_result()?
-                .parse_result_from_json::<u64>()
-                .wrap_err("Failed to parse return value of view function call for u64.")?,
-        ),
-        Err(near_jsonrpc_client::errors::JsonRpcError::ServerError(
-            near_jsonrpc_client::errors::JsonRpcServerError::HandlerError(
-                near_jsonrpc_client::methods::query::RpcQueryError::NoContractCode { .. }
-                | near_jsonrpc_client::methods::query::RpcQueryError::ContractExecutionError {
-                    ..
-                },
-            ),
-        )) => None,
-        Err(err) => return Err(err.into()),
-    };
+    let delegators = call_staking_pool_view_method(
+        json_rpc_client,
+        &validator_account_id,
+        "get_number_of_accounts",
+    )
+    .await?;
 
     Ok(StakingPoolInfo {
-        validator_id: validator_account_id.clone(),
+        validator_id: validator_account_id,
         fee,
         delegators,
         stake,

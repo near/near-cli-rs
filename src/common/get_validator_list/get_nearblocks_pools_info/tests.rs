@@ -1,4 +1,6 @@
 use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::thread::JoinHandle;
 
 use super::*;
 
@@ -7,10 +9,10 @@ use super::*;
 /// after the code under test is done; an unexpected extra request takes that slot instead.
 fn spawn_mock_nearblocks_server(
     responses: Vec<(&'static str, &'static str)>,
-) -> (std::net::SocketAddr, std::thread::JoinHandle<Vec<String>>) {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+) -> (SocketAddr, JoinHandle<Vec<String>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = listener.local_addr().unwrap();
-    let handle = std::thread::spawn(move || {
+    let handle = thread::spawn(move || {
         let mut responses = responses.into_iter();
         let mut requests = vec![];
         for _ in 0..=responses.len() {
@@ -40,18 +42,17 @@ fn spawn_mock_nearblocks_server(
 fn get_nearblocks_pools_info_from_mock_server(
     responses: Vec<(&'static str, &'static str)>,
     validators: &[&str],
-) -> (
-    HashMap<near_primitives::types::AccountId, (RewardFeeFraction, u64)>,
-    Vec<String>,
-) {
+) -> (HashMap<AccountId, (RewardFeeFraction, u64)>, Vec<String>) {
     let (addr, server_handle) = spawn_mock_nearblocks_server(responses);
     let validators = validators
         .iter()
         .map(|validator_id| validator_id.parse().unwrap())
-        .collect::<Vec<near_primitives::types::AccountId>>();
-    let staking_pools_info =
-        get_nearblocks_pools_info(&format!("http://{addr}/").parse().unwrap(), &validators);
-    drop(std::net::TcpStream::connect(addr).unwrap());
+        .collect::<Vec<AccountId>>();
+    let staking_pools_info = get_nearblocks_pools_info(
+        &format!("http://{addr}/").parse().unwrap(),
+        validators.iter().collect(),
+    );
+    drop(TcpStream::connect(addr).unwrap());
     (staking_pools_info, server_handle.join().unwrap())
 }
 
@@ -114,9 +115,7 @@ fn get_nearblocks_pools_info_stops_on_the_last_page() {
 
     assert_eq!(
         staking_pools_info.keys().collect::<Vec<_>>(),
-        [&"a.near"
-            .parse::<near_primitives::types::AccountId>()
-            .unwrap()]
+        [&"a.near".parse::<AccountId>().unwrap()]
     );
     assert_eq!(requests, ["GET /v3/validators?limit=100 HTTP/1.1", ""]);
 }
@@ -138,9 +137,7 @@ fn get_nearblocks_pools_info_keeps_fetched_pages_on_error() {
 
     assert_eq!(
         staking_pools_info.keys().collect::<Vec<_>>(),
-        [&"a.near"
-            .parse::<near_primitives::types::AccountId>()
-            .unwrap()]
+        [&"a.near".parse::<AccountId>().unwrap()]
     );
     assert_eq!(requests.len(), 3);
     assert_eq!(requests[2], "");
