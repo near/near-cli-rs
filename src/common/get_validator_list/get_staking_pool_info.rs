@@ -53,19 +53,18 @@ pub(super) async fn get_staking_pool_info(
     validator_account_id: AccountId,
     stake: NearToken,
 ) -> eyre::Result<StakingPoolInfo> {
-    let fee = call_staking_pool_view_method(
-        json_rpc_client,
-        &validator_account_id,
-        "get_reward_fee_fraction",
-    )
-    .await?;
-
-    let delegators = call_staking_pool_view_method(
-        json_rpc_client,
-        &validator_account_id,
-        "get_number_of_accounts",
-    )
-    .await?;
+    let (fee, delegators) = futures::try_join!(
+        call_staking_pool_view_method(
+            json_rpc_client,
+            &validator_account_id,
+            "get_reward_fee_fraction",
+        ),
+        call_staking_pool_view_method(
+            json_rpc_client,
+            &validator_account_id,
+            "get_number_of_accounts",
+        ),
+    )?;
 
     Ok(StakingPoolInfo {
         validator_id: validator_account_id,
