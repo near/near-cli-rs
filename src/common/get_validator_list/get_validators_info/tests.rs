@@ -1,4 +1,4 @@
-use near_primitives::types::ValidatorKickoutReason;
+use near_token::NearToken;
 use serde_json::{Value, json};
 
 use super::*;
@@ -36,7 +36,7 @@ fn proposal(account_id: &str, stake: NearToken) -> Value {
 }
 
 #[test]
-fn validators_get_the_status_and_stake_of_their_latest_seat() {
+fn each_account_keeps_its_latest_stake_and_status() {
     let epoch_validator_info: EpochValidatorInfo = serde_json::from_value(json!({
         "current_validators": [
             current_validator("active.near", NearToken::from_near(100)),
@@ -52,60 +52,43 @@ fn validators_get_the_status_and_stake_of_their_latest_seat() {
             proposal("active.near", NearToken::from_near(120)),
             proposal("leaving.near", NearToken::from_near(55)),
             proposal("proposal.near", NearToken::from_near(20)),
-            proposal("kicked.near", NearToken::from_near(40)),
         ],
-        "prev_epoch_kickout": [
-            {
-                "account_id": "leaving.near",
-                "reason": { "NotEnoughChunkEndorsements": { "produced": 1, "expected": 10 } },
-            },
-            { "account_id": "kicked.near", "reason": "Unstaked" },
-        ],
+        "prev_epoch_kickout": [],
         "epoch_start_height": 1,
         "epoch_height": 1,
     }))
     .unwrap();
 
     assert_eq!(
-        collect_validators(epoch_validator_info),
+        merge_validators_info(epoch_validator_info),
         HashMap::from([
             (
                 "active.near".parse().unwrap(),
-                (NearToken::from_near(110), ValidatorStatus::Active),
+                ValidatorInfo {
+                    stake: NearToken::from_near(110),
+                    status: ValidatorStatus::Active,
+                },
             ),
             (
                 "leaving.near".parse().unwrap(),
-                (
-                    NearToken::from_near(50),
-                    ValidatorStatus::Leaving {
-                        kickout_reason: Some(ValidatorKickoutReason::NotEnoughChunkEndorsements {
-                            produced: 1,
-                            expected: 10,
-                        }),
-                    },
-                ),
+                ValidatorInfo {
+                    stake: NearToken::from_near(50),
+                    status: ValidatorStatus::Leaving,
+                },
             ),
             (
                 "joining.near".parse().unwrap(),
-                (NearToken::from_near(30), ValidatorStatus::Joining),
+                ValidatorInfo {
+                    stake: NearToken::from_near(30),
+                    status: ValidatorStatus::Joining,
+                },
             ),
             (
                 "proposal.near".parse().unwrap(),
-                (
-                    NearToken::from_near(20),
-                    ValidatorStatus::Proposal {
-                        kickout_reason: None,
-                    },
-                ),
-            ),
-            (
-                "kicked.near".parse().unwrap(),
-                (
-                    NearToken::from_near(40),
-                    ValidatorStatus::Proposal {
-                        kickout_reason: Some(ValidatorKickoutReason::Unstaked),
-                    },
-                ),
+                ValidatorInfo {
+                    stake: NearToken::from_near(20),
+                    status: ValidatorStatus::Proposal,
+                },
             ),
         ]),
     );

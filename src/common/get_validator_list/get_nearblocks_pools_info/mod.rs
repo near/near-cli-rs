@@ -13,7 +13,7 @@ use serde::Deserialize;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
 use url::Url;
 
-use super::shared::staking_pool_info::RewardFeeFraction;
+use super::shared::RewardFeeFraction;
 
 #[derive(Debug, Deserialize)]
 struct Validator {

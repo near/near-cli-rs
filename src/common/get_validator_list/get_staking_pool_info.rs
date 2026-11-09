@@ -7,8 +7,7 @@ use near_primitives::views::QueryRequest;
 use near_token::NearToken;
 use serde::Deserialize;
 
-use super::shared::staking_pool_info::StakingPoolInfo;
-use super::shared::validator_status::ValidatorStatus;
+use super::shared::{StakingPoolInfo, ValidatorStatus};
 use crate::common::{CallResultExt, RpcQueryResponseExt};
 
 /// Returns `None` if the validator account is not a staking pool

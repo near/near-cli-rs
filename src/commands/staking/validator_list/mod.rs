@@ -1,9 +1,7 @@
 mod format_validator_stake;
-mod format_validator_status;
 
-use crate::common::{StakingPoolInfo, get_validator_list};
+use crate::common::{StakingPoolInfo, ValidatorStatus, get_validator_list};
 use format_validator_stake::format_validator_stake;
-use format_validator_status::format_validator_status;
 use prettytable::Table;
 
 fn format_validator_fee(validator: &StakingPoolInfo) -> String {
@@ -19,6 +17,15 @@ fn format_validator_delegators(validator: &StakingPoolInfo) -> String {
         format!("{delegator_count:>8}")
     } else {
         format!("{:>8}", "N/A")
+    }
+}
+
+pub fn format_validator_status(validator: &StakingPoolInfo) -> &'static str {
+    match validator.status {
+        ValidatorStatus::Active => "Active",
+        ValidatorStatus::Leaving => "Leaving",
+        ValidatorStatus::Joining => "Joining",
+        ValidatorStatus::Proposal => "Proposal",
     }
 }
 
