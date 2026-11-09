@@ -1941,27 +1941,27 @@ near staking \
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
 ```txt
-+-----+----------------------------------------------+----------+------------+----------------------------------------+
-| #   | Validator Id                                 | Fee      | Delegators | Stake                                  |
-+-----+----------------------------------------------+----------+------------+----------------------------------------+
-| 1   | staked.poolv1.near                           |     10 % |     3207   | 44135674.18356215181482959363448 NEAR  |
-| 2   | figment.poolv1.near                          |     10 % |     1911   | 43158696.364374348313201031661037 NEAR |
-| 3   | astro-stakers.poolv1.near                    |      1 % |    11528   | 26760042.204197815051321354819805 NEAR |
-| 4   | bzam6yjpnfnxsdmjf6pw.poolv1.near             |    100 % |      772   | 23347900.996610021010359525969384 NEAR |
-| 5   | zavodil.poolv1.near                          |      1 % |     7116   | 20700903.223980192761611953425855 NEAR |
-| 6   | binancenode1.poolv1.near                     |      5 % |     1250   | 14209385.916611355199355410152982 NEAR |
-| 7   | staking_yes_protocol1.poolv1.near            |    100 % |       65   | 13590245.381034035922399111793022 NEAR |
-| 8   | pinnacle1.poolv1.near                        |    100 % |        4   | 13509874.537453205747773186007329 NEAR |
-| 9   | priory.poolv1.near                           |    100 % |       15   | 12727257.514716521676379711750814 NEAR |
-| 10  | stake1.poolv1.near                           |      3 % |      754   | 12449700.095021989100340879377004 NEAR |
-| 11  | mockingbird.poolv1.near                      |    100 % |       28   | 11501759.018634341466180769487983 NEAR |
-| 12  | dqw9k3e4422cxt92masmy.poolv1.near            |    100 % |       36   | 11122519.385245577197951932017032 NEAR |
-| 13  | flipside.pool.near                           |    100 % |        9   | 11087540.718366137730589600283212 NEAR |
-| 14  | sweat_validator.poolv1.near                  |    100 % |      112   | 10900424.272450229667472212076621 NEAR |
-| 15  | epic.poolv1.near                             |      1 % |     5363   | 10769900.629411406438519703653828 NEAR |
-| 16  | future_is_near.poolv1.near                   |      9 % |      355   | 10243082.132364573976720438585765 NEAR |
-| 17  | cosmose.poolv1.near                          |    100 % |       10   | 10064982.806109296980776431396738 NEAR |
-| 18  | aurora.pool.near                             |     99 % |     3301   | 9298278.181302142009939675438401 NEAR  |
++-----+----------------------------------------------+----------+----------+------------+-----------------+
+| #   | Validator Id                                 | Status   | Fee      | Delegators | Stake           |
++-----+----------------------------------------------+----------+----------+------------+-----------------+
+| 1   | astro-stakers.poolv1.near                    | Active   |      1 % |    32353   | 33,148,072 NEAR |
+| 2   | figment.poolv1.near                          | Active   |     10 % |     1691   | 28,191,138 NEAR |
+| 3   | ledgerbyfigment.poolv1.near                  | Active   |      5 % |    13828   | 23,131,436 NEAR |
+| 4   | staked.poolv1.near                           | Active   |     10 % |     3475   | 21,250,192 NEAR |
+| 5   | binancenode1.poolv1.near                     | Active   |      5 % |     1190   | 20,146,641 NEAR |
+| 6   | sumerian.poolv1.near                         | Active   |     15 % |      230   | 18,788,638 NEAR |
+| 7   | zavodil.poolv1.near                          | Active   |      1 % |     8441   | 17,863,439 NEAR |
+| 8   | liver.pool.near                              | Active   |      1 % |      354   | 16,287,086 NEAR |
+| 9   | cnear-1.poolv1.near                          | Active   |    100 % |        4   | 15,903,521 NEAR |
+| 10  | cnear-3.poolv1.near                          | Active   |    100 % |        3   | 15,891,857 NEAR |
+| 11  | cnear-2.poolv1.near                          | Active   |    100 % |        3   | 15,890,406 NEAR |
+| 12  | bitwise_2.poolv1.near                        | Active   |      3 % |       84   | 15,755,573 NEAR |
+| 13  | bitwise_1.poolv1.near                        | Active   |      5 % |      217   | 14,882,258 NEAR |
+| 14  | svrn-ai.poolv1.near                          | Active   |    100 % |        8   | 12,080,499 NEAR |
+| 15  | svrn.pool.near                               | Active   |    100 % |        4   | 12,048,367 NEAR |
+| 16  | kiln-1.poolv1.near                           | Active   |      5 % |      261   | 12,017,937 NEAR |
+| 17  | epic.poolv1.near                             | Active   |      1 % |     4676   | 11,814,446 NEAR |
+| 18  | svrn-luganodes.pool.near                     | Active   |    100 % |        6   | 11,405,574 NEAR |
 ...
 ```
 </details>
