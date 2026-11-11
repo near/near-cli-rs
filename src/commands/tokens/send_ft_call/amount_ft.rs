@@ -373,6 +373,7 @@ fn build_action_context(
                 near_primitives::views::FinalExecutionStatus::NotStarted
                 | near_primitives::views::FinalExecutionStatus::Started => None,
             };
+
             let requested_amount = ft_transfer_call.as_ref().map(|ft_transfer_call| {
                 crate::types::ft_properties::FungibleToken::from_params_ft(
                     ft_transfer_call.amount,
@@ -393,34 +394,9 @@ fn build_action_context(
             if let crate::Verbosity::Quiet = verbosity {
                 return Ok(());
             }
-
-            // Find the FT-contract receipt with the final transaction result to query the balance after resolution.
-            let remaining_balance_block_hash = outcome_view
-                .receipts_outcome
-                .iter()
-                .find(|receipt| {
-                    receipt.outcome.executor_id == ft_contract_account_id
-                        && match (&outcome_view.status, &receipt.outcome.status) {
-                            (
-                                near_primitives::views::FinalExecutionStatus::SuccessValue(
-                                    final_value,
-                                ),
-                                near_primitives::views::ExecutionStatusView::SuccessValue(
-                                    receipt_value,
-                                ),
-                            ) => final_value == receipt_value,
-                            (
-                                near_primitives::views::FinalExecutionStatus::Failure(
-                                    final_error,
-                                ),
-                                near_primitives::views::ExecutionStatusView::Failure(
-                                    receipt_error,
-                                ),
-                            ) => final_error == receipt_error,
-                            _ => false,
-                        }
-                })
-                .map(|receipt| receipt.block_hash);
+            let remaining_balance_block_hash =
+                find_final_ft_transfer_receipt(outcome_view, &ft_contract_account_id)
+                    .map(|receipt| receipt.block_hash);
             let remaining_balance = remaining_balance_block_hash
                 .and_then(|block_hash| {
                     crate::commands::tokens::send_ft::get_ft_balance_for_account(
@@ -459,6 +435,60 @@ fn build_action_context(
         sign_as_delegate_action: false,
         on_sending_delegate_action_callback: None,
     })
+}
+
+fn find_final_ft_transfer_receipt<'a>(
+    outcome_view: &'a near_primitives::views::FinalExecutionOutcomeView,
+    ft_contract_account_id: &near_primitives::types::AccountId,
+) -> Option<&'a near_primitives::views::ExecutionOutcomeWithIdView> {
+    let near_primitives::views::ExecutionStatusView::SuccessReceiptId(first_receipt_id) =
+        &outcome_view.transaction_outcome.outcome.status
+    else {
+        return None;
+    };
+    let mut receipt_id = *first_receipt_id;
+    let mut visited_receipt_ids = Vec::new();
+
+    loop {
+        if visited_receipt_ids.contains(&receipt_id) {
+            return None;
+        }
+        visited_receipt_ids.push(receipt_id);
+
+        let receipt = outcome_view
+            .receipts_outcome
+            .iter()
+            .find(|receipt| receipt.id == receipt_id)?;
+
+        match &receipt.outcome.status {
+            near_primitives::views::ExecutionStatusView::SuccessReceiptId(next_receipt_id) => {
+                receipt_id = *next_receipt_id;
+            }
+            near_primitives::views::ExecutionStatusView::SuccessValue(value)
+                if receipt.outcome.executor_id == *ft_contract_account_id
+                    && matches!(
+                        &outcome_view.status,
+                        near_primitives::views::FinalExecutionStatus::SuccessValue(final_value)
+                            if final_value == value
+                    ) =>
+            {
+                return Some(receipt);
+            }
+            near_primitives::views::ExecutionStatusView::Failure(error)
+                if receipt.outcome.executor_id == *ft_contract_account_id
+                    && matches!(
+                        &outcome_view.status,
+                        near_primitives::views::FinalExecutionStatus::Failure(final_error)
+                            if final_error == error
+                    ) =>
+            {
+                return Some(receipt);
+            }
+            near_primitives::views::ExecutionStatusView::Unknown
+            | near_primitives::views::ExecutionStatusView::Failure(_)
+            | near_primitives::views::ExecutionStatusView::SuccessValue(_) => return None,
+        }
+    }
 }
 
 fn transfer_message(
@@ -534,7 +564,118 @@ fn parse_ft_transfer_call_transferred_amount(
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_ft_transfer_call_transferred_amount, transfer_message};
+    use super::{
+        find_final_ft_transfer_receipt, parse_ft_transfer_call_transferred_amount, transfer_message,
+    };
+    use near_primitives::{
+        hash::CryptoHash,
+        views::{
+            ExecutionMetadataView, ExecutionOutcomeView, ExecutionOutcomeWithIdView,
+            ExecutionStatusView, FinalExecutionOutcomeView, FinalExecutionStatus,
+            SignedTransactionView,
+        },
+    };
+
+    fn receipt(
+        id: CryptoHash,
+        executor_id: &str,
+        status: ExecutionStatusView,
+        receipt_ids: Vec<CryptoHash>,
+        block_hash: CryptoHash,
+    ) -> ExecutionOutcomeWithIdView {
+        ExecutionOutcomeWithIdView {
+            proof: Vec::new(),
+            block_hash,
+            id,
+            outcome: ExecutionOutcomeView {
+                logs: Vec::new(),
+                receipt_ids,
+                gas_burnt: near_primitives::types::Gas::ZERO,
+                tokens_burnt: near_token::NearToken::ZERO,
+                executor_id: executor_id.parse().unwrap(),
+                status,
+                metadata: ExecutionMetadataView {
+                    version: 1,
+                    gas_profile: None,
+                    contracts: None,
+                },
+            },
+        }
+    }
+
+    fn outcome_view(
+        root_id: CryptoHash,
+        receipts_outcome: Vec<ExecutionOutcomeWithIdView>,
+        status: FinalExecutionStatus,
+    ) -> FinalExecutionOutcomeView {
+        let transaction_id = CryptoHash::hash_bytes(b"transaction");
+        FinalExecutionOutcomeView {
+            status,
+            transaction: SignedTransactionView {
+                signer_id: "sender.testnet".parse().unwrap(),
+                public_key: near_crypto::PublicKey::empty(near_crypto::KeyType::ED25519),
+                nonce: 1,
+                receiver_id: "token.testnet".parse().unwrap(),
+                actions: Vec::new(),
+                _priority_fee: 0,
+                signature: near_crypto::Signature::empty(near_crypto::KeyType::ED25519),
+                hash: transaction_id,
+                nonce_index: None,
+                nonce_mode: None,
+            },
+            transaction_outcome: receipt(
+                transaction_id,
+                "sender.testnet",
+                ExecutionStatusView::SuccessReceiptId(root_id),
+                vec![root_id],
+                CryptoHash::default(),
+            ),
+            receipts_outcome,
+        }
+    }
+
+    #[test]
+    fn finds_ft_resolution_receipt_through_returned_receipt_id() {
+        let ft_contract_id = "token.testnet".parse().unwrap();
+        let root_id = CryptoHash::hash_bytes(b"root");
+        let decoy_id = CryptoHash::hash_bytes(b"decoy");
+        let resolver_id = CryptoHash::hash_bytes(b"resolver");
+        let decoy_block_hash = CryptoHash::hash_bytes(b"decoy block");
+        let resolver_block_hash = CryptoHash::hash_bytes(b"resolver block");
+        let return_value = br#""50""#.to_vec();
+        let receipts = vec![
+            receipt(
+                root_id,
+                "token.testnet",
+                ExecutionStatusView::SuccessReceiptId(resolver_id),
+                vec![decoy_id, resolver_id],
+                CryptoHash::default(),
+            ),
+            receipt(
+                decoy_id,
+                "token.testnet",
+                ExecutionStatusView::SuccessValue(return_value.clone()),
+                Vec::new(),
+                decoy_block_hash,
+            ),
+            receipt(
+                resolver_id,
+                "token.testnet",
+                ExecutionStatusView::SuccessValue(return_value.clone()),
+                Vec::new(),
+                resolver_block_hash,
+            ),
+        ];
+        let outcome_view = outcome_view(
+            root_id,
+            receipts,
+            FinalExecutionStatus::SuccessValue(return_value),
+        );
+        let final_receipt = find_final_ft_transfer_receipt(&outcome_view, &ft_contract_id).unwrap();
+
+        assert_eq!(final_receipt.id, resolver_id);
+        assert_eq!(final_receipt.block_hash, resolver_block_hash);
+    }
 
     fn transfer_message_for_test(
         requested_amount: Option<u128>,
