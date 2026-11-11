@@ -299,10 +299,6 @@ fn build_action_context(
         let verbosity = previous_context.global_context.verbosity;
 
         move |outcome_view, network_config| {
-            if let crate::Verbosity::Quiet = verbosity {
-                return Ok(());
-            }
-
             let ft_transfer_call = outcome_view.transaction.actions.iter().find_map(|action| {
                 if let near_primitives::views::ActionView::FunctionCall {
                     method_name, args, ..
@@ -377,6 +373,27 @@ fn build_action_context(
                 near_primitives::views::FinalExecutionStatus::NotStarted
                 | near_primitives::views::FinalExecutionStatus::Started => None,
             };
+            let requested_amount = ft_transfer_call.as_ref().map(|ft_transfer_call| {
+                crate::types::ft_properties::FungibleToken::from_params_ft(
+                    ft_transfer_call.amount,
+                    ft_metadata.decimals,
+                    ft_metadata.symbol.clone(),
+                )
+            });
+            let transfer_message = transfer_message(
+                &signer_account_id,
+                &receiver_account_id,
+                &ft_contract_account_id,
+                requested_amount.as_ref(),
+                transferred_amount,
+                &ft_metadata,
+                failure_reason.as_deref(),
+            )?;
+
+            if let crate::Verbosity::Quiet = verbosity {
+                return Ok(());
+            }
+
             // Find the FT-contract receipt with the final transaction result to query the balance after resolution.
             let remaining_balance_block_hash = outcome_view
                 .receipts_outcome
@@ -417,23 +434,6 @@ fn build_action_context(
                 .map(|balance| balance.to_string())
                 .unwrap_or_else(|| "N/A".to_string());
 
-            let requested_amount = ft_transfer_call.as_ref().map(|ft_transfer_call| {
-                crate::types::ft_properties::FungibleToken::from_params_ft(
-                    ft_transfer_call.amount,
-                    ft_metadata.decimals,
-                    ft_metadata.symbol.clone(),
-                )
-            });
-            let transfer_message = transfer_message(
-                &signer_account_id,
-                &receiver_account_id,
-                &ft_contract_account_id,
-                requested_amount.as_ref(),
-                transferred_amount,
-                &ft_metadata,
-                failure_reason.as_deref(),
-            );
-
             tracing_indicatif::suspend_tracing_indicatif(|| eprintln!(
                 "{transfer_message}\nRemaining balance: {remaining_balance}",
             ));
@@ -469,7 +469,7 @@ fn transfer_message(
     transferred_amount: Option<u128>,
     ft_metadata: &crate::types::ft_properties::FtMetadata,
     failure_reason: Option<&str>,
-) -> String {
+) -> color_eyre::eyre::Result<String> {
     match transferred_amount {
         Some(amount)
             if let Some(requested_amount) = requested_amount
@@ -486,9 +486,9 @@ fn transfer_message(
                 ft_metadata.decimals,
                 ft_metadata.symbol.clone(),
             );
-            format!(
+            Ok(format!(
                 "<{signer_account_id}> has transferred {transferred_amount} of the requested {requested_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>; {returned_amount} was returned to the sender."
-            )
+            ))
         }
         Some(amount) if amount > 0 => {
             let transferred_amount = crate::types::ft_properties::FungibleToken::from_params_ft(
@@ -496,31 +496,25 @@ fn transfer_message(
                 ft_metadata.decimals,
                 ft_metadata.symbol.clone(),
             );
-            format!(
+            Ok(format!(
                 "<{signer_account_id}> has successfully transferred {transferred_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>."
-            )
+            ))
         }
-        Some(_) => match requested_amount {
-            Some(requested_amount) => format!(
-                "<{signer_account_id}> could not transfer {requested_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>. Reason: {}.",
-                failure_reason.unwrap_or("the full amount was returned to the sender")
-            ),
-            None => format!(
-                "<{signer_account_id}> could not complete ft_transfer_call (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>. Reason: {}.",
-                failure_reason.unwrap_or("the full amount was returned to the sender")
-            ),
-        },
+        Some(_) => Err(color_eyre::eyre::eyre!(
+            "{}",
+            failure_reason.unwrap_or("The full amount was returned to the sender.")
+        )),
         None => {
             let failure_reason = failure_reason
                 .map(|reason| format!(" Reason: {reason}"))
                 .unwrap_or_default();
             match requested_amount {
-                Some(requested_amount) => format!(
+                Some(requested_amount) => Ok(format!(
                     "<{signer_account_id}> could not determine the transferred amount of {requested_amount} (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.{failure_reason}"
-                ),
-                None => format!(
+                )),
+                None => Ok(format!(
                     "<{signer_account_id}> could not determine the transferred amount (FT-contract: {ft_contract_account_id}) to <{receiver_account_id}>.{failure_reason}"
-                ),
+                )),
             }
         }
     }
@@ -546,7 +540,7 @@ mod tests {
         requested_amount: Option<u128>,
         transferred_amount: Option<u128>,
         failure_reason: Option<&str>,
-    ) -> String {
+    ) -> color_eyre::eyre::Result<String> {
         let signer_account_id = "sender.testnet".parse().unwrap();
         let receiver_account_id = "receiver.testnet".parse().unwrap();
         let ft_contract_account_id = "token.testnet".parse().unwrap();
@@ -572,7 +566,7 @@ mod tests {
     #[test]
     fn formats_partial_transfer_message() {
         assert_eq!(
-            transfer_message_for_test(Some(100), Some(25), None),
+            transfer_message_for_test(Some(100), Some(25), None).unwrap(),
             "<sender.testnet> has transferred 0.25 TOK of the requested 1 TOK (FT-contract: token.testnet) to <receiver.testnet>; 0.75 TOK was returned to the sender."
         );
     }
@@ -580,23 +574,35 @@ mod tests {
     #[test]
     fn formats_successful_transfer_message() {
         assert_eq!(
-            transfer_message_for_test(Some(100), Some(100), None),
+            transfer_message_for_test(Some(100), Some(100), None).unwrap(),
             "<sender.testnet> has successfully transferred 1 TOK (FT-contract: token.testnet) to <receiver.testnet>."
         );
     }
 
     #[test]
-    fn zero_transfer_message_includes_failure_reason() {
+    fn full_refund_returns_an_error_with_failure_reason() {
         assert_eq!(
-            transfer_message_for_test(Some(100), Some(0), Some("receiver failed")),
-            "<sender.testnet> could not transfer 1 TOK (FT-contract: token.testnet) to <receiver.testnet>. Reason: receiver failed."
+            transfer_message_for_test(Some(100), Some(0), Some("receiver failed"))
+                .unwrap_err()
+                .to_string(),
+            "receiver failed"
+        );
+    }
+
+    #[test]
+    fn full_refund_without_failure_reason_returns_a_short_error() {
+        assert_eq!(
+            transfer_message_for_test(Some(100), Some(0), None)
+                .unwrap_err()
+                .to_string(),
+            "The full amount was returned to the sender."
         );
     }
 
     #[test]
     fn unknown_transfer_amount_message_includes_failure_reason() {
         assert_eq!(
-            transfer_message_for_test(Some(100), None, Some("resolver failed")),
+            transfer_message_for_test(Some(100), None, Some("resolver failed")).unwrap(),
             "<sender.testnet> could not determine the transferred amount of 1 TOK (FT-contract: token.testnet) to <receiver.testnet>. Reason: resolver failed"
         );
     }

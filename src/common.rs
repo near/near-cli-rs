@@ -1537,6 +1537,9 @@ fn push_state_init_info(
     ));
 }
 
+// These methods have command-specific result messages, so avoid a misleading generic success message.
+const METHODS_WITHOUT_GENERIC_SUCCESS_MESSAGE: &[&str] = &["ft_transfer", "ft_transfer_call"];
+
 fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
 ) -> String {
@@ -1558,12 +1561,14 @@ fn print_value_successful_transaction(
                 gas: _,
                 deposit: _,
             } => {
-                info_str.push_str(&format!(
-                    "\nThe \"{}\" call to <{}> on behalf of <{}> succeeded.",
-                    method_name,
-                    transaction_info.transaction.receiver_id,
-                    transaction_info.transaction.signer_id,
-                ));
+                if !METHODS_WITHOUT_GENERIC_SUCCESS_MESSAGE.contains(&method_name.as_str()) {
+                    info_str.push_str(&format!(
+                        "\nThe \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                        method_name,
+                        transaction_info.transaction.receiver_id,
+                        transaction_info.transaction.signer_id,
+                    ));
+                }
             }
             near_primitives::views::ActionView::Transfer { deposit } => {
                 info_str.push_str(&format!(
@@ -2268,6 +2273,13 @@ pub fn print_transaction_status(
         .map(get_near_usd_exchange_rate);
 
     let mut transaction_info = std::borrow::Cow::Borrowed(transaction_info);
+    let is_ft_transfer_call = transaction_info.transaction.actions.iter().any(|action| {
+        matches!(
+            action,
+            near_primitives::views::ActionView::FunctionCall { method_name, .. }
+                if method_name == "ft_transfer_call"
+        )
+    });
     let mut success_data = String::new();
     #[allow(unused_assignments)]
     let mut return_value = String::new();
@@ -2435,7 +2447,7 @@ pub fn print_transaction_status(
             "Function execution logs:{}",
             crate::common::indent_payload(&format!("{logs_info}\n "))
         );
-        if result.is_ok() {
+        if result.is_ok() && !is_ft_transfer_call {
             if returned_value_bytes.is_empty() {
                 tracing::info!(
                     parent: &tracing::Span::none(),
