@@ -44,6 +44,7 @@ impl From<LoginFromPrivateKeyContext> for super::ImportAccountDetailsContext {
             global_context: item.global_context,
             key_store_property,
             on_after_getting_network_callback,
+            uses_web_wallet: false,
         }
     }
 }

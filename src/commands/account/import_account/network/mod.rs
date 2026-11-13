@@ -36,6 +36,7 @@ pub struct NetworkForImportAccountContext {
     pub account_id: near_primitives::types::AccountId,
     pub key_store_property: super::key_store_prop::KeyStorePropertyType,
     pub on_after_getting_network_callback: OnAfterGettingNetworkConfigCallback,
+    pub uses_web_wallet: bool,
 }
 
 #[derive(Clone)]
@@ -118,6 +119,70 @@ impl NetworkForImportAccount {
         Ok(matches!(select_choose_input, ConfirmOptions::Yes))
     }
 
+    /// Lets the user pick which web wallet approves the new key, when `--wallet-url` wasn't passed.
+    /// Returns `None` (keep the network's configured `wallet_url`) outside an interactive terminal
+    /// or when there is nothing to choose from.
+    fn input_wallet_url(
+        context: &NetworkForImportAccountContext,
+        network_connection_name: &str,
+    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+        use std::io::IsTerminal;
+
+        if !std::io::stdin().is_terminal() {
+            return Ok(None);
+        }
+
+        let Some(network_config) = context
+            .global_context
+            .config
+            .network_connection
+            .get(network_connection_name)
+        else {
+            return Ok(None);
+        };
+        let configured_url = network_config.wallet_url.clone();
+
+        let mut choices: Vec<WalletChoice> = known_web_wallets(&network_config.network_name)
+            .into_iter()
+            .map(|(name, url)| WalletChoice::Known { name, url })
+            .collect();
+        if !choices.iter().any(
+            |choice| matches!(choice, WalletChoice::Known { url, .. } if *url == configured_url),
+        ) {
+            choices.insert(0, WalletChoice::Configured(configured_url.clone()));
+        }
+        choices.push(WalletChoice::Custom);
+
+        let starting_cursor = choices
+            .iter()
+            .position(|choice| choice.url() == Some(&configured_url))
+            .unwrap_or(0);
+
+        let selected = inquire::Select::new(
+            "Which wallet do you want to use to approve the new access key?",
+            choices,
+        )
+        .with_starting_cursor(starting_cursor)
+        .prompt()?;
+
+        let url = match selected {
+            WalletChoice::Known { url, .. } | WalletChoice::Configured(url) => url,
+            WalletChoice::Custom => {
+                let crate::types::url::Url(mut url) =
+                    inquire::CustomType::<crate::types::url::Url>::new("Enter the wallet URL:")
+                        .prompt()?;
+                // The login page is resolved relative to this URL, so it must end with `/`.
+                if !url.path().ends_with('/') {
+                    let path = format!("{}/", url.path());
+                    url.set_path(&path);
+                }
+                url
+            }
+        };
+
+        Ok(Some(url.into()))
+    }
+
     fn input_network_name(
         context: &NetworkForImportAccountContext,
     ) -> color_eyre::eyre::Result<Option<String>> {
@@ -181,6 +246,13 @@ impl interactive_clap::FromCli for NetworkForImportAccount {
         }
         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
 
+        if clap_variant.wallet_url.is_none() && context.uses_web_wallet && !fully_scripted {
+            match Self::input_wallet_url(&context, &network_name) {
+                Ok(wallet_url) => clap_variant.wallet_url = wallet_url,
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            }
+        }
+
         if !clap_variant.check_account_id && !fully_scripted {
             clap_variant.check_account_id = match Self::input_check_account_id(&context) {
                 Ok(answer) => answer,
@@ -220,6 +292,52 @@ impl interactive_clap::FromCli for NetworkForImportAccount {
                 clap_variant.save_mode = optional;
                 interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
             }
+        }
+    }
+}
+
+/// Wallets known to support the CLI web-wallet login (`<wallet_url>login/?public_key=...`), listed
+/// alphabetically. Each URL is the base the CLI appends `login/` to.
+fn known_web_wallets(network_name: &str) -> Vec<(&'static str, url::Url)> {
+    if !matches!(network_name, "mainnet" | "testnet") {
+        return Vec::new();
+    }
+
+    [
+        // Intear uses the network of the account selected in the wallet.
+        ("Intear Wallet", "https://wallet.intear.tech/".to_string()),
+        (
+            "Meteor Wallet",
+            format!("https://wallet.meteorwallet.app/cli/{network_name}/"),
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(name, url)| Some((name, url.parse().ok()?)))
+    .collect()
+}
+
+#[derive(Clone)]
+enum WalletChoice {
+    Known { name: &'static str, url: url::Url },
+    Configured(url::Url),
+    Custom,
+}
+
+impl WalletChoice {
+    fn url(&self) -> Option<&url::Url> {
+        match self {
+            Self::Known { url, .. } | Self::Configured(url) => Some(url),
+            Self::Custom => None,
+        }
+    }
+}
+
+impl std::fmt::Display for WalletChoice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Known { name, url } => write!(f, "{name} ({url})"),
+            Self::Configured(url) => write!(f, "Wallet from your config ({url})"),
+            Self::Custom => write!(f, "Enter a custom wallet URL"),
         }
     }
 }
