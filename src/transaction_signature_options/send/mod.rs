@@ -56,6 +56,7 @@ impl SendContext {
                         &transaction_info,
                         &previous_context.network_config,
                         previous_context.global_context.verbosity,
+                        previous_context.suppress_function_return_value,
                     )?;
 
                     (previous_context.on_after_sending_transaction_callback)(

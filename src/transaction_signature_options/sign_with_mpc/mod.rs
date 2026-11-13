@@ -628,6 +628,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
             sign_as_delegate_action: item.sign_as_delegate_action,
+            suppress_function_return_value: false,
         }
     }
 }
@@ -710,6 +711,7 @@ pub fn dao_sign_with_mpc_after_send_flow(
                 |_outcome_view, _network_config| Ok(()),
         ),
         on_sending_delegate_action_callback: None,
+        suppress_function_return_value: false,
     };
 
     prompt_and_submit(submit_context)

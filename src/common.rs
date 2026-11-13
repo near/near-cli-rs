@@ -1537,6 +1537,9 @@ fn push_state_init_info(
     ));
 }
 
+// These methods have command-specific result messages, so avoid a misleading generic success message.
+const METHODS_WITHOUT_GENERIC_SUCCESS_MESSAGE: &[&str] = &["ft_transfer", "ft_transfer_call"];
+
 fn print_value_successful_transaction(
     transaction_info: near_primitives::views::FinalExecutionOutcomeView,
 ) -> String {
@@ -1558,12 +1561,14 @@ fn print_value_successful_transaction(
                 gas: _,
                 deposit: _,
             } => {
-                info_str.push_str(&format!(
-                    "\nThe \"{}\" call to <{}> on behalf of <{}> succeeded.",
-                    method_name,
-                    transaction_info.transaction.receiver_id,
-                    transaction_info.transaction.signer_id,
-                ));
+                if !METHODS_WITHOUT_GENERIC_SUCCESS_MESSAGE.contains(&method_name.as_str()) {
+                    info_str.push_str(&format!(
+                        "\nThe \"{}\" call to <{}> on behalf of <{}> succeeded.",
+                        method_name,
+                        transaction_info.transaction.receiver_id,
+                        transaction_info.transaction.signer_id,
+                    ));
+                }
             }
             near_primitives::views::ActionView::Transfer { deposit } => {
                 info_str.push_str(&format!(
@@ -2257,10 +2262,24 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
     Some(tokens_decimal * price_decimal)
 }
 
+fn should_print_quiet_return_value(
+    bytes_result: &[u8],
+    suppress_function_return_value: bool,
+) -> bool {
+    let is_full_refund = serde_json::from_slice::<String>(bytes_result)
+        .ok()
+        .and_then(|amount| amount.parse::<u128>().ok())
+        .is_some_and(|amount| amount == 0);
+
+    !suppress_function_return_value || !is_full_refund
+}
+
 pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
     verbosity: crate::Verbosity,
+    // Set when the command prints a replacement recap instead of the function return value.
+    suppress_function_return_value: bool,
 ) -> crate::CliResult {
     let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
         .coingecko_url
@@ -2335,7 +2354,10 @@ pub fn print_transaction_status(
             }
             near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
                 if let crate::Verbosity::Quiet = verbosity {
-                    std::io::stdout().write_all(bytes_result)?;
+                    if should_print_quiet_return_value(bytes_result, suppress_function_return_value)
+                    {
+                        std::io::stdout().write_all(bytes_result)?;
+                    }
                     return Ok(());
                 };
                 returned_value_bytes.append(&mut bytes_result.clone());
@@ -2435,7 +2457,7 @@ pub fn print_transaction_status(
             "Function execution logs:{}",
             crate::common::indent_payload(&format!("{logs_info}\n "))
         );
-        if result.is_ok() {
+        if result.is_ok() && !suppress_function_return_value {
             if returned_value_bytes.is_empty() {
                 tracing::info!(
                     parent: &tracing::Span::none(),
@@ -4403,5 +4425,13 @@ mod tests {
             assert!(pending_transaction_status(&err).is_none());
             assert!(rpc_transaction_error(&err).is_ok());
         }
+    }
+
+    #[test]
+    fn quiet_ft_transfer_call_suppresses_only_full_refunds() {
+        assert!(!should_print_quiet_return_value(br#""0""#, true));
+        assert!(should_print_quiet_return_value(br#""50""#, true));
+        assert!(should_print_quiet_return_value(br#""0""#, false));
+        assert!(should_print_quiet_return_value(b"invalid", true));
     }
 }
