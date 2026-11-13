@@ -2262,6 +2262,18 @@ fn calculate_usd_amount(tokens: u128, price: f64) -> Option<rust_decimal::Decima
     Some(tokens_decimal * price_decimal)
 }
 
+fn should_print_quiet_return_value(
+    bytes_result: &[u8],
+    suppress_function_return_value: bool,
+) -> bool {
+    let is_full_refund = serde_json::from_slice::<String>(bytes_result)
+        .ok()
+        .and_then(|amount| amount.parse::<u128>().ok())
+        .is_some_and(|amount| amount == 0);
+
+    !suppress_function_return_value || !is_full_refund
+}
+
 pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
@@ -2342,7 +2354,8 @@ pub fn print_transaction_status(
             }
             near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
                 if let crate::Verbosity::Quiet = verbosity {
-                    if !suppress_function_return_value {
+                    if should_print_quiet_return_value(bytes_result, suppress_function_return_value)
+                    {
                         std::io::stdout().write_all(bytes_result)?;
                     }
                     return Ok(());
@@ -4412,5 +4425,13 @@ mod tests {
             assert!(pending_transaction_status(&err).is_none());
             assert!(rpc_transaction_error(&err).is_ok());
         }
+    }
+
+    #[test]
+    fn quiet_ft_transfer_call_suppresses_only_full_refunds() {
+        assert!(!should_print_quiet_return_value(br#""0""#, true));
+        assert!(should_print_quiet_return_value(br#""50""#, true));
+        assert!(should_print_quiet_return_value(br#""0""#, false));
+        assert!(should_print_quiet_return_value(b"invalid", true));
     }
 }
