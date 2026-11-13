@@ -25,8 +25,10 @@ pub struct NetworkForImportAccount {
     save_mode: SaveMode,
 }
 
+/// Called once the network is chosen. The `bool` is whether the account/key check
+/// (`--check-account-id`) will run next.
 pub type OnAfterGettingNetworkConfigCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<()>>;
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, bool) -> color_eyre::eyre::Result<()>>;
 
 #[derive(Clone)]
 pub struct NetworkForImportAccountContext {
@@ -62,7 +64,10 @@ impl NetworkForImportAccountOutputContext {
             network_config.wallet_url = url.into();
         }
 
-        (previous_context.on_after_getting_network_callback)(&network_config)?;
+        (previous_context.on_after_getting_network_callback)(
+            &network_config,
+            scope.check_account_id,
+        )?;
 
         if scope.check_account_id {
             super::check_account_id(

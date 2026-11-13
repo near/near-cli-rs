@@ -43,7 +43,7 @@ impl From<LoginFromSeedPhraseContext> for super::ImportAccountDetailsContext {
         let key_store_property =
             super::key_store_prop::KeyStorePropertyType::Recoverable(item.key_store_property);
         let on_after_getting_network_callback: super::network::OnAfterGettingNetworkConfigCallback =
-            std::sync::Arc::new(move |_network_config| Ok(()));
+            std::sync::Arc::new(move |_network_config, _will_check_account_id| Ok(()));
 
         Self {
             global_context: item.global_context,
