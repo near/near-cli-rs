@@ -113,6 +113,7 @@ pub struct ActionContext {
     pub on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     pub sign_as_delegate_action: bool,
+    pub suppress_function_return_value: bool,
 }
 
 #[derive(Clone)]
@@ -129,4 +130,5 @@ pub struct TransactionContext {
     pub on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     pub sign_as_delegate_action: bool,
+    pub suppress_function_return_value: bool,
 }

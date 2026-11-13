@@ -2266,6 +2266,8 @@ pub fn print_transaction_status(
     transaction_info: &near_primitives::views::FinalExecutionOutcomeView,
     network_config: &crate::config::NetworkConfig,
     verbosity: crate::Verbosity,
+    // Set when the command prints a replacement recap instead of the function return value.
+    suppress_function_return_value: bool,
 ) -> crate::CliResult {
     let near_usd_exchange_rate: Option<Result<f64, color_eyre::eyre::Error>> = network_config
         .coingecko_url
@@ -2273,13 +2275,6 @@ pub fn print_transaction_status(
         .map(get_near_usd_exchange_rate);
 
     let mut transaction_info = std::borrow::Cow::Borrowed(transaction_info);
-    let is_ft_transfer_call = transaction_info.transaction.actions.iter().any(|action| {
-        matches!(
-            action,
-            near_primitives::views::ActionView::FunctionCall { method_name, .. }
-                if method_name == "ft_transfer_call"
-        )
-    });
     let mut success_data = String::new();
     #[allow(unused_assignments)]
     let mut return_value = String::new();
@@ -2347,7 +2342,9 @@ pub fn print_transaction_status(
             }
             near_primitives::views::FinalExecutionStatus::SuccessValue(bytes_result) => {
                 if let crate::Verbosity::Quiet = verbosity {
-                    std::io::stdout().write_all(bytes_result)?;
+                    if !suppress_function_return_value {
+                        std::io::stdout().write_all(bytes_result)?;
+                    }
                     return Ok(());
                 };
                 returned_value_bytes.append(&mut bytes_result.clone());
@@ -2447,7 +2444,7 @@ pub fn print_transaction_status(
             "Function execution logs:{}",
             crate::common::indent_payload(&format!("{logs_info}\n "))
         );
-        if result.is_ok() && !is_ft_transfer_call {
+        if result.is_ok() && !suppress_function_return_value {
             if returned_value_bytes.is_empty() {
                 tracing::info!(
                     parent: &tracing::Span::none(),

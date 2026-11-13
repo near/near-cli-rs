@@ -312,6 +312,7 @@ impl From<DepositContext> for crate::commands::TransactionContext {
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
             sign_as_delegate_action: item.sign_as_delegate_action,
+            suppress_function_return_value: false,
         }
     }
 }
