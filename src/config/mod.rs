@@ -26,7 +26,9 @@ impl Default for Config {
                 rpc_url: "https://archival-rpc.mainnet.fastnear.com/"
                     .parse()
                     .unwrap(),
-                wallet_url: "https://wallet.meteorwallet.app/cli/mainnet/".parse().unwrap(),
+                wallet_url: "https://wallet.meteorwallet.app/cli/mainnet/"
+                    .parse()
+                    .unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
                     .parse()
                     .unwrap(),
@@ -49,7 +51,9 @@ impl Default for Config {
                 network_name: "mainnet".to_string(),
                 rpc_url: "https://rpc.mainnet.fastnear.com/".parse().unwrap(),
                 rpc_api_key: None,
-                wallet_url: "https://wallet.meteorwallet.app/cli/mainnet/".parse().unwrap(),
+                wallet_url: "https://wallet.meteorwallet.app/cli/mainnet/"
+                    .parse()
+                    .unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
                     .parse()
                     .unwrap(),
@@ -71,7 +75,9 @@ impl Default for Config {
                 network_name: "mainnet".to_string(),
                 rpc_url: "https://near.lava.build/".parse().unwrap(),
                 rpc_api_key: None,
-                wallet_url: "https://wallet.meteorwallet.app/cli/mainnet/".parse().unwrap(),
+                wallet_url: "https://wallet.meteorwallet.app/cli/mainnet/"
+                    .parse()
+                    .unwrap(),
                 explorer_transaction_url: "https://explorer.near.org/transactions/"
                     .parse()
                     .unwrap(),
@@ -95,7 +101,9 @@ impl Default for Config {
                 rpc_url: "https://archival-rpc.testnet.fastnear.com/"
                     .parse()
                     .unwrap(),
-                wallet_url: "https://wallet.meteorwallet.app/cli/testnet/".parse().unwrap(),
+                wallet_url: "https://wallet.meteorwallet.app/cli/testnet/"
+                    .parse()
+                    .unwrap(),
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
                     .parse()
                     .unwrap(),
@@ -118,7 +126,9 @@ impl Default for Config {
                 network_name: "testnet".to_string(),
                 rpc_url: "https://test.rpc.fastnear.com/".parse().unwrap(),
                 rpc_api_key: None,
-                wallet_url: "https://wallet.meteorwallet.app/cli/testnet/".parse().unwrap(),
+                wallet_url: "https://wallet.meteorwallet.app/cli/testnet/"
+                    .parse()
+                    .unwrap(),
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
                     .parse()
                     .unwrap(),
@@ -140,7 +150,9 @@ impl Default for Config {
                 network_name: "testnet".to_string(),
                 rpc_url: "https://neart.lava.build/".parse().unwrap(),
                 rpc_api_key: None,
-                wallet_url: "https://wallet.meteorwallet.app/cli/testnet/".parse().unwrap(),
+                wallet_url: "https://wallet.meteorwallet.app/cli/testnet/"
+                    .parse()
+                    .unwrap(),
                 explorer_transaction_url: "https://explorer.testnet.near.org/transactions/"
                     .parse()
                     .unwrap(),
