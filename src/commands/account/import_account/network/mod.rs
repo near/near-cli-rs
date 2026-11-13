@@ -120,16 +120,16 @@ impl NetworkForImportAccount {
     }
 
     /// Lets the user pick which web wallet approves the new key, when `--wallet-url` wasn't passed.
-    /// Returns `None` (keep the network's configured `wallet_url`) outside an interactive terminal
-    /// or when there is nothing to choose from.
+    /// Keeps the network's configured `wallet_url` outside an interactive terminal or when there is
+    /// nothing to choose from; Esc / Ctrl-C at either prompt is reported as a cancellation.
     fn input_wallet_url(
         context: &NetworkForImportAccountContext,
         network_connection_name: &str,
-    ) -> color_eyre::eyre::Result<Option<crate::types::url::Url>> {
+    ) -> color_eyre::eyre::Result<WalletUrlInput> {
         use std::io::IsTerminal;
 
         if !std::io::stdin().is_terminal() {
-            return Ok(None);
+            return Ok(WalletUrlInput::KeepConfigured);
         }
 
         let Some(network_config) = context
@@ -138,7 +138,7 @@ impl NetworkForImportAccount {
             .network_connection
             .get(network_connection_name)
         else {
-            return Ok(None);
+            return Ok(WalletUrlInput::KeepConfigured);
         };
         let configured_url = network_config.wallet_url.clone();
 
@@ -163,14 +163,20 @@ impl NetworkForImportAccount {
             choices,
         )
         .with_starting_cursor(starting_cursor)
-        .prompt()?;
+        .prompt();
+        let Some(selected) = cancellable(selected)? else {
+            return Ok(WalletUrlInput::Cancelled);
+        };
 
         let url = match selected {
             WalletChoice::Known { url, .. } | WalletChoice::Configured(url) => url,
             WalletChoice::Custom => {
-                let crate::types::url::Url(mut url) =
+                let entered =
                     inquire::CustomType::<crate::types::url::Url>::new("Enter the wallet URL:")
-                        .prompt()?;
+                        .prompt();
+                let Some(crate::types::url::Url(mut url)) = cancellable(entered)? else {
+                    return Ok(WalletUrlInput::Cancelled);
+                };
                 // The login page is resolved relative to this URL, so it must end with `/`.
                 if !url.path().ends_with('/') {
                     let path = format!("{}/", url.path());
@@ -180,7 +186,7 @@ impl NetworkForImportAccount {
             }
         };
 
-        Ok(Some(url.into()))
+        Ok(WalletUrlInput::Selected(url.into()))
     }
 
     fn input_network_name(
@@ -248,7 +254,14 @@ impl interactive_clap::FromCli for NetworkForImportAccount {
 
         if clap_variant.wallet_url.is_none() && context.uses_web_wallet && !fully_scripted {
             match Self::input_wallet_url(&context, &network_name) {
-                Ok(wallet_url) => clap_variant.wallet_url = wallet_url,
+                Ok(WalletUrlInput::Selected(wallet_url)) => {
+                    clap_variant.wallet_url = Some(wallet_url)
+                }
+                Ok(WalletUrlInput::KeepConfigured) => {}
+                // Esc / Ctrl-C: stop quietly, like the network picker does.
+                Ok(WalletUrlInput::Cancelled) => {
+                    return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                }
                 Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
             }
         }
@@ -314,6 +327,26 @@ fn known_web_wallets(network_name: &str) -> Vec<(&'static str, url::Url)> {
     .into_iter()
     .filter_map(|(name, url)| Some((name, url.parse().ok()?)))
     .collect()
+}
+
+enum WalletUrlInput {
+    Selected(crate::types::url::Url),
+    KeepConfigured,
+    Cancelled,
+}
+
+/// Treats Esc / Ctrl-C at a prompt as `None` (a cancellation) rather than an error.
+fn cancellable<T>(
+    result: Result<T, inquire::error::InquireError>,
+) -> color_eyre::eyre::Result<Option<T>> {
+    match result {
+        Ok(value) => Ok(Some(value)),
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => Ok(None),
+        Err(err) => Err(err.into()),
+    }
 }
 
 #[derive(Clone)]
