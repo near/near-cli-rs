@@ -1,7 +1,8 @@
+use color_eyre::eyre::WrapErr;
 use inquire::ui::{Color, RenderConfig, Styled};
 use inquire::{CustomType, MultiSelect, formatter::MultiOptionFormatter};
 
-use crate::common::AccessKeyInfo;
+use crate::common::{AccessKeyInfo, JsonRpcClientExt, RpcQueryResponseExt};
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(input_context = super::DeleteKeysCommandContext)]
@@ -40,8 +41,33 @@ impl From<PublicKeyListContext> for crate::commands::ActionContext {
         let get_prepopulated_transaction_after_getting_network_callback: crate::commands::GetPrepopulatedTransactionAfterGettingNetworkCallback =
             std::sync::Arc::new({
                 let owner_account_id = item.owner_account_id.clone();
+                let offline = item.global_context.offline;
 
-                move |_network_config| {
+                move |network_config| {
+                    if !offline {
+                        let access_key_list = network_config
+                            .json_rpc_client()
+                            .blocking_call_view_access_key_list(
+                                &owner_account_id,
+                                near_primitives::types::Finality::Final.into(),
+                            )
+                            .wrap_err_with(|| {
+                                format!(
+                                    "Failed to fetch access keys for <{}> on network <{}>; cannot validate keys to delete",
+                                    owner_account_id, network_config.network_name
+                                )
+                            })?
+                            .access_key_list_view()?;
+                        if let Some(public_key) = item.public_keys.iter().find(|public_key| {
+                                let handle = near_crypto::PublicKeyHandle::from(*public_key);
+                                !access_key_list.keys.iter().any(|key| key.public_key == handle)
+                            }) {
+                            color_eyre::eyre::bail!(
+                                "Cannot delete access keys for <{}> on network <{}>: key <{}> does not exist on this network.",
+                                owner_account_id, network_config.network_name, public_key
+                            );
+                        }
+                    }
                     Ok(crate::commands::PrepopulatedTransaction {
                         signer_id: owner_account_id.clone(),
                         receiver_id: owner_account_id.clone(),
