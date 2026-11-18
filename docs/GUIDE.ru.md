@@ -496,7 +496,7 @@ near account \
 ```
 
 Вы будете перенаправлены браузер для авторизации.
-По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
+По умолчанию - это https://wallet.meteorwallet.app/cli/mainnet/ (для testnet - https://wallet.meteorwallet.app/cli/testnet/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
 ```txt
 near account \
     import-account \
@@ -588,7 +588,7 @@ near account \
 ```
 
 Вы будете перенаправлены браузер.
-По умолчанию - это https://app.mynearwallet.com/ (для testnet - https://testnet.mynearwallet.com/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
+По умолчанию - это https://wallet.meteorwallet.app/cli/mainnet/ (для testnet - https://wallet.meteorwallet.app/cli/testnet/). Но вы можете изменить адрес для авторизации с помощью флага `--wallet-url`:
 ```txt
 near account \
     export-account volodymyr.testnet \

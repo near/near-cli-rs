@@ -496,7 +496,7 @@ near account \
 ```
 
 You will be redirected to the browser for authorization.
-Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
+Default wallet url is https://wallet.meteorwallet.app/cli/mainnet/ (for testnet - https://wallet.meteorwallet.app/cli/testnet/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
 ```txt
 near account \
     import-account \
@@ -588,7 +588,7 @@ near account \
 ```
 
 You will be redirected to the browser for authorization.
-Default wallet url is https://app.mynearwallet.com/ (for testnet - https://testnet.mynearwallet.com/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
+Default wallet url is https://wallet.meteorwallet.app/cli/mainnet/ (for testnet - https://wallet.meteorwallet.app/cli/testnet/). But if you want to change to a different wallet url, you can use `--wallet-url` option:
 ```txt
 near account \
     export-account volodymyr.testnet \

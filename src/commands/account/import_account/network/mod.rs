@@ -25,8 +25,10 @@ pub struct NetworkForImportAccount {
     save_mode: SaveMode,
 }
 
+/// Called once the network is chosen. The `bool` is whether the account/key check
+/// (`--check-account-id`) will run next.
 pub type OnAfterGettingNetworkConfigCallback =
-    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig) -> color_eyre::eyre::Result<()>>;
+    std::sync::Arc<dyn Fn(&crate::config::NetworkConfig, bool) -> color_eyre::eyre::Result<()>>;
 
 #[derive(Clone)]
 pub struct NetworkForImportAccountContext {
@@ -34,6 +36,7 @@ pub struct NetworkForImportAccountContext {
     pub account_id: near_primitives::types::AccountId,
     pub key_store_property: super::key_store_prop::KeyStorePropertyType,
     pub on_after_getting_network_callback: OnAfterGettingNetworkConfigCallback,
+    pub uses_web_wallet: bool,
 }
 
 #[derive(Clone)]
@@ -62,7 +65,10 @@ impl NetworkForImportAccountOutputContext {
             network_config.wallet_url = url.into();
         }
 
-        (previous_context.on_after_getting_network_callback)(&network_config)?;
+        (previous_context.on_after_getting_network_callback)(
+            &network_config,
+            scope.check_account_id,
+        )?;
 
         if scope.check_account_id {
             super::check_account_id(
@@ -111,6 +117,76 @@ impl NetworkForImportAccount {
         .prompt()?;
 
         Ok(matches!(select_choose_input, ConfirmOptions::Yes))
+    }
+
+    /// Lets the user pick which web wallet approves the new key, when `--wallet-url` wasn't passed.
+    /// Keeps the network's configured `wallet_url` outside an interactive terminal or when there is
+    /// nothing to choose from; Esc / Ctrl-C at either prompt is reported as a cancellation.
+    fn input_wallet_url(
+        context: &NetworkForImportAccountContext,
+        network_connection_name: &str,
+    ) -> color_eyre::eyre::Result<WalletUrlInput> {
+        use std::io::IsTerminal;
+
+        if !std::io::stdin().is_terminal() {
+            return Ok(WalletUrlInput::KeepConfigured);
+        }
+
+        let Some(network_config) = context
+            .global_context
+            .config
+            .network_connection
+            .get(network_connection_name)
+        else {
+            return Ok(WalletUrlInput::KeepConfigured);
+        };
+        let configured_url = network_config.wallet_url.clone();
+
+        let mut choices: Vec<WalletChoice> = known_web_wallets(&network_config.network_name)
+            .into_iter()
+            .map(|(name, url)| WalletChoice::Known { name, url })
+            .collect();
+        if !choices.iter().any(
+            |choice| matches!(choice, WalletChoice::Known { url, .. } if *url == configured_url),
+        ) {
+            choices.insert(0, WalletChoice::Configured(configured_url.clone()));
+        }
+        choices.push(WalletChoice::Custom);
+
+        let starting_cursor = choices
+            .iter()
+            .position(|choice| choice.url() == Some(&configured_url))
+            .unwrap_or(0);
+
+        let selected = inquire::Select::new(
+            "Which wallet do you want to use to approve the new access key?",
+            choices,
+        )
+        .with_starting_cursor(starting_cursor)
+        .prompt();
+        let Some(selected) = cancellable(selected)? else {
+            return Ok(WalletUrlInput::Cancelled);
+        };
+
+        let url = match selected {
+            WalletChoice::Known { url, .. } | WalletChoice::Configured(url) => url,
+            WalletChoice::Custom => {
+                let entered =
+                    inquire::CustomType::<crate::types::url::Url>::new("Enter the wallet URL:")
+                        .prompt();
+                let Some(crate::types::url::Url(mut url)) = cancellable(entered)? else {
+                    return Ok(WalletUrlInput::Cancelled);
+                };
+                // The login page is resolved relative to this URL, so it must end with `/`.
+                if !url.path().ends_with('/') {
+                    let path = format!("{}/", url.path());
+                    url.set_path(&path);
+                }
+                url
+            }
+        };
+
+        Ok(WalletUrlInput::Selected(url.into()))
     }
 
     fn input_network_name(
@@ -176,6 +252,20 @@ impl interactive_clap::FromCli for NetworkForImportAccount {
         }
         let network_name = clap_variant.network_name.clone().expect("Unexpected error");
 
+        if clap_variant.wallet_url.is_none() && context.uses_web_wallet && !fully_scripted {
+            match Self::input_wallet_url(&context, &network_name) {
+                Ok(WalletUrlInput::Selected(wallet_url)) => {
+                    clap_variant.wallet_url = Some(wallet_url)
+                }
+                Ok(WalletUrlInput::KeepConfigured) => {}
+                // Esc / Ctrl-C: stop quietly, like the network picker does.
+                Ok(WalletUrlInput::Cancelled) => {
+                    return interactive_clap::ResultFromCli::Cancel(Some(clap_variant));
+                }
+                Err(err) => return interactive_clap::ResultFromCli::Err(Some(clap_variant), err),
+            }
+        }
+
         if !clap_variant.check_account_id && !fully_scripted {
             clap_variant.check_account_id = match Self::input_check_account_id(&context) {
                 Ok(answer) => answer,
@@ -215,6 +305,72 @@ impl interactive_clap::FromCli for NetworkForImportAccount {
                 clap_variant.save_mode = optional;
                 interactive_clap::ResultFromCli::Err(Some(clap_variant), err)
             }
+        }
+    }
+}
+
+/// Wallets known to support the CLI web-wallet login (`<wallet_url>login/?public_key=...`), listed
+/// alphabetically. Each URL is the base the CLI appends `login/` to.
+fn known_web_wallets(network_name: &str) -> Vec<(&'static str, url::Url)> {
+    if !matches!(network_name, "mainnet" | "testnet") {
+        return Vec::new();
+    }
+
+    [
+        // Intear uses the network of the account selected in the wallet.
+        ("Intear Wallet", "https://wallet.intear.tech/".to_string()),
+        (
+            "Meteor Wallet",
+            format!("https://wallet.meteorwallet.app/cli/{network_name}/"),
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(name, url)| Some((name, url.parse().ok()?)))
+    .collect()
+}
+
+enum WalletUrlInput {
+    Selected(crate::types::url::Url),
+    KeepConfigured,
+    Cancelled,
+}
+
+/// Treats Esc / Ctrl-C at a prompt as `None` (a cancellation) rather than an error.
+fn cancellable<T>(
+    result: Result<T, inquire::error::InquireError>,
+) -> color_eyre::eyre::Result<Option<T>> {
+    match result {
+        Ok(value) => Ok(Some(value)),
+        Err(
+            inquire::error::InquireError::OperationCanceled
+            | inquire::error::InquireError::OperationInterrupted,
+        ) => Ok(None),
+        Err(err) => Err(err.into()),
+    }
+}
+
+#[derive(Clone)]
+enum WalletChoice {
+    Known { name: &'static str, url: url::Url },
+    Configured(url::Url),
+    Custom,
+}
+
+impl WalletChoice {
+    fn url(&self) -> Option<&url::Url> {
+        match self {
+            Self::Known { url, .. } | Self::Configured(url) => Some(url),
+            Self::Custom => None,
+        }
+    }
+}
+
+impl std::fmt::Display for WalletChoice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Known { name, url } => write!(f, "{name} ({url})"),
+            Self::Configured(url) => write!(f, "Wallet from your config ({url})"),
+            Self::Custom => write!(f, "Enter a custom wallet URL"),
         }
     }
 }
