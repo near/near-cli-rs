@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0](https://github.com/near/near-cli-rs/compare/v0.31.1...v0.32.0) - 2026-11-18
+
+### Fixed
+
+- staking validator-list network-config mainnet  ([#719](https://github.com/near/near-cli-rs/pull/719))
+- report recipient warnings without a TTY ([#722](https://github.com/near/near-cli-rs/pull/722))
+
 ## [0.31.1](https://github.com/near/near-cli-rs/compare/v0.31.0...v0.31.1) - 2026-11-05
 
 ### Fixed
