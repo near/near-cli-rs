@@ -38,6 +38,7 @@ pub struct SignPrivateKeyContext {
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
     on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
+    suppress_function_return_value: bool,
 }
 
 impl SignPrivateKeyContext {
@@ -126,6 +127,7 @@ impl SignPrivateKeyContext {
                     .on_after_sending_transaction_callback,
                 on_sending_delegate_action_callback: previous_context
                     .on_sending_delegate_action_callback,
+                suppress_function_return_value: previous_context.suppress_function_return_value,
             });
         }
 
@@ -157,6 +159,7 @@ impl SignPrivateKeyContext {
                 .on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: previous_context
                 .on_sending_delegate_action_callback,
+            suppress_function_return_value: previous_context.suppress_function_return_value,
         })
     }
 }
@@ -171,6 +174,7 @@ impl From<SignPrivateKeyContext> for super::SubmitContext {
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
+            suppress_function_return_value: item.suppress_function_return_value,
         }
     }
 }
