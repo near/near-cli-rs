@@ -3147,8 +3147,10 @@ pub fn input_network_name(
     config: &crate::config::Config,
     account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
+    // Callers look the answer up as a connection name (a key of
+    // `network_connection`), which may differ from its `network_name`.
     if config.network_connection.len() == 1 {
-        return Ok(config.network_names().pop());
+        return Ok(config.network_connection.keys().next().cloned());
     }
     let variants = if !account_ids.is_empty() {
         let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
