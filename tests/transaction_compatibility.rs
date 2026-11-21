@@ -76,6 +76,24 @@ fn signed_v0_and_v1_preserve_the_wire_format() {
 }
 
 #[test]
+fn printed_nonce_fields_match_the_transaction_version() {
+    let decoded_v0: SignedTransactionAsBase64 = SIGNED_V0.trim().parse().unwrap();
+    let printed_v0 = near_cli_rs::common::print_full_signed_transaction(decoded_v0.inner);
+    assert!(printed_v0.contains("\nnonce:        42"), "{printed_v0}");
+    assert!(!printed_v0.contains("nonce_index:"), "{printed_v0}");
+    assert!(!printed_v0.contains("nonce_mode:"), "{printed_v0}");
+
+    let decoded_v1: SignedTransactionAsBase64 = SIGNED_V1.trim().parse().unwrap();
+    let printed_v1 = near_cli_rs::common::print_full_signed_transaction(decoded_v1.inner);
+    assert!(printed_v1.contains("\nnonce:        42"), "{printed_v1}");
+    assert!(printed_v1.contains("\nnonce_index:  3"), "{printed_v1}");
+    assert!(
+        printed_v1.contains("\nnonce_mode:   strict"),
+        "{printed_v1}"
+    );
+}
+
+#[test]
 fn signed_delegate_preserves_text_and_json_encoding() {
     let v0 = transaction_v0();
     let expected = SignedDelegateAction {
