@@ -196,6 +196,7 @@ impl PrepaidGas {
                 "What is the gas limit for adding a DAO proposal (if you're not sure, keep 10 Tgas)?",
             )
             .with_starting_input("10 Tgas")
+            .with_parser(&crate::common::parse_near_gas)
             .with_validator(move |gas: &crate::common::NearGas| {
                 if gas > &near_gas::NearGas::from_tgas(1000) {
                     Ok(inquire::validator::Validation::Invalid(

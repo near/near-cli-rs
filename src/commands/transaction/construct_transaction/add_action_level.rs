@@ -505,6 +505,7 @@ macro_rules! impl_add_action_level {
                             Ok(Some(
                                 CustomType::new("Enter gas for function call:")
                                     .with_starting_input("100 TeraGas")
+                                    .with_parser(&crate::common::parse_near_gas)
                                     .with_validator(move |gas: &crate::common::NearGas| {
                                         if gas > &near_gas::NearGas::from_tgas(1000) {
                                             Ok(inquire::validator::Validation::Invalid(

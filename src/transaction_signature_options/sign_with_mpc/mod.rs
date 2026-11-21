@@ -336,6 +336,7 @@ impl PrepaidGas {
                 "What is the gas limit for signing with MPC (if you're not sure, keep 15 Tgas)?",
             )
             .with_starting_input("15 Tgas")
+            .with_parser(&crate::common::parse_near_gas)
             .with_validator(move |gas: &crate::common::NearGas| {
                 if gas < &near_gas::NearGas::from_tgas(15) {
                     Ok(inquire::validator::Validation::Invalid(

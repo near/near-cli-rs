@@ -14,7 +14,6 @@ const ONE_NEAR: u128 = 10u128.pow(24);
     derive_more::AsRef,
     derive_more::From,
     derive_more::Into,
-    derive_more::FromStr,
 )]
 #[as_ref(forward)]
 pub struct NearToken(pub near_token::NearToken);
@@ -35,6 +34,17 @@ impl std::fmt::Display for NearToken {
                 format!("{:0>24}", (self.as_yoctonear() % ONE_NEAR)).trim_end_matches('0')
             )
         }
+    }
+}
+
+impl std::str::FromStr for NearToken {
+    type Err = near_token::NearTokenError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // near_token::NearToken::from_str locates the unit in the untrimmed
+        // input but splits the trimmed one, so leading whitespace panics
+        // (byte index out of bounds, or not a char boundary). Trim here.
+        near_token::NearToken::from_str(s.trim()).map(Self)
     }
 }
 
@@ -60,6 +70,17 @@ impl interactive_clap::ToCli for NearToken {
 mod tests {
     use super::*;
     use std::str::FromStr;
+
+    #[test]
+    fn near_token_from_str_with_leading_whitespace() {
+        assert_eq!(
+            NearToken::from_str("  67 NEAR").unwrap(),
+            NearToken(near_token::NearToken::from_near(67))
+        );
+        for input in ["  67 T", "   3 T", "   '{}'ünïcödé", " \u{168}"] {
+            assert!(NearToken::from_str(input).is_err(), "{input:?}");
+        }
+    }
 
     #[test]
     fn near_token_to_string_0_near() {

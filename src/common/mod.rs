@@ -90,6 +90,13 @@ impl std::fmt::Display for BlockHashAsBase58 {
 
 pub use near_gas::NearGas;
 
+/// Parser for gas prompts. `near_gas::NearGas::from_str` finds the unit in
+/// the untrimmed input but splits the trimmed one, so leading whitespace
+/// panics (near/near-gas-rs#39). Trim first.
+pub(crate) fn parse_near_gas(input: &str) -> Result<NearGas, ()> {
+    input.trim().parse().map_err(|_| ())
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd)]
 pub struct TransferAmount {
     amount: near_token::NearToken,
@@ -3147,8 +3154,10 @@ pub fn input_network_name(
     config: &crate::config::Config,
     account_ids: &[near_primitives::types::AccountId],
 ) -> color_eyre::eyre::Result<Option<String>> {
+    // Callers look the answer up as a connection name (a key of
+    // `network_connection`), which may differ from its `network_name`.
     if config.network_connection.len() == 1 {
-        return Ok(config.network_names().pop());
+        return Ok(config.network_connection.keys().next().cloned());
     }
     let variants = if !account_ids.is_empty() {
         let (mut matches, non_matches): (Vec<_>, Vec<_>) = config
@@ -4138,6 +4147,12 @@ pub async fn fetch_access_key_list<E>(
 mod tests {
     use super::*;
     use near_jsonrpc_client::methods::send_tx::{RpcTransactionError, RpcTransactionResponse};
+
+    #[test]
+    fn parse_near_gas_accepts_leading_whitespace() {
+        assert_eq!(parse_near_gas("       10 Tgas"), Ok(NearGas::from_tgas(10)));
+        assert_eq!(parse_near_gas("  7 T"), Err(()));
+    }
     use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryResponse};
     use near_jsonrpc_primitives::types::transactions::TimeoutErrorCause;
     use near_primitives::types::{BlockId, BlockReference, Finality};
