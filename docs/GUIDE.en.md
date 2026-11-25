@@ -2759,107 +2759,104 @@ near transaction \
 
 <details><summary><i>The result of this command will be as follows:</i></summary>
 
-```txt
- INFO Transaction status:
- |    RpcTransactionResponse {
- |        final_execution_outcome: Some(
- |            FinalExecutionOutcome(
- |                FinalExecutionOutcome {
- |                    status: SuccessValue(''),
- |                    transaction: SignedTransactionView {
- |                        signer_id: AccountId(
- |                            "volodymyr.testnet",
- |                        ),
- |                        public_key: ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS,
- |                        nonce: 165,
- |                        receiver_id: AccountId(
- |                            "qweqweqwe.volodymyr.testnet",
- |                        ),
- |                        actions: [
- |                            CreateAccount,
- |                            Transfer {
- |                                deposit: 100000000000000000000000000,
- |                            },
- |                            AddKey {
- |                                public_key: ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf,
- |                                access_key: AccessKeyView {
- |                                    nonce: 0,
- |                                    permission: FullAccess,
- |                                },
- |                            },
- |                        ],
- |                        priority_fee: 0,
- |                        signature: ed25519:266jBRjvnaxe4mDyHRGwv3TJesvgRo2umJBqkZU26fRwmhVHciu3tBSLqRZFjEuqLTiwDTrFvfxpJ8Sbd2PqHHhv,
- |                        hash: GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank,
- |                    },
- |                    transaction_outcome: ExecutionOutcomeWithIdView {
- |                        proof: [],
- |                        block_hash: AQH6jDqqxpBYj5NSZv3Skg5hUZQRsn16jvDuphCTugSQ,
- |                        id: GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank,
- |                        outcome: ExecutionOutcomeView {
- |                            logs: [],
- |                            receipt_ids: [
- |                                5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh,
- |                            ],
- |                            gas_burnt: 424555062500,
- |                            tokens_burnt: 42455506250000000000,
- |                            executor_id: AccountId(
- |                                "volodymyr.testnet",
- |                            ),
- |                            status: SuccessReceiptId(5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh),
- |                            metadata: ExecutionMetadataView {
- |                                version: 1,
- |                                gas_profile: None,
- |                            },
- |                        },
- |                    },
- |                    receipts_outcome: [
- |                        ExecutionOutcomeWithIdView {
- |                            proof: [],
- |                            block_hash: DBUpiLVVDBQwSAPU8ZTE8KQnX5skDD1dTsBjJQ8kV24R,
- |                            id: 5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh,
- |                            outcome: ExecutionOutcomeView {
- |                                logs: [],
- |                                receipt_ids: [
- |                                    851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU,
- |                                ],
- |                                gas_burnt: 424555062500,
- |                                tokens_burnt: 42455506250000000000,
- |                                executor_id: AccountId(
- |                                    "qweqweqwe.volodymyr.testnet",
- |                                ),
- |                                status: SuccessValue(''),
- |                                metadata: ExecutionMetadataView {
- |                                    version: 1,
- |                                    gas_profile: None,
- |                                },
- |                            },
- |                        },
- |                        ExecutionOutcomeWithIdView {
- |                            proof: [],
- |                            block_hash: BSjrH3WyKnXhD17drR94YfM725Ho59us9N4msXrrgHEw,
- |                            id: 851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU,
- |                            outcome: ExecutionOutcomeView {
- |                                logs: [],
- |                                receipt_ids: [],
- |                                gas_burnt: 0,
- |                                tokens_burnt: 0,
- |                                executor_id: AccountId(
- |                                    "volodymyr.testnet",
- |                                ),
- |                                status: SuccessValue(''),
- |                                metadata: ExecutionMetadataView {
- |                                    version: 1,
- |                                    gas_profile: None,
- |                                },
- |                            },
- |                        },
- |                    ],
- |                },
- |            ),
- |        ),
- |        final_execution_status: Final,
- |    }
+The response is printed as JSON on stdout; `Transaction status:` is printed on stderr. Use `near --quiet transaction view-status ...` for compact, single-line JSON. `--teach-me` also prints RPC tracing, so use normal or quiet mode when parsing stdout.
+
+```json
+{
+  "status": {
+    "SuccessValue": ""
+  },
+  "transaction": {
+    "signer_id": "volodymyr.testnet",
+    "public_key": "ed25519:7FmDRADa1v4BcLiiR9MPPdmWQp3Um1iPdAYATvBY1YzS",
+    "nonce": 165,
+    "receiver_id": "qweqweqwe.volodymyr.testnet",
+    "actions": [
+      "CreateAccount",
+      {
+        "Transfer": {
+          "deposit": "100000000000000000000000000"
+        }
+      },
+      {
+        "AddKey": {
+          "public_key": "ed25519:AgVv8qjZ7yix3pTo7BimT1zoDYUSTGcg73RBssC5JMRf",
+          "access_key": {
+            "nonce": 0,
+            "permission": "FullAccess"
+          }
+        }
+      }
+    ],
+    "priority_fee": 0,
+    "signature": "ed25519:266jBRjvnaxe4mDyHRGwv3TJesvgRo2umJBqkZU26fRwmhVHciu3tBSLqRZFjEuqLTiwDTrFvfxpJ8Sbd2PqHHhv",
+    "hash": "GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank"
+  },
+  "transaction_outcome": {
+    "proof": [],
+    "block_hash": "AQH6jDqqxpBYj5NSZv3Skg5hUZQRsn16jvDuphCTugSQ",
+    "id": "GDoinMecpvnqahzJz9tXLxYycznL4cAoxKTPEnJZ3ank",
+    "outcome": {
+      "logs": [],
+      "receipt_ids": [
+        "5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh"
+      ],
+      "gas_burnt": 424555062500,
+      "tokens_burnt": "42455506250000000000",
+      "executor_id": "volodymyr.testnet",
+      "status": {
+        "SuccessReceiptId": "5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh"
+      },
+      "metadata": {
+        "version": 1,
+        "gas_profile": null
+      }
+    }
+  },
+  "receipts_outcome": [
+    {
+      "proof": [],
+      "block_hash": "DBUpiLVVDBQwSAPU8ZTE8KQnX5skDD1dTsBjJQ8kV24R",
+      "id": "5DmuFwQaiSbEDiR7dx6sDurjyDyF92c1tK7gfN7bXqPh",
+      "outcome": {
+        "logs": [],
+        "receipt_ids": [
+          "851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU"
+        ],
+        "gas_burnt": 424555062500,
+        "tokens_burnt": "42455506250000000000",
+        "executor_id": "qweqweqwe.volodymyr.testnet",
+        "status": {
+          "SuccessValue": ""
+        },
+        "metadata": {
+          "version": 1,
+          "gas_profile": null
+        }
+      }
+    },
+    {
+      "proof": [],
+      "block_hash": "BSjrH3WyKnXhD17drR94YfM725Ho59us9N4msXrrgHEw",
+      "id": "851GMnZZ5FJ2aDSHM34N99yVb1ZkwY8n7F8rUcvuRpUU",
+      "outcome": {
+        "logs": [],
+        "receipt_ids": [],
+        "gas_burnt": 0,
+        "tokens_burnt": "0",
+        "executor_id": "volodymyr.testnet",
+        "status": {
+          "SuccessValue": ""
+        },
+        "metadata": {
+          "version": 1,
+          "gas_profile": null
+        }
+      }
+    }
+  ],
+  "final_execution_status": "FINAL"
+}
 ```
 </details>
 
