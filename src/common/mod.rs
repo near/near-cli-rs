@@ -1209,11 +1209,21 @@ pub fn print_full_unsigned_transaction(
             format_ml_dsa_65_pubkey_handle(pub_key)
         ));
     }
-    info_str.push_str(&format!(
-        "\n{:<13} {}",
-        "nonce:",
-        transaction.nonce().nonce()
-    ));
+    let nonce = transaction.nonce();
+    info_str.push_str(&format!("\n{:<13} {}", "nonce:", nonce.nonce()));
+    if let Some(nonce_index) = nonce.nonce_index() {
+        info_str.push_str(&format!("\n{:<13} {}", "nonce_index:", nonce_index));
+    }
+    if matches!(
+        &transaction,
+        near_primitives::transaction::Transaction::V1(_)
+    ) {
+        let nonce_mode = match transaction.nonce_mode() {
+            near_primitives::transaction::NonceMode::Monotonic => "monotonic",
+            near_primitives::transaction::NonceMode::Strict => "strict",
+        };
+        info_str.push_str(&format!("\n{:<13} {}", "nonce_mode:", nonce_mode));
+    }
     info_str.push_str(&format!(
         "\n{:<13} {}",
         "block_hash:",
