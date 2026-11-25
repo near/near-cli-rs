@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use color_eyre::eyre::ContextCompat;
 use near_primitives::types::{BlockId, BlockReference, Finality};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
@@ -133,7 +131,7 @@ impl AtBlockHeightContext {
 #[interactive_clap(output_context = BlockIdHashContext)]
 pub struct BlockIdHash {
     /// Type the block ID hash:
-    block_id_hash: String,
+    block_id_hash: crate::types::crypto_hash::CryptoHash,
 }
 
 #[derive(Debug, Clone)]
@@ -144,9 +142,7 @@ impl BlockIdHashContext {
         previous_context: NetworkViewAtBlockArgsContext,
         scope: &<BlockIdHash as interactive_clap::ToInteractiveClapContextScope>::InteractiveClapContextScope,
     ) -> color_eyre::eyre::Result<Self> {
-        let block_reference = BlockReference::BlockId(BlockId::Hash(
-            near_primitives::hash::CryptoHash::from_str(&scope.block_id_hash).unwrap(),
-        ));
+        let block_reference = BlockReference::BlockId(BlockId::Hash(scope.block_id_hash.into()));
 
         (previous_context.on_after_getting_block_reference_callback)(
             &previous_context.network_config,
