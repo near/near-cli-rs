@@ -54,6 +54,8 @@ pub struct ImportAccountDetailsContext {
     global_context: crate::GlobalContext,
     key_store_property: key_store_prop::KeyStorePropertyType,
     on_after_getting_network_callback: network::OnAfterGettingNetworkConfigCallback,
+    /// Whether the key is approved in a web wallet, so the network step may offer a choice of wallets.
+    uses_web_wallet: bool,
 }
 
 impl network::NetworkForImportAccountContext {
@@ -68,6 +70,7 @@ impl network::NetworkForImportAccountContext {
             account_id,
             key_store_property: previous_context.key_store_property,
             on_after_getting_network_callback: previous_context.on_after_getting_network_callback,
+            uses_web_wallet: previous_context.uses_web_wallet,
         })
     }
 }
