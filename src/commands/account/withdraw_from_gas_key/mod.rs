@@ -188,6 +188,7 @@ impl From<WithdrawFromGasKeyDetailsContext> for crate::commands::ActionContext {
                 |_outcome_view, _network_config| Ok(()),
             ),
             sign_as_delegate_action: false,
+            suppress_function_return_value: false,
             on_sending_delegate_action_callback: None,
         }
     }

@@ -84,6 +84,7 @@ impl SubmitContext {
                 &transaction_info,
                 &previous_context.network_config,
                 previous_context.global_context.verbosity,
+                false,
             )?;
         }
         Ok(())

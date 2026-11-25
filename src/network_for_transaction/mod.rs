@@ -25,6 +25,7 @@ pub struct NetworkForTransactionArgsContext {
     on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
     sign_as_delegate_action: bool,
+    suppress_function_return_value: bool,
 }
 
 impl NetworkForTransactionArgsContext {
@@ -59,6 +60,7 @@ impl NetworkForTransactionArgsContext {
             on_sending_delegate_action_callback: previous_context
                 .on_sending_delegate_action_callback,
             sign_as_delegate_action,
+            suppress_function_return_value: previous_context.suppress_function_return_value,
         })
     }
 }
@@ -77,6 +79,7 @@ impl From<NetworkForTransactionArgsContext> for crate::commands::TransactionCont
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
             sign_as_delegate_action: item.sign_as_delegate_action,
+            suppress_function_return_value: item.suppress_function_return_value,
         }
     }
 }

@@ -77,6 +77,7 @@ impl From<SkipActionContext> for crate::commands::ActionContext {
             ),
             on_sending_delegate_action_callback: None,
             sign_as_delegate_action: item.0.sign_as_delegate_action,
+            suppress_function_return_value: false,
         }
     }
 }
