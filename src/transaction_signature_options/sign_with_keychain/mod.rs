@@ -43,6 +43,7 @@ pub struct SignKeychainContext {
         crate::transaction_signature_options::OnAfterSendingTransactionCallback,
     on_sending_delegate_action_callback:
         Option<crate::transaction_signature_options::OnSendingDelegateActionCallback>,
+    suppress_function_return_value: bool,
 }
 
 impl From<super::sign_with_legacy_keychain::SignLegacyKeychainContext> for SignKeychainContext {
@@ -55,6 +56,7 @@ impl From<super::sign_with_legacy_keychain::SignLegacyKeychainContext> for SignK
             on_before_sending_transaction_callback: value.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: value.on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: value.on_sending_delegate_action_callback,
+            suppress_function_return_value: value.suppress_function_return_value,
         }
     }
 }
@@ -237,6 +239,7 @@ impl SignKeychainContext {
                     .on_after_sending_transaction_callback,
                 on_sending_delegate_action_callback: previous_context
                     .on_sending_delegate_action_callback,
+                suppress_function_return_value: previous_context.suppress_function_return_value,
             });
         }
 
@@ -270,6 +273,7 @@ impl SignKeychainContext {
                 .on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: previous_context
                 .on_sending_delegate_action_callback,
+            suppress_function_return_value: previous_context.suppress_function_return_value,
         })
     }
 }
@@ -316,6 +320,7 @@ impl From<SignKeychainContext> for super::SubmitContext {
             on_before_sending_transaction_callback: item.on_before_sending_transaction_callback,
             on_after_sending_transaction_callback: item.on_after_sending_transaction_callback,
             on_sending_delegate_action_callback: item.on_sending_delegate_action_callback,
+            suppress_function_return_value: item.suppress_function_return_value,
         }
     }
 }

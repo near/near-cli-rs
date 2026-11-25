@@ -127,6 +127,7 @@ pub struct SubmitContext {
     pub on_before_sending_transaction_callback: OnBeforeSendingTransactionCallback,
     pub on_after_sending_transaction_callback: OnAfterSendingTransactionCallback,
     pub on_sending_delegate_action_callback: Option<OnSendingDelegateActionCallback>,
+    pub suppress_function_return_value: bool,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
