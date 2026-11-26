@@ -2608,9 +2608,15 @@ pub fn save_access_key_to_legacy_keychain(
     }
 }
 
+pub fn is_cli_mode_flag(arg: &str) -> bool {
+    matches!(arg, "--offline" | "--quiet" | "--teach-me")
+}
+
 pub fn try_external_subcommand_execution(error: clap::Error) -> CliResult {
     let (subcommand, args) = {
-        let mut args = std::env::args().skip(1);
+        let mut args = std::env::args()
+            .skip(1)
+            .skip_while(|arg| is_cli_mode_flag(arg));
         let subcommand = args
             .next()
             .ok_or_else(|| color_eyre::eyre::eyre!("subcommand is not provided"))?;
