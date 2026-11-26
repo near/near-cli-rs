@@ -8,7 +8,10 @@
 // when computing type layouts.
 #![recursion_limit = "512"]
 
-use clap::Parser;
+use clap::{
+    Parser,
+    error::{ContextKind, ContextValue, ErrorKind},
+};
 #[cfg(feature = "self-update")]
 use color_eyre::eyre::WrapErr;
 use color_eyre::owo_colors::OwoColorize;
@@ -98,9 +101,7 @@ fn main() -> crate::common::CliResult {
     let cli = match Cmd::try_parse() {
         Ok(cli) => cli,
         Err(cmd_error) => match cmd_error.kind() {
-            clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
-                cmd_error.exit()
-            }
+            ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => cmd_error.exit(),
             _ => {
                 // Backward compat: old `construct-transaction <sender> <receiver>` syntax
                 // Insert "account-id" subcommand before the bare receiver account ID.
@@ -117,19 +118,24 @@ fn main() -> crate::common::CliResult {
                             Parser::parse_from(cmd)
                         }
                         Err(js_cmd_error) => {
-                            // js and rust both don't understand the subcommand
-                            if cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
-                                && js_cmd_error.kind() == clap::error::ErrorKind::InvalidSubcommand
+                            if cmd_error.kind() != ErrorKind::InvalidSubcommand {
+                                cmd_error.exit();
+                            }
+
+                            let legacy_rejected_mode_flag = js_cmd_error.kind()
+                                == ErrorKind::UnknownArgument
+                                && matches!(
+                                    js_cmd_error.get(ContextKind::InvalidArg),
+                                    Some(ContextValue::String(arg))
+                                        if crate::common::is_cli_mode_flag(arg)
+                                );
+                            if js_cmd_error.kind() == ErrorKind::InvalidSubcommand
+                                || legacy_rejected_mode_flag
                             {
                                 return crate::common::try_external_subcommand_execution(cmd_error);
                             }
 
-                            // js understand the subcommand
-                            if js_cmd_error.kind() != clap::error::ErrorKind::InvalidSubcommand {
-                                js_cmd_error.exit();
-                            }
-
-                            cmd_error.exit();
+                            js_cmd_error.exit();
                         }
                     }
                 }
