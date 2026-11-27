@@ -1435,9 +1435,7 @@ near account \
     autogenerate-new-keypair \
     save-to-keychain \
     network-config testnet \
-    sign-with-plaintext-private-key \
-        --signer-public-key ed25519:1TprKa4burMqDMjDHyBSUaFQQczF7NamhxTx2yEXe9P \
-        --signer-private-key ed25519:1aXaNaPNxU6Nwb4R1FxP9FzqFqhXwsx3nDS8PWv2jLxcX2ABEbKiGCPFKwEqQYzULWqiXLZDQX8oZYrhSLnDXFf \
+    sign-with-plaintext-private-key ed25519:1aXaNaPNxU6Nwb4R1FxP9FzqFqhXwsx3nDS8PWv2jLxcX2ABEbKiGCPFKwEqQYzULWqiXLZDQX8oZYrhSLnDXFf \
     send
 ```
 

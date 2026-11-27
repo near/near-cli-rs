@@ -108,7 +108,6 @@ jobs:
       NEAR_NETWORK_CONNECTION: mainnet
       NEAR_CONTRACT_ACCOUNT_ID: ${{ vars.NEAR_CONTRACT_ACCOUNT_ID }}
       NEAR_SIGNER_ACCOUNT_ID: ${{ vars.NEAR_SIGNER_ACCOUNT_ID }}
-      NEAR_SIGNER_ACCOUNT_PUBLIC_KEY: ${{ vars.NEAR_SIGNER_ACCOUNT_PUBLIC_KEY }}
       NEAR_SIGNER_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEAR_SIGNER_ACCOUNT_PRIVATE_KEY }}
 
     steps:
@@ -117,11 +116,11 @@ jobs:
 
     - name: Install near CLI
       run: |
-        curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.7.4/near-cli-rs-installer.sh | sh
+        curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
 
     - name: Call some function
       run: |
-        near contract call-function as-transaction "$NEAR_CONTRACT_ACCOUNT_ID" 'function_name_here' json-args '{}' prepaid-gas '100 TeraGas' attached-deposit '0 NEAR' sign-as "$NEAR_SIGNER_ACCOUNT_ID" network-config "$NEAR_NETWORK_CONNECTION" sign-with-plaintext-private-key --signer-public-key "$NEAR_SIGNER_ACCOUNT_PUBLIC_KEY" --signer-private-key "$NEAR_SIGNER_ACCOUNT_PRIVATE_KEY" send
+        near contract call-function as-transaction "$NEAR_CONTRACT_ACCOUNT_ID" 'function_name_here' json-args '{}' prepaid-gas '100 TeraGas' attached-deposit '0 NEAR' sign-as "$NEAR_SIGNER_ACCOUNT_ID" network-config "$NEAR_NETWORK_CONNECTION" sign-with-plaintext-private-key "$NEAR_SIGNER_ACCOUNT_PRIVATE_KEY" send
 ```
 
 You will need to configure GitHub Actions Secrets and Variables and once it is ready, this CI will only take a couple of _seconds_ to complete!
